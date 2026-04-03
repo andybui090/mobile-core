@@ -1,37 +1,68 @@
 const fs = require('fs');
 const path = require('path');
 
-const root = 'src';
+// 👉 đảm bảo chạy ở root project
+const root = path.join(process.cwd(), 'src');
 
-const ensureFile = (filePath) => {
+// =========================
+// HELPER
+// =========================
+const createDir = (dirPath) => {
+  fs.mkdirSync(dirPath, { recursive: true });
+
+  const gitkeep = path.join(dirPath, '.gitkeep');
+  if (!fs.existsSync(gitkeep)) {
+    fs.writeFileSync(gitkeep, '');
+  }
+};
+
+const createFile = (filePath) => {
   if (!fs.existsSync(filePath)) {
     fs.writeFileSync(filePath, '');
   }
 };
 
-// ✅ core
+// =========================
+// CORE (INFRA ONLY)
+// =========================
 const coreDirs = [
-  'core/api',
+  'core/network',
   'core/storage',
   'core/config',
-  'core/navigation',
   'core/utils',
-  'core/services', // ✅ thêm
 ];
 
-// ✅ shared
+// =========================
+// SHARED (REUSABLE)
+// =========================
 const sharedDirs = [
-  'shared/ui', // ✅ rename
+  'shared/ui',
   'shared/hooks',
   'shared/utils',
   'shared/constants',
   'shared/theme',
 ];
 
-// ✅ app
-const appDirs = ['app'];
+// =========================
+// APP (ENTRY + NAVIGATION)
+// =========================
+const appDirs = [
+  'app',
+  'app/navigation',
+  'app/providers',
+];
 
-// ✅ features
+// =========================
+// DEV (PLAYGROUND)
+// =========================
+const devDirs = [
+  'dev/playground/components',
+  'dev/playground/screens',
+];
+
+// =========================
+// FEATURES
+// =========================
 const features = [
   'auth',
   'feed',
@@ -42,52 +73,74 @@ const features = [
   'notification',
 ];
 
-// ✅ feature structure
+// clean architecture (bạn đã chốt)
 const featureStructure = [
-  'api',
-  'usecases',
-  'components',
-  'hooks',
-  'screens',
+  'domain/models',
+  'domain/repositories',
+  'data/api',
+  'data/repositories',
+  'application/usecases',
+  'presentation/hooks',
+  'presentation/screens',
+  'presentation/components',
   'store',
 ];
 
-// 👉 create base dirs
-[...coreDirs, ...sharedDirs, ...appDirs].forEach((dir) => {
-  const fullPath = path.join(root, dir);
-  fs.mkdirSync(fullPath, { recursive: true });
+// =========================
+// CREATE ROOT
+// =========================
+createDir(root);
 
-  // ✅ add .gitkeep
-  ensureFile(path.join(fullPath, '.gitkeep'));
+// =========================
+// BASE DIRS
+// =========================
+[...coreDirs, ...sharedDirs, ...appDirs, ...devDirs].forEach((dir) => {
+  createDir(path.join(root, dir));
 });
 
-// 👉 create feature dirs
-features.forEach((feature) => {
-  featureStructure.forEach((sub) => {
-    const fullPath = path.join(root, 'features', feature, sub);
-    fs.mkdirSync(fullPath, { recursive: true });
+// =========================
+// FEATURES ROOT
+// =========================
+createDir(path.join(root, 'features'));
 
-    ensureFile(path.join(fullPath, '.gitkeep'));
+// =========================
+// FEATURES STRUCTURE
+// =========================
+features.forEach((feature) => {
+  const featureRoot = path.join(root, 'features', feature);
+  createDir(featureRoot);
+
+  featureStructure.forEach((sub) => {
+    createDir(path.join(featureRoot, sub));
   });
 
-  // types
-  ensureFile(path.join(root, 'features', feature, 'types.ts'));
-
-  // index
-  ensureFile(path.join(root, 'features', feature, 'index.ts'));
+  // base files
+  createFile(path.join(featureRoot, 'types.ts'));
+  createFile(path.join(featureRoot, 'index.ts'));
 });
 
-// ✅ extra files
-const extraFiles = [
-  'core/api/client.ts',
+// =========================
+// EXTRA FILES
+// =========================
+const files = [
+  'core/network/apiClient.ts',
   'core/config/env.ts',
+
   'app/App.tsx',
-  'app/providers.tsx',
-  'app/routes.tsx',
+  'app/navigation/index.tsx',
+  'app/providers/index.tsx',
+
+  'shared/ui/Button.tsx',
+  'shared/theme/index.ts',
+
+  // playground sample
+  'dev/playground/screens/PlaygroundScreen.tsx',
 ];
 
-extraFiles.forEach((file) => {
-  ensureFile(path.join(root, file));
+files.forEach((file) => {
+  const fullPath = path.join(root, file);
+  createDir(path.dirname(fullPath));
+  createFile(fullPath);
 });
 
-console.log('🚀 Structure created successfully!');
+console.log('🚀 DONE - Structure ready to scale!');

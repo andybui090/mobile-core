@@ -7,20 +7,21 @@ A scalable and production-ready **React Native core template** built with modern
 * ⚛️ React Native `0.84+`
 * 🧠 TypeScript
 * 🧩 Feature-based architecture
-* 🧱 Clean Architecture (lightweight & practical)
+* 🧱 Pragmatic Clean Architecture
 * 🔄 Reusable across multiple projects
 
-This template is designed to help build **maintainable, scalable, and high-performance mobile applications**.
+Designed to build **maintainable, scalable, and high-performance mobile applications** without unnecessary complexity.
 
 ---
 
 ## 🧠 Core Philosophy
 
-This project follows a **pragmatic architecture**:
+This project follows a **pragmatic approach**:
 
 * ❌ No over-engineering (no DI container, no heavy abstraction)
-* ✅ Clear separation of responsibilities
-* ✅ Easy to scale when needed
+* ✅ Clear separation of concerns
+* ✅ Predictable structure for teams
+* ✅ Easy onboarding & scalability
 
 ---
 
@@ -41,7 +42,7 @@ This project follows a **pragmatic architecture**:
 Screen → Hook → UseCase → API → Response
 ```
 
-> 🔥 Rule: UI **never calls API directly**
+> 🔥 Rule: UI **must never call API directly**
 
 ---
 
@@ -49,36 +50,50 @@ Screen → Hook → UseCase → API → Response
 
 ```
 src/
-├── app/                    # App entry, providers, navigation
+├── app/                    # App entry, navigation, providers
 │   ├── App.tsx
-│   ├── providers.tsx
-│   └── routes.tsx
+│   ├── navigation/
+│   └── providers/
 │
 ├── core/                   # Infrastructure (NO business logic)
-│   ├── api/                # Axios client & interceptors
+│   ├── network/            # Axios client & interceptors
 │   ├── storage/            # MMKV wrapper
 │   ├── config/             # Env & configs
-│   ├── navigation/         # Navigation setup
-│   ├── services/           # Socket, analytics, etc.
 │   └── utils/
 │
 ├── features/               # Feature modules
 │   └── auth/
-│       ├── api/            # API calls (feature-specific)
-│       ├── usecases/       # Business logic
-│       ├── components/     # UI components (local)
-│       ├── hooks/          # Orchestration (React Query, etc.)
-│       ├── screens/        # Screens
-│       ├── store/          # Zustand store (if needed)
+│       ├── domain/         # Business contracts (optional layer)
+│       │   ├── models/
+│       │   └── repositories/
+│       │
+│       ├── data/           # Implementation layer
+│       │   ├── api/
+│       │   └── repositories/
+│       │
+│       ├── application/    # Use cases (business logic)
+│       │   └── usecases/
+│       │
+│       ├── presentation/   # UI layer
+│       │   ├── hooks/
+│       │   ├── screens/
+│       │   └── components/
+│       │
+│       ├── store/          # Zustand (if needed)
 │       ├── types.ts
 │       └── index.ts
 │
 ├── shared/                 # Reusable across features
-│   ├── ui/                 # Design system (Button, Input, etc.)
+│   ├── ui/                 # Design system (Button, Input...)
 │   ├── hooks/
 │   ├── utils/
 │   ├── constants/
 │   └── theme/
+│
+├── dev/                    # Development-only tools
+│   └── playground/
+│       ├── components/     # Test UI components
+│       └── screens/        # Playground screens
 ```
 
 ---
@@ -87,24 +102,12 @@ src/
 
 ```
 features/auth/
-├── api/
-│   └── auth.api.ts
-│
-├── usecases/
-│   └── login.ts
-│
-├── hooks/
-│   └── useLogin.ts
-│
-├── screens/
-│   └── LoginScreen.tsx
-│
-├── components/
-│   └── LoginForm.tsx
-│
-├── store/
-│   └── useAuthStore.ts
-│
+├── data/api/auth.api.ts
+├── application/usecases/login.ts
+├── presentation/hooks/useLogin.ts
+├── presentation/screens/LoginScreen.tsx
+├── presentation/components/LoginForm.tsx
+├── store/useAuthStore.ts
 ├── types.ts
 └── index.ts
 ```
@@ -156,38 +159,56 @@ API_URL=https://api.example.com
 * Zustand
 * Axios
 * React Navigation
-* MMKV (storage)
+* MMKV
 
 ---
 
 ## 🔄 State Management
 
-### ✅ Correct Usage
+### ✅ Recommended
 
-| Data Type     | Tool               |
-| ------------- | ------------------ |
-| Server data   | React Query        |
-| Auth / global | Zustand            |
-| UI state      | Zustand (optional) |
+| Data Type   | Tool        |
+| ----------- | ----------- |
+| Server data | React Query |
+| Auth/global | Zustand     |
+| UI state    | Zustand     |
 
 ---
 
 ### ❌ Avoid
 
-* Putting API data into Zustand
+* Storing server data in Zustand
 * Creating one global store for everything
 
 ---
 
 ## 🌐 API Layer
 
-* Centralized Axios instance in `core/api`
-* Feature APIs inside each feature
+* Centralized API client in `core/network`
+* Feature-specific APIs inside each feature
 * Supports:
 
   * Auth token injection
   * Error handling
-  * Refresh token (optional)
+  * Token refresh (optional)
+
+---
+
+## 🧪 Dev Playground
+
+A dedicated space for testing UI and experimenting:
+
+```
+src/dev/playground/
+```
+
+### Use cases:
+
+* Build & test design system components
+* Try UI without affecting real features
+* Debug layouts quickly
+
+> ⚠️ This folder is **development-only** and should not contain business logic
 
 ---
 
@@ -199,13 +220,14 @@ API_URL=https://api.example.com
 * Keep features isolated
 * Put business logic in `usecases`
 * Use hooks to orchestrate logic
+* Keep UI components dumb
 
 ---
 
 ### ❌ Don't
 
 * Call API inside screens
-* Put logic inside UI components
+* Put business logic inside components
 * Share logic across features without structure
 * Turn `core/` into a dumping folder
 
@@ -217,7 +239,7 @@ API_URL=https://api.example.com
 * Add toast/notification system
 * Normalize API errors
 * Add logging (Sentry, etc.)
-* Optimize FlatList for feed
+* Optimize FlatList performance
 * Use pagination & caching (React Query)
 
 ---
