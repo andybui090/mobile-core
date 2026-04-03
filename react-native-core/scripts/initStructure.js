@@ -3,19 +3,25 @@ const path = require('path');
 
 const root = 'src';
 
-// ✅ core structure
+const ensureFile = (filePath) => {
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, '');
+  }
+};
+
+// ✅ core
 const coreDirs = [
   'core/api',
-  'core/auth',
   'core/storage',
   'core/config',
   'core/navigation',
   'core/utils',
+  'core/services', // ✅ thêm
 ];
 
 // ✅ shared
 const sharedDirs = [
-  'shared/components',
+  'shared/ui', // ✅ rename
   'shared/hooks',
   'shared/utils',
   'shared/constants',
@@ -23,11 +29,9 @@ const sharedDirs = [
 ];
 
 // ✅ app
-const appDirs = [
-  'app',
-];
+const appDirs = ['app'];
 
-// ✅ features (auto generate)
+// ✅ features
 const features = [
   'auth',
   'feed',
@@ -38,25 +42,23 @@ const features = [
   'notification',
 ];
 
+// ✅ feature structure
 const featureStructure = [
   'api',
+  'usecases',
   'components',
   'hooks',
   'screens',
   'store',
 ];
 
-// 👉 merge all dirs
-const dirs = [
-  ...coreDirs,
-  ...sharedDirs,
-  ...appDirs,
-];
-
 // 👉 create base dirs
-dirs.forEach((dir) => {
+[...coreDirs, ...sharedDirs, ...appDirs].forEach((dir) => {
   const fullPath = path.join(root, dir);
   fs.mkdirSync(fullPath, { recursive: true });
+
+  // ✅ add .gitkeep
+  ensureFile(path.join(fullPath, '.gitkeep'));
 });
 
 // 👉 create feature dirs
@@ -64,16 +66,18 @@ features.forEach((feature) => {
   featureStructure.forEach((sub) => {
     const fullPath = path.join(root, 'features', feature, sub);
     fs.mkdirSync(fullPath, { recursive: true });
+
+    ensureFile(path.join(fullPath, '.gitkeep'));
   });
 
-  // create types file
-  const typesFile = path.join(root, 'features', feature, 'types.ts');
-  if (!fs.existsSync(typesFile)) {
-    fs.writeFileSync(typesFile, '');
-  }
+  // types
+  ensureFile(path.join(root, 'features', feature, 'types.ts'));
+
+  // index
+  ensureFile(path.join(root, 'features', feature, 'index.ts'));
 });
 
-// ✅ global extra
+// ✅ extra files
 const extraFiles = [
   'core/api/client.ts',
   'core/config/env.ts',
@@ -83,10 +87,7 @@ const extraFiles = [
 ];
 
 extraFiles.forEach((file) => {
-  const fullPath = path.join(root, file);
-  if (!fs.existsSync(fullPath)) {
-    fs.writeFileSync(fullPath, '');
-  }
+  ensureFile(path.join(root, file));
 });
 
 console.log('🚀 Structure created successfully!');

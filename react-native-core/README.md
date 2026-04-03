@@ -4,13 +4,23 @@
 
 A scalable and production-ready **React Native core template** built with modern best practices:
 
-- ⚛️ React Native `0.84+`
-- 🧠 TypeScript
-- 🧩 Feature-based architecture
-- 🧱 Clean Architecture (lightweight & practical)
-- 🔄 Reusable across multiple projects
+* ⚛️ React Native `0.84+`
+* 🧠 TypeScript
+* 🧩 Feature-based architecture
+* 🧱 Clean Architecture (lightweight & practical)
+* 🔄 Reusable across multiple projects
 
-This template is designed to help teams build **maintainable, scalable, and testable mobile applications**.
+This template is designed to help build **maintainable, scalable, and high-performance mobile applications**.
+
+---
+
+## 🧠 Core Philosophy
+
+This project follows a **pragmatic architecture**:
+
+* ❌ No over-engineering (no DI container, no heavy abstraction)
+* ✅ Clear separation of responsibilities
+* ✅ Easy to scale when needed
 
 ---
 
@@ -18,16 +28,20 @@ This template is designed to help teams build **maintainable, scalable, and test
 
 ### 🔹 Principles
 
-- Feature isolation
-- Separation of concerns
-- Domain-driven structure (lightweight)
-- Scalable for large teams
+* Feature isolation
+* Separation of concerns
+* Keep it simple & scalable
+* Avoid premature abstraction
 
-### 🔹 Data Flow
+---
+
+### 🔹 Data Flow (IMPORTANT)
 
 ```
 Screen → Hook → UseCase → API → Response
 ```
+
+> 🔥 Rule: UI **never calls API directly**
 
 ---
 
@@ -35,38 +49,64 @@ Screen → Hook → UseCase → API → Response
 
 ```
 src/
-├── app/                # App entry, providers, navigation
-│   ├── navigation/
-│   ├── providers/
-│   └── App.tsx
+├── app/                    # App entry, providers, navigation
+│   ├── App.tsx
+│   ├── providers.tsx
+│   └── routes.tsx
 │
-├── features/           # Feature modules (domain-driven)
+├── core/                   # Infrastructure (NO business logic)
+│   ├── api/                # Axios client & interceptors
+│   ├── storage/            # MMKV wrapper
+│   ├── config/             # Env & configs
+│   ├── navigation/         # Navigation setup
+│   ├── services/           # Socket, analytics, etc.
+│   └── utils/
+│
+├── features/               # Feature modules
 │   └── auth/
-│       ├── api/
-│       ├── domain/
-│       │   ├── entities/
-│       │   └── usecases/
-│       ├── hooks/
-│       ├── screens/
-│       ├── components/
-│       └── store/
+│       ├── api/            # API calls (feature-specific)
+│       ├── usecases/       # Business logic
+│       ├── components/     # UI components (local)
+│       ├── hooks/          # Orchestration (React Query, etc.)
+│       ├── screens/        # Screens
+│       ├── store/          # Zustand store (if needed)
+│       ├── types.ts
+│       └── index.ts
 │
-├── shared/             # Reusable UI & utilities
-│   ├── components/
+├── shared/                 # Reusable across features
+│   ├── ui/                 # Design system (Button, Input, etc.)
 │   ├── hooks/
 │   ├── utils/
-│   └── constants/
+│   ├── constants/
+│   └── theme/
+```
+
+---
+
+## 🧩 Feature Structure Example
+
+```
+features/auth/
+├── api/
+│   └── auth.api.ts
 │
-├── services/           # Core services (no business logic)
-│   ├── http/           # Axios instance, interceptors
-│   ├── storage/        # MMKV / AsyncStorage wrapper
-│   └── logger/
+├── usecases/
+│   └── login.ts
 │
-├── store/              # Global state (Zustand / Redux)
-├── config/             # App configs & env
-├── theme/              # Design system
-├── assets/             # Images, fonts
-└── types/              # Global types
+├── hooks/
+│   └── useLogin.ts
+│
+├── screens/
+│   └── LoginScreen.tsx
+│
+├── components/
+│   └── LoginForm.tsx
+│
+├── store/
+│   └── useAuthStore.ts
+│
+├── types.ts
+└── index.ts
 ```
 
 ---
@@ -110,28 +150,44 @@ API_URL=https://api.example.com
 
 ## 📦 Tech Stack
 
-- React Native
-- TypeScript
-- React Query (data fetching)
-- Zustand (state management)
-- Axios (HTTP client)
-- React Navigation
+* React Native
+* TypeScript
+* @tanstack/react-query
+* Zustand
+* Axios
+* React Navigation
+* MMKV (storage)
 
 ---
 
-## 🧠 Feature Structure Example
+## 🔄 State Management
 
-```
-features/auth/
-├── api/            # API calls
-├── domain/         # Business logic
-│   ├── entities/
-│   └── usecases/
-├── hooks/          # Orchestration logic
-├── screens/        # UI screens
-├── components/     # Local components
-└── store/          # Feature state
-```
+### ✅ Correct Usage
+
+| Data Type     | Tool               |
+| ------------- | ------------------ |
+| Server data   | React Query        |
+| Auth / global | Zustand            |
+| UI state      | Zustand (optional) |
+
+---
+
+### ❌ Avoid
+
+* Putting API data into Zustand
+* Creating one global store for everything
+
+---
+
+## 🌐 API Layer
+
+* Centralized Axios instance in `core/api`
+* Feature APIs inside each feature
+* Supports:
+
+  * Auth token injection
+  * Error handling
+  * Refresh token (optional)
 
 ---
 
@@ -139,35 +195,30 @@ features/auth/
 
 ### ✅ Do
 
-- Use absolute imports (`@/features/...`)
-- Keep features isolated
-- Use hooks for orchestration logic
-- Keep business logic in `domain/`
+* Use absolute imports (`@/features/...`)
+* Keep features isolated
+* Put business logic in `usecases`
+* Use hooks to orchestrate logic
+
+---
 
 ### ❌ Don't
 
-- Call APIs directly inside screens
-- Put business logic in UI components
-- Share logic across features without abstraction
-- Turn `services/` into a dumping folder
+* Call API inside screens
+* Put logic inside UI components
+* Share logic across features without structure
+* Turn `core/` into a dumping folder
 
 ---
 
-## 🔄 State Management
+## 🚀 Production Recommendations
 
-- Server state → React Query
-- Client state → Zustand (or Redux if needed)
-
----
-
-## 🌐 API Layer
-
-- Centralized Axios instance
-- Interceptors for:
-
-  - Auth token
-  - Error handling
-  - Refresh token (optional)
+* Add global error boundary
+* Add toast/notification system
+* Normalize API errors
+* Add logging (Sentry, etc.)
+* Optimize FlatList for feed
+* Use pagination & caching (React Query)
 
 ---
 
@@ -177,26 +228,22 @@ features/auth/
 yarn test
 ```
 
-- Jest
-- React Native Testing Library
-
----
-
-## 🚀 Production Recommendations
-
-- Add global error boundary
-- Implement toast/notification system
-- Normalize API errors
-- Add logging (Sentry, etc.)
-- Setup CI/CD pipeline
+* Jest
+* React Native Testing Library
 
 ---
 
 ## 📌 Notes
 
-- Use `yarn.lock` for consistent dependencies
-- Do NOT mix `npm` and `yarn`
-- Keep architecture consistent across projects
+* Use `yarn.lock` for consistency
+* Do NOT mix `npm` and `yarn`
+* Keep architecture consistent across features
+
+---
+
+## 🧠 Final Thought
+
+> Simple architecture done right > Complex architecture done wrong
 
 ---
 
