@@ -1,12 +1,16 @@
 {
-  "extends": "@react-native/typescript-config",
   "compilerOptions": {
+    "target": "ESNext",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
     },
-    "types": ["jest", "node"]
+    "ignoreDeprecations": "6.0",
+    "types": ["jest", "node"],
+    "skipLibCheck": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "ios/Pods"]
+  "include": ["src"]
 }
