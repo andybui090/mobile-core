@@ -1,31 +1,92 @@
 const fs = require('fs');
 const path = require('path');
 
-const dirs = [
-  'src/app/navigation',
-  'src/app/providers',
-  'src/features/auth/api',
-  'src/features/auth/domain/entities',
-  'src/features/auth/domain/usecases',
-  'src/features/auth/hooks',
-  'src/features/auth/screens',
-  'src/features/auth/components',
-  'src/features/auth/store',
-  'src/shared/components',
-  'src/shared/hooks',
-  'src/shared/utils',
-  'src/shared/constants',
-  'src/services/http',
-  'src/services/storage',
-  'src/services/logger',
-  'src/config',
-  'src/theme',
-  'src/assets',
-  'src/types',
+const root = 'src';
+
+// ✅ core structure
+const coreDirs = [
+  'core/api',
+  'core/auth',
+  'core/storage',
+  'core/config',
+  'core/navigation',
+  'core/utils',
 ];
 
-dirs.forEach(dir => {
-  fs.mkdirSync(path.resolve(dir), { recursive: true });
+// ✅ shared
+const sharedDirs = [
+  'shared/components',
+  'shared/hooks',
+  'shared/utils',
+  'shared/constants',
+  'shared/theme',
+];
+
+// ✅ app
+const appDirs = [
+  'app',
+];
+
+// ✅ features (auto generate)
+const features = [
+  'auth',
+  'feed',
+  'post',
+  'comment',
+  'profile',
+  'chat',
+  'notification',
+];
+
+const featureStructure = [
+  'api',
+  'components',
+  'hooks',
+  'screens',
+  'store',
+];
+
+// 👉 merge all dirs
+const dirs = [
+  ...coreDirs,
+  ...sharedDirs,
+  ...appDirs,
+];
+
+// 👉 create base dirs
+dirs.forEach((dir) => {
+  const fullPath = path.join(root, dir);
+  fs.mkdirSync(fullPath, { recursive: true });
 });
 
-console.log('✅ Structure created');
+// 👉 create feature dirs
+features.forEach((feature) => {
+  featureStructure.forEach((sub) => {
+    const fullPath = path.join(root, 'features', feature, sub);
+    fs.mkdirSync(fullPath, { recursive: true });
+  });
+
+  // create types file
+  const typesFile = path.join(root, 'features', feature, 'types.ts');
+  if (!fs.existsSync(typesFile)) {
+    fs.writeFileSync(typesFile, '');
+  }
+});
+
+// ✅ global extra
+const extraFiles = [
+  'core/api/client.ts',
+  'core/config/env.ts',
+  'app/App.tsx',
+  'app/providers.tsx',
+  'app/routes.tsx',
+];
+
+extraFiles.forEach((file) => {
+  const fullPath = path.join(root, file);
+  if (!fs.existsSync(fullPath)) {
+    fs.writeFileSync(fullPath, '');
+  }
+});
+
+console.log('🚀 Structure created successfully!');
