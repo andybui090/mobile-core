@@ -1,0 +1,4 @@
+#include "Pods/Target Support Files/Pods-ReactNativeCore/Pods-ReactNativeCore.releaseprod.xcconfig"
+APP_NAME=MyApp
+BUNDLE_ID=com.myapp
+GOOGLE_SERVICE_FILE=GoogleService-Info

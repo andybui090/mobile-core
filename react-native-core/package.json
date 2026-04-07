@@ -18,7 +18,15 @@
     "install:clean": "yarn install && cd ios && pod install && cd ..",
     "reset": "yarn clean && yarn install:clean && yarn start:reset",
     "init:structure": "node scripts/initStructure.js",
-    "gen:feature": "node scripts/genFeature.js"
+    "gen:feature": "node scripts/genFeature.js",
+
+    "android:dev": "ENVFILE=.env.development react-native run-android",
+    "android:staging": "ENVFILE=.env.staging react-native run-android",
+    "android:prod": "ENVFILE=.env.production react-native run-android",
+
+    "ios:dev": "ENVFILE=.env.development react-native run-ios",
+    "ios:staging": "ENVFILE=.env.staging react-native run-ios",
+    "ios:prod": "ENVFILE=.env.production react-native run-ios"
   },
   "dependencies": {
     "@react-native-vector-icons/ionicons": "13.0.0",

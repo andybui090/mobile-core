@@ -1,0 +1,3 @@
+APP_NAME=MyApp Staging
+BUNDLE_ID=com.myapp.staging
+GOOGLE_SERVICE_FILE=GoogleService-Info-Staging

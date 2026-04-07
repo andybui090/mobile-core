@@ -1,0 +1,4 @@
+#include "Pods/Target Support Files/Pods-ReactNativeCore/Pods-ReactNativeCore.debugstaging.xcconfig"
+APP_NAME=MyApp Staging
+BUNDLE_ID=com.myapp.staging
+GOOGLE_SERVICE_FILE=GoogleService-Info-Staging

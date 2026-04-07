@@ -1,5 +1,5 @@
-import { Navigation } from './navigation';
+import { AppNavigator } from './navigation';
 
 export const Root = () => {
-  return <Navigation />;
+  return <AppNavigator />;
 };
