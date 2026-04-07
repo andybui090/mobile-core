@@ -1,7 +1,6 @@
-import React from 'react';
-import { TouchableOpacity, View } from 'react-native';
-import { Text } from '@/shared/ui';
 import { useTheme } from '@/shared/theme/useTheme';
+import { Text } from '@/shared/ui';
+import { TouchableOpacity, View } from 'react-native';
 
 interface Props {
   title: string;

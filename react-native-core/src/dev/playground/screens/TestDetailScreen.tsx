@@ -1,12 +1,12 @@
-import React from 'react';
-import { View } from 'react-native';
-import { Header, Screen, Text } from '@/shared/ui';
-import { useRoute } from '@react-navigation/native';
 import { useThemeContext } from '@/shared/theme/ThemeProvider';
+import { Header, Screen, Text } from '@/shared/ui';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { View } from 'react-native';
 import { FontScaleDemo } from './FontScaleDemo';
 
 export const TestDetailScreen = () => {
   const route = useRoute<any>();
+  const navigation = useNavigation();
   const { type } = route.params;
 
   const { theme } = useThemeContext();
@@ -24,7 +24,7 @@ export const TestDetailScreen = () => {
         return <Text>Theme demo</Text>;
 
       case 'fontScale':
-        return <FontScaleDemo />; // 👈 thêm
+        return <FontScaleDemo />;
 
       default:
         return <Text>Unknown</Text>;
@@ -33,7 +33,11 @@ export const TestDetailScreen = () => {
 
   return (
     <Screen>
-      <Header title="TestListScreen"/>
+      <Header
+        title="TestDetailScreen"
+        onBack={() => navigation.goBack()}
+      />
+
       <View
         style={{
           flex: 1,

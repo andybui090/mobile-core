@@ -21,6 +21,7 @@
     "gen:feature": "node scripts/genFeature.js"
   },
   "dependencies": {
+    "@react-native-vector-icons/ionicons": "13.0.0",
     "@react-navigation/native": "^7.2.2",
     "@react-navigation/native-stack": "^7.14.10",
     "@tanstack/react-query": "^5.96.1",

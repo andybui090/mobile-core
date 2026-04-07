@@ -1,9 +1,8 @@
-import React from 'react';
-import { View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { View } from 'react-native';
 
+import { Header, Screen, Icon } from '@/shared/ui';
 import { PlaygroundItem } from '../components/PlaygroundItem';
-import { Header, Screen } from '@/shared/ui';
 
 export const TestListScreen = () => {
   const navigation = useNavigation<any>();
@@ -17,7 +16,7 @@ export const TestListScreen = () => {
 
   return (
     <Screen>
-      <Header title="TestListScreen" />
+      <Header title="TestListScreen" showBack={false} />
       <View style={{ flex: 1 }}>
         {items.map(item => (
           <PlaygroundItem
@@ -28,6 +27,7 @@ export const TestListScreen = () => {
             }
           />
         ))}
+        <Icon name="person" size="xl" color="#4F8EF7" />
       </View>
     </Screen>
   );

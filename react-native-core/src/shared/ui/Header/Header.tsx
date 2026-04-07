@@ -46,7 +46,7 @@ export const Header = ({
         )}
 
         {/* TITLE */}
-        <Text variant="h3" weight="bold">
+        <Text variant="h4" weight="semibold">
           {title}
         </Text>
 
