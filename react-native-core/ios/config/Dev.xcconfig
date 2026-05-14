@@ -1,4 +1,0 @@
-#include "Pods/Target Support Files/Pods-ReactNativeCore/Pods-ReactNativeCore.debugdev.xcconfig"
-APP_NAME=MyApp Dev
-BUNDLE_ID=com.myapp.dev
-GOOGLE_SERVICE_FILE=GoogleService-Info-Dev
