@@ -1,13 +1,23 @@
 {
-  "name": "DoctorNetwork",
+  "name": "doctor-network",
   "version": "0.0.1",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest"
+    "lint": "eslint .",
+    "test": "jest",
+    "install:newdevice": "brew install node watchman cocoapods cmake ninja",
+    "clean": "watchman watch-del-all || true && rm -rf node_modules ios/Pods ios/Podfile.lock ios/build android/build android/.gradle android/app/build $TMPDIR/metro-* $TMPDIR/react-*",
+    "clean:all": "watchman watch-del-all || true && rm -rf node_modules ios/Pods ios/Podfile.lock ios/build android/build android/.gradle android/app/build $TMPDIR/metro-* $TMPDIR/react-* && yarn cache clean",
+    "install:clean": "yarn run clean && yarn install && cd ios && pod install && cd ..",
+    "pods": "cd ios && pod install && cd ..",
+    "android:clean": "cd android && ./gradlew clean && cd ..",
+    "android:apk:debug": "cd android && ./gradlew assembleDebug --info --stacktrace && cd ..",
+    "android:apk:release": "cd android && ./gradlew assembleRelease --info --stacktrace && cd ..",
+    "android:aab:release": "cd android && ./gradlew bundleRelease --info --stacktrace && cd ..",
+    "reset": "react-native start --reset-cache"
   },
   "dependencies": {
     "react": "19.2.3",
