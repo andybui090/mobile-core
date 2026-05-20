@@ -1,4 +1,4 @@
-package com.doctornetwork
+package com.doctornetwork.staging
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

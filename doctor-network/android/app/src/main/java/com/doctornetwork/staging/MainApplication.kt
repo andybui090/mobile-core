@@ -1,4 +1,4 @@
-package com.doctornetwork
+package com.doctornetwork.staging
 
 import android.app.Application
 import com.facebook.react.PackageList
