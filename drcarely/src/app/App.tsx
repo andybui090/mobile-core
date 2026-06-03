@@ -1,7 +1,11 @@
-import { View, Text } from 'react-native';
+import { ThemeProvider } from '@/shared/theme/ThemeProvider';
+import { Root } from './Root';
 
 export default function App() {
-  return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold' }}>Test Font</Text>
-  </View>;
+
+  return (
+    <ThemeProvider>
+      <Root />
+    </ThemeProvider>
+  );
 }
