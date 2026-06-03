@@ -11,7 +11,9 @@
 		115C7E2418D745B5A69F73A1 /* Inter-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 74C8FF31882C421D9C80CE96 /* Inter-Medium.ttf */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		2E315BE7B1B14EB996CB0642 /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4B14696D2328481780AD444B /* Inter-Bold.ttf */; };
+		383335AD089D4490B634F624 /* BootSplash.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = DECEC4521DBD490A99735CE9 /* BootSplash.storyboard */; };
 		5CC0F424628145A080664286 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2EBAD38E5EA3429F8B677268 /* Inter-SemiBold.ttf */; };
+		6467D4C694144FE8B598DC90 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F3452964C6CC4ADD8FCF1831 /* Colors.xcassets */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		BAE3794C9CAD4006A09C5965 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C78BBB192DEB4C408A98CA8C /* Inter-Regular.ttf */; };
@@ -33,7 +35,9 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = drcarely/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		9BC3C41C2FCEC5830006364C /* drcarely.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = drcarely.entitlements; path = drcarely/drcarely.entitlements; sourceTree = "<group>"; };
 		C78BBB192DEB4C408A98CA8C /* Inter-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-Regular.ttf"; path = "../src/assets/fonts/inter/Inter-Regular.ttf"; sourceTree = "<group>"; };
+		DECEC4521DBD490A99735CE9 /* BootSplash.storyboard */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = BootSplash.storyboard; path = drcarely/BootSplash.storyboard; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		F3452964C6CC4ADD8FCF1831 /* Colors.xcassets */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = folder.assetcatalog; name = Colors.xcassets; path = drcarely/Colors.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +61,8 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
+				DECEC4521DBD490A99735CE9 /* BootSplash.storyboard */,
+				F3452964C6CC4ADD8FCF1831 /* Colors.xcassets */,
 			);
 			name = drcarely;
 			sourceTree = "<group>";
@@ -189,6 +195,8 @@
 				2E315BE7B1B14EB996CB0642 /* Inter-Bold.ttf in Resources */,
 				BAE3794C9CAD4006A09C5965 /* Inter-Regular.ttf in Resources */,
 				5CC0F424628145A080664286 /* Inter-SemiBold.ttf in Resources */,
+				383335AD089D4490B634F624 /* BootSplash.storyboard in Resources */,
+				6467D4C694144FE8B598DC90 /* Colors.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

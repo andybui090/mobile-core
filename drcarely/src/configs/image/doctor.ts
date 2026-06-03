@@ -1,0 +1,15 @@
+export const doctor = {
+    setting: require('../../assets/images/doctor/setting.png'),
+    kyc_0: require('../../assets/images/doctor/kyc_0.png'),
+    kyc_1: require('../../assets/images/doctor/kyc_1.png'),
+    kyc_2: require('../../assets/images/doctor/kyc_2.png'),
+    ic_edit: require('../../assets/images/doctor/ic_edit.png'),
+    menu_video: require('../../assets/images/doctor/menu_video.png'),
+    menu_heart: require('../../assets/images/doctor/menu_heart.png'),
+    menu_bookmark: require('../../assets/images/doctor/menu_bookmark.png'),
+    menu_namecard: require('../../assets/images/doctor/menu_namecard.png'),
+    menu_qrcode: require('../../assets/images/doctor/menu_qrcode.png'),
+    menu_course: require('../../assets/images/doctor/menu_course.png'),
+    menu_appointment: require('../../assets/images/doctor/menu_appointment.png'),
+    menu_share: require('../../assets/images/doctor/menu_share.png'),
+};

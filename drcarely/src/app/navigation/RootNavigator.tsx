@@ -1,33 +1,55 @@
-import {
-    NavigationContainer
-} from '@react-navigation/native';
-import {
-    createNativeStackNavigator
-} from '@react-navigation/native-stack';
+import { NavigationContainer } from '@react-navigation/native';
 
-import { HomeScreen } from '@/features/home/presentation/screens/HomeScreen';
-import { useTheme } from '@/shared/theme/useTheme';
-import { SCREEN_OPTIONS } from './constants';
-import { createNavigationTheme } from './navigationTheme';
-
-/**
- * 1. Define Root Stack Param List (VERY IMPORTANT)
- */
-export type RootStackParamList = {
-  Home: undefined;
-};
-/**
- * 2. Create typed stack
- */
-const Stack = createNativeStackNavigator<RootStackParamList>();
+import { AppNavigator } from './AppNavigator';
+import { AuthNavigator } from './AuthNavigator';
+import { useMemo, useReducer, useState } from 'react';
+import { initialState, rootReducer } from './root-store';
+import { AppContext } from '@/contexts';
+import { View } from 'react-native';
 
 export const RootNavigator = () => {
-  const { colors } = useTheme();
+  
+  const [stateRoot, rootDispatch] = useReducer(rootReducer, initialState);
+  const [waitingRegisterComplete, setWaitingRegisterComplete] = useState(false);
+  const rootAction = useMemo(
+    () => ({
+      closeGettingStart: async () => {},
+      closeCategory: async () => {},
+      login: async (userInfo: any) => {},
+      registerComplete: async (userInfo: any, loginType: any) => {},
+      setGlobalLocation: async (location: any) => {},
+      register: () => {},
+      logout: async () => {},
+      onCompleteAuth: async () => {},
+    }),
+    [],
+  );
+
+  const renderRootApp = useMemo(() => {
+    if (!stateRoot.isLoading) {
+      if (stateRoot.isGetting) {
+        return <GettingApp />;
+      } else {
+        if (stateRoot.isCategory) {
+          return <CategoryApp />;
+        } else {
+          const userTemp: any = stateRoot.user;
+          if (userTemp.username && !waitingRegisterComplete) {
+            return <AppNavigator />;
+          }
+          return <AuthNavigator />;
+        }
+      }
+    } else {
+      return <View />; // SplashScreen
+    }
+  }, [stateRoot, waitingRegisterComplete]);
+
   return (
-    <NavigationContainer theme={createNavigationTheme(colors)}>
-      <Stack.Navigator screenOptions={SCREEN_OPTIONS}>
-        <Stack.Screen name="Home" component={HomeScreen} />
-      </Stack.Navigator>
+    <NavigationContainer>
+      <AppContext.Provider value={{ ...rootAction, ...stateRoot }}>
+        {renderRootApp}
+      </AppContext.Provider>
     </NavigationContainer>
   );
 };
