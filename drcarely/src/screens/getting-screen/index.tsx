@@ -75,6 +75,7 @@ const GettingScreen = () => {
   // -------------------------------
   useEffect(() => {
     const {loading, data, error} = tutorialList || {};
+    // console.log("🚀 ~ GettingScreen ~ tutorialList:", tutorialList)
     if (loading) return;
     if (data?.items) setListIntro(data.items);
   }, [tutorialList]);

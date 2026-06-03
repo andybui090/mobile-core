@@ -56,7 +56,7 @@ type State = {
 export default class AppIntroSlider<ItemT = any> extends React.Component<Props<ItemT>, State> {
   static defaultProps = {
     activeDotStyle: {
-      backgroundColor: '#0080F6',
+      backgroundColor: '#19A2A7',
     },
     dotStyle: {
       backgroundColor: '#EAECF0',
