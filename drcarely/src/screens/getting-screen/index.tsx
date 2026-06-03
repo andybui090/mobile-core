@@ -1,7 +1,9 @@
-import {CHeader, ICON_TYPE, IconX, ImageHelper, Wrapper} from '@/components';
+import {CHeader, 
+  // ICON_TYPE, IconX, 
+  ImageHelper, Wrapper} from '@/components';
 import {
-  GAEvents,
-  GALogEvent,
+  // GAEvents,
+  // GALogEvent,
   ScreenWidth,
   getBottomSpace,
   screenStyles,
@@ -9,7 +11,7 @@ import {
 import {AppContext} from '@/contexts/AppContext';
 import useI18n from '@/hooks/useI18n';
 import {getTutorials} from '@/redux/slices/globalSlice';
-import {getSettingsOnboarding} from '@/redux/slices/settingSlice';
+// import {getSettingsOnboarding} from '@/redux/slices/settingSlice';
 import {useAppDispatch, useAppSelector} from '@/redux/store/customReduxHook';
 import {CButton, CText} from '@/utils';
 import {makeStyles, useTheme} from '@rneui/themed';
@@ -39,7 +41,7 @@ const useStyles = makeStyles(({colors}) => ({
 // -------------------------------
 // MAIN
 // -------------------------------
-const GettingApp = () => {
+const GettingScreen = () => {
   const {t} = useTranslation();
   const styles = useStyles();
 
@@ -65,7 +67,7 @@ const GettingApp = () => {
     if (!lang) return;
     const params = {fq: 'type:onboard', sort: 'order'};
     dispatch(getTutorials(params));
-    dispatch(getSettingsOnboarding({fq: 'type:onboard'}));
+    // dispatch(getSettingsOnboarding({fq: 'type:onboard'}));
   }, [lang]);
 
   // -------------------------------
@@ -81,12 +83,12 @@ const GettingApp = () => {
   // ACTIONS
   // -------------------------------
   const handleSkip = useCallback(() => {
-    GALogEvent(GAEvents.ONBOARDING_SKIPPED, {method: 'App Onboarding Skipped'});
+    // GALogEvent(GAEvents.ONBOARDING_SKIPPED, {method: 'App Onboarding Skipped'});
     closeGettingStart();
   }, []);
 
   const handleDone = useCallback(() => {
-    GALogEvent(GAEvents.ONBOARDING_STARTED, {method: 'App Onboarding Started'});
+    // GALogEvent(GAEvents.ONBOARDING_STARTED, {method: 'App Onboarding Started'});
     closeGettingStart();
   }, []);
 
@@ -145,13 +147,13 @@ const GettingApp = () => {
     showBackBtn && (
       <View style={styles.leftWrapper}>
         <Pressable onPress={handleBackSlide}>
-          <IconX
+          {/* <IconX
             origin={ICON_TYPE.FEATHER_ICONS}
             name="chevron-left"
             size={26}
             color={colors.c667085}
             style={{marginLeft: 3}}
-          />
+          /> */}
         </Pressable>
       </View>
     );
@@ -202,4 +204,4 @@ const GettingApp = () => {
   );
 };
 
-export default GettingApp;
+export default GettingScreen;

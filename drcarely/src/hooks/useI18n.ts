@@ -8,7 +8,7 @@ import ApiSSO from "@/services/api-sso";
 import { STORAGEKEY } from "@/constants";
 import { updateCategoriesWhenChangeLanguage } from "@/redux/slices/globalSlice";
 import { store } from "@/redux/store";
-import APIECommerceService from "@/services/api-ecommerce";
+// import APIECommerceService from "@/services/api-ecommerce";
 
 const LANGUAGES = "languages";
 
@@ -29,7 +29,7 @@ const useI18n = () => {
       setLang(_localLang);
       ApiService.setXAppLanguage(lang);
       ApiSSO.setXAppLanguage(lang);
-      APIECommerceService.setXAppLanguage(lang);
+      // APIECommerceService.setXAppLanguage(lang);
       return;
     }
 
@@ -54,7 +54,7 @@ const useI18n = () => {
         storeStringData("@lang", lang);
         ApiService.setXAppLanguage(lang);
         ApiSSO.setXAppLanguage(lang);
-        APIECommerceService.setXAppLanguage(lang);
+        // APIECommerceService.setXAppLanguage(lang);
         const arrCategory = await getObjectData(STORAGEKEY.CATEGORIES_CHOOSE);
         if (arrCategory && arrCategory.categoryStore?.length > 0) {
           let oldARR = arrCategory.categoryStore;
