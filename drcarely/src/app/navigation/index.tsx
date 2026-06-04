@@ -6,29 +6,25 @@ import { useEffect, useMemo, useReducer, useState } from 'react';
 import { initialState, rootReducer, TYPES } from './root-store';
 import { AppContext } from '@/contexts';
 import { View } from 'react-native';
-import GettingScreen from '@/screens/getting-screen';
+import GettingScreen from '@/screens/Getting';
 import { checkHideCategoryApp, checkHideIntroApp } from './app-helper';
-import { removeValue } from '@/storages';
+import { removeValue } from '@/storage';
 import { STORAGEKEY } from '@/constants/storage_key';
-import ApiSSO from '@/services/api-sso';
+// import ApiSSO from '@/services/api-sso';
 import ApiService from '@/services/api-base';
-import { useAppDispatch } from '@/redux/store/customReduxHook';
-import { clearReducer } from '@/redux/store/reducers';
 
 export const RootNavigator = () => {
   const [stateRoot, rootDispatch] = useReducer(rootReducer, initialState);
   const [waitingRegisterComplete, setWaitingRegisterComplete] = useState(false);
   const [firstStart, setFirstStart] = useState(true);
 
-  const appDispatch = useAppDispatch();
-
   const logoutApp = async () => {
     await removeValue(STORAGEKEY.JWT_TOKEN);
-    ApiSSO.deleteAuthorizationHeader();
+    // ApiSSO.deleteAuthorizationHeader();
     ApiService.deleteAuthorizationHeader();
     // APIUpload.deleteAuthorizationHeader();
     // APIECommerceService.deleteAuthorizationHeader();
-    appDispatch(clearReducer()); //open comment when done
+    // Redux removed, no store cleanup here
     rootDispatch({ type: TYPES.LOGOUT_APP, payload: true });
     setFirstStart(true);
   };

@@ -1,5 +1,5 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AuthScreen } from '@/screens/auth-screen';
+import { AuthScreen } from '@/screens/Auth';
 import { SCREEN_OPTIONS } from './constants';
 
 export type AuthStackParamList = {

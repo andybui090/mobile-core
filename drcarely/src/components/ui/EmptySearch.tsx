@@ -1,0 +1,55 @@
+import { ScreenWidth, getBottomSpace, images } from '@/config';
+import { Row, Text } from '@/components/ui';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Image, StyleSheet, View, ViewStyle } from 'react-native';
+
+interface EmptySearchProps {
+  title?: string;
+  style?: ViewStyle | object;
+  isSmall?: boolean;
+}
+
+export const EmptySearch: React.FC<EmptySearchProps> = ({ title, style = {}, isSmall }) => {
+  const { t } = useTranslation();
+  return (
+    <View style={[isSmall ? styles.containerSmall : styles.container, style]}>
+      <View
+        style={{
+          width: ScreenWidth / 3,
+          height: ScreenWidth / 3,
+        }}>
+        <Image source={images.global.empty_search} resizeMode="contain" style={styles.img} />
+      </View>
+      <Row style={styles.rowText}>
+        <Text h5 w600 center style={{ color: '#667085' }}>
+          {title ?? t('search.noResult', 'No result found')}
+        </Text>
+      </Row>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+    paddingBottom: getBottomSpace() + 50,
+    backgroundColor: 'white',
+  },
+  containerSmall: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+    paddingVertical: 30,
+  },
+  img: {
+    width: '100%',
+    height: '100%',
+  },
+  rowText: {
+    paddingHorizontal: 20,
+    marginTop: 15,
+  },
+});

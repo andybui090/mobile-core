@@ -1,6 +1,5 @@
-// RF DONE
 import React, { ReactNode, memo } from 'react';
-import { StatusBar, View, ViewStyle } from 'react-native';
+import { StatusBar, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 
@@ -8,13 +7,13 @@ import useStyles from './styles';
 
 interface WrapperProps {
   isSafe?: boolean;
-  style?: ViewStyle | object;
+  style?: StyleProp<ViewStyle>;
   children: ReactNode;
   hideStatusbar?: boolean;
   isBottomSafe?: boolean;
 }
 
-const FocusAwareStatusBar = memo(({ hidden }: { hidden?: boolean }) => {
+const FocusAwareStatusBar = ({ hidden }: { hidden?: boolean }) => {
   const isFocused = useIsFocused();
   if (!isFocused) return null;
 
@@ -22,11 +21,11 @@ const FocusAwareStatusBar = memo(({ hidden }: { hidden?: boolean }) => {
     <StatusBar
       barStyle="dark-content"
       backgroundColor="transparent"
-      translucent={true}
+      translucent
       hidden={hidden}
     />
   );
-});
+};
 
 const Wrapper: React.FC<WrapperProps> = ({
   isSafe = false,
@@ -36,9 +35,13 @@ const Wrapper: React.FC<WrapperProps> = ({
   isBottomSafe = false,
 }) => {
   const styles = useStyles();
-  const insets = useSafeAreaInsets();
+  const { top, bottom } = useSafeAreaInsets();
 
-  const safeStyle = isSafe ? { paddingTop: insets.top} : isBottomSafe ? { paddingBottom: insets.bottom } : undefined;
+  const safeStyle: StyleProp<ViewStyle> = isSafe
+    ? { paddingTop: top }
+    : isBottomSafe
+    ? { paddingBottom: bottom }
+    : undefined;
 
   return (
     <View style={[styles.container, style, safeStyle]}>

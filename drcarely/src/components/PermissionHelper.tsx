@@ -1,4 +1,4 @@
-import { alertForLocationPermission, checkPermissionLocation, isIOS } from '@/configs';
+import { alertForLocationPermission, checkPermissionLocation, isIOS } from '@/config';
 import { PERMISSIONS, RESULTS, request } from 'react-native-permissions';
 
 export const PermissionHelper = async () => {

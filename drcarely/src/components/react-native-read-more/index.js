@@ -1,8 +1,0 @@
-var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.default = void 0;
-var _ReadMore = _interopRequireDefault(require("./ReadMore"));
-var _default = _ReadMore.default;
-exports.default = _default;

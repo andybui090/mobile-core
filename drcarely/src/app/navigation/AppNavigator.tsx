@@ -1,4 +1,4 @@
-import { HomeScreen } from '@/screens/home-screen';
+import { HomeScreen } from '@/screens/Home';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SCREEN_OPTIONS } from './constants';
 

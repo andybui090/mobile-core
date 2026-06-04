@@ -1,4 +1,4 @@
-// import { images } from '@/configs';
+// import { images } from '@/config';
 
 export const CHAT_THEME = {
   white: {

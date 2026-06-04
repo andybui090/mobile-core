@@ -5,11 +5,11 @@ import {
   getStringData,
   // storeObjectData,
   storeStringData,
-} from '@/storages';
+} from '@/storage';
 import { getLocales } from 'react-native-localize';
 import Config from 'react-native-config';
 import ApiService from '@/services/api-base';
-import ApiSSO from '@/services/api-sso';
+// import ApiSSO from '@/services/api-sso';
 // import { STORAGEKEY } from '@/constants';
 // import { updateCategoriesWhenChangeLanguage } from '@/redux/slices/globalSlice';
 // import { store } from '@/redux/store';
@@ -32,7 +32,7 @@ const useI18n = () => {
     if (_localLang) {
       setLang(_localLang);
       ApiService.setXAppLanguage(lang);
-      ApiSSO.setXAppLanguage(lang);
+      // ApiSSO.setXAppLanguage(lang);
       return;
     }
 
@@ -56,7 +56,7 @@ const useI18n = () => {
         i18n.changeLanguage(lang);
         storeStringData('@lang', lang);
         ApiService.setXAppLanguage(lang);
-        ApiSSO.setXAppLanguage(lang);
+        // ApiSSO.setXAppLanguage(lang);
         // APIECommerceService.setXAppLanguage(lang);
         // const arrCategory = await getObjectData(STORAGEKEY.CATEGORIES_CHOOSE);
         // if (arrCategory && arrCategory.categoryStore?.length > 0) {

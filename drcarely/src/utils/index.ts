@@ -1,11 +1,13 @@
-export {Container} from './Container';
-export {Row} from './Row';
-export {CText} from './CText';
-export {CButton} from './CButton';
-export {CEmptySearch} from './CEmptySearch';
-export {CEmptyData} from './CEmptyData';
-export {DismissKeyboard} from './DismissKeyboard';
-export {Loader} from './Loader';
-export {CLoading} from './CLoading';
-export {CScrollView} from './CScrollView';
-export {NetworkAwareProvider} from './NetworkAwareProvider';
+export {
+  Container,
+  Row,
+  Text,
+  Button,
+  EmptySearch,
+  EmptyData,
+  DismissKeyboard,
+  Loader,
+  Loading,
+  ScrollView,
+  NetworkAwareProvider,
+} from '../components/ui';

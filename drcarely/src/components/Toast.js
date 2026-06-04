@@ -1,7 +1,7 @@
 import React from 'react';
 import {StyleSheet, View, Animated, Dimensions, Text} from 'react-native';
 import PropTypes from 'prop-types';
-import {fonts} from '@/configs';
+import {fonts} from '@/config';
 
 export const DURATION = {
   LENGTH_SHORT: 500,

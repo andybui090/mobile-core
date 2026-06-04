@@ -8,7 +8,7 @@ import Config from "react-native-config";
 import en from "./locales/en";
 import vi from "./locales/vi";
 // import { STORAGEKEY } from "@/constants";
-// import { storeStringData } from "@/storages";
+// import { storeStringData } from "@/storage";
 
 const LANGUAGE_URL = `${Config.CDN_URL}/settings/languages/{{lng}}.json`;
 
