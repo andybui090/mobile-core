@@ -2,12 +2,11 @@ import { ReactElement, useEffect } from 'react';
 import BootSplash from 'react-native-bootsplash';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ThemeProvider, theme } from '@/theme';
-import { RootNavigator } from './navigation';
+import { ThemeProvider, theme } from '@/shared/theme';
+import { RootNavigator } from '@/app//navigation';
 import useI18n from '@/hooks/useI18n';
 
 export default function App(): ReactElement {
-
   useI18n();
 
   useEffect(() => {

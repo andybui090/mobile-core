@@ -1,7 +1,7 @@
 import React from 'react';
 import { fonts, getBottomSpace, ifIphoneX } from '@/config';
-import { makeStyles } from '@/theme';
-import { Row } from '@/components/ui';
+import { makeStyles } from '@/shared/theme';
+import { Row } from './row';
 import { ViewStyle, TouchableOpacity, Text, View } from 'react-native';
 
 interface ButtonProps {

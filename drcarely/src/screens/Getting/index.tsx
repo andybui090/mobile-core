@@ -1,23 +1,25 @@
-import {
-  // CHeader, 
-  // ICON_TYPE, IconX, 
-  ImageHelper, Wrapper} from '@/components';
+// import {
+//   // CHeader, 
+//   // ICON_TYPE, IconX, 
+//   ImageHelper, Wrapper} from '@/components';
 import {
   // GAEvents,
   // GALogEvent,
   ScreenWidth,
-  getBottomSpace,
+  // getBottomSpace,
   screenStyles,
 } from '@/config';
 import {AppContext} from '@/contexts/AppContext';
 import useI18n from '@/hooks/useI18n';
-import {useGlobalStore, fetchTutorialsSelector, tutorialListSelector} from '@/stores/globalStore';
-import { Button, Loading, Text } from '@/components';
-import { makeStyles, useTheme } from '@/theme';
+import {fetchTutorialsSelector, tutorialListSelector, useGlobalStore} from '@/stores/globalStore';
+// import { Button, Loading, Text } from '@/components';
+import { makeStyles, useTheme } from '@/shared/theme';
 import {useContext, useEffect, useRef, useState, useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Pressable, View} from 'react-native';
-import AppIntroSlider from './AppIntroSlider';
+// import AppIntroSlider from './AppIntroSlider';
+import { Screen } from '@/shared/ui';
+import { appStyles } from '@/shared';
 
 const useStyles = makeStyles(({colors}) => ({
   imgWrap: {
@@ -51,8 +53,8 @@ const GettingScreen = () => {
   const {lang} = useI18n();
   const fetchTutorials = useGlobalStore(fetchTutorialsSelector);
   const slideRef = useRef<any>(null);
-  const tutorialList = useGlobalStore(tutorialListSelector);
-  const loading = tutorialList?.loading;
+  
+  const {loading, data, error} = useGlobalStore(tutorialListSelector);
 
   const {closeGettingStart} = useContext(AppContext);
 
@@ -68,139 +70,138 @@ const GettingScreen = () => {
     const params = {fq: 'type:onboard', sort: 'order'};
     fetchTutorials(params);
     // dispatch(getSettingsOnboarding({fq: 'type:onboard'}));
-  }, [lang]);
+  }, [fetchTutorials, lang]);
 
   // -------------------------------
   // HANDLE API RESPONSE
   // -------------------------------
   useEffect(() => {
-    const {loading, data, error} = tutorialList || {};
     // console.log("🚀 ~ GettingScreen ~ tutorialList:", tutorialList)
-    if (loading) return;
+    if (loading || error) return;
     if (data?.items) setListIntro(data.items);
-  }, [tutorialList]);
+  }, [data, error, loading]);
 
   // -------------------------------
   // ACTIONS
   // -------------------------------
-  const handleSkip = useCallback(() => {
-    // GALogEvent(GAEvents.ONBOARDING_SKIPPED, {method: 'App Onboarding Skipped'});
-    closeGettingStart();
-  }, []);
+  // const handleSkip = useCallback(() => {
+  //   // GALogEvent(GAEvents.ONBOARDING_SKIPPED, {method: 'App Onboarding Skipped'});
+  //   closeGettingStart();
+  // }, []);
 
-  const handleDone = useCallback(() => {
-    // GALogEvent(GAEvents.ONBOARDING_STARTED, {method: 'App Onboarding Started'});
-    closeGettingStart();
-  }, []);
+  // const handleDone = useCallback(() => {
+  //   // GALogEvent(GAEvents.ONBOARDING_STARTED, {method: 'App Onboarding Started'});
+  //   closeGettingStart();
+  // }, []);
 
-  const handleBackSlide = useCallback(() => {
-    if (nextIndex > 1) slideRef.current?.goToSlide(nextIndex - 2, true);
-  }, [nextIndex]);
+  // const handleBackSlide = useCallback(() => {
+  //   if (nextIndex > 1) slideRef.current?.goToSlide(nextIndex - 2, true);
+  // }, [nextIndex]);
 
-  const handleNextSlide = useCallback(() => {
-    slideRef.current?.goToSlide(nextIndex, true);
-  }, [nextIndex]);
+  // const handleNextSlide = useCallback(() => {
+  //   slideRef.current?.goToSlide(nextIndex, true);
+  // }, [nextIndex]);
 
-  const handleSliderChange = useCallback((index: number) => {
-    setShowBackBtn(index !== 0);
-    setNextIndex(index + 1);
-  }, []);
+  // const handleSliderChange = useCallback((index: number) => {
+  //   setShowBackBtn(index !== 0);
+  //   setNextIndex(index + 1);
+  // }, []);
 
   // -------------------------------
   // RENDER ITEM
   // -------------------------------
-  const renderItem = useCallback(
-    ({item}: any) => (
-      <View style={screenStyles.flex1}>
-        <View style={styles.imgWrap}>
-          <ImageHelper source={{uri: item.image}} resizeMode="contain" />
-        </View>
+  // const renderItem = useCallback(
+  //   ({item}: any) => (
+  //     <View style={screenStyles.flex1}>
+  //       <View style={styles.imgWrap}>
+  //         <ImageHelper source={{uri: item.image}} resizeMode="contain" />
+  //       </View>
 
-        <View style={styles.txtWrap}>
-          <Text center h3 w600 color={colors.c101828} style={styles.title}>
-            {item.title}
-          </Text>
-          <Text h5 center color={colors.c667085} style={styles.txtSubtitle}>
-            {item.description}
-          </Text>
+  //       <View style={styles.txtWrap}>
+  //         <Text center h3 w600 color={colors.c101828} style={styles.title}>
+  //           {item.title}
+  //         </Text>
+  //         <Text h5 center color={colors.c667085} style={styles.txtSubtitle}>
+  //           {item.description}
+  //         </Text>
 
-          <View style={{height: getBottomSpace() + 140}} />
-        </View>
-      </View>
-    ),
-    [colors],
-  );
+  //         <View style={{height: getBottomSpace() + 140}} />
+  //       </View>
+  //     </View>
+  //   ),
+  //   [colors],
+  // );
 
   // -------------------------------
   // HEADER COMPONENTS
   // -------------------------------
-  const renderRightHead = () => (
-    <View style={styles.rightWrapper}>
-        <Pressable onPress={handleSkip}>
-        <Text h5 w400 color={colors.c667085}>
-          {t('tutorial.skip', 'Skip')}
-        </Text>
-      </Pressable>
-    </View>
-  );
+  // const renderRightHead = () => (
+  //   <View style={styles.rightWrapper}>
+  //       <Pressable onPress={handleSkip}>
+  //       <Text h5 w400 color={colors.c667085}>
+  //         {t('tutorial.skip', 'Skip')}
+  //       </Text>
+  //     </Pressable>
+  //   </View>
+  // );
 
-  const renderLeftHead = () =>
-    showBackBtn && (
-      <View style={styles.leftWrapper}>
-        <Pressable onPress={handleBackSlide}>
-          {/* <IconX
-            origin={ICON_TYPE.FEATHER_ICONS}
-            name="chevron-left"
-            size={26}
-            color={colors.c667085}
-            style={{marginLeft: 3}}
-          /> */}
-        </Pressable>
-      </View>
-    );
+  // const renderLeftHead = () =>
+  //   showBackBtn && (
+  //     <View style={styles.leftWrapper}>
+  //       <Pressable onPress={handleBackSlide}>
+  //         {/* <IconX
+  //           origin={ICON_TYPE.FEATHER_ICONS}
+  //           name="chevron-left"
+  //           size={26}
+  //           color={colors.c667085}
+  //           style={{marginLeft: 3}}
+  //         /> */}
+  //       </Pressable>
+  //     </View>
+  //   );
 
   // -------------------------------
   // NEXT & DONE BUTTON
   // -------------------------------
-  const renderNextButton = () => (
-    <Button
-      onPress={handleNextSlide}
-      title={t('common.continue')}
-      btnWidth="100%"
-    />
-  );
+  // const renderNextButton = () => (
+  //   <Button
+  //     onPress={handleNextSlide}
+  //     title={t('common.continue')}
+  //     btnWidth="100%"
+  //   />
+  // );
 
-  const renderDoneButton = () => (
-    <Button
-      onPress={handleDone}
-      title={t('course.getStarted')}
-      btnWidth="100%"
-    />
-  );
+  // const renderDoneButton = () => (
+  //   <Button
+  //     onPress={handleDone}
+  //     title={t('course.getStarted')}
+  //     btnWidth="100%"
+  //   />
+  // );
 
-  if (tutorialList?.loading) {
-    return (
-      <Wrapper>
-        <View style={screenStyles.flex1}>
-          <Loading />
-        </View>
-      </Wrapper>
-    );
-  }
+  // if (tutorialList?.loading) {
+  //   return (
+  //     <Wrapper>
+  //       <View style={screenStyles.flex1}>
+  //         <Loading />
+  //       </View>
+  //     </Wrapper>
+  //   );
+  // }
 
   // -------------------------------
   // RENDER CONTENT
   // -------------------------------
   return (
-    <Wrapper>
-      <View style={screenStyles.flex1}>
+    <Screen>
+      <View style={appStyles.flex1}>
         {/* <CHeader
           rightComponent={renderRightHead()}
           leftComponent={renderLeftHead()}
           leftComponentDisable={!showBackBtn}
         /> */}
 
-        <AppIntroSlider
+        {/* <AppIntroSlider
           ref={slideRef}
           data={listIntro}
           renderItem={renderItem}
@@ -209,9 +210,9 @@ const GettingScreen = () => {
           renderNextButton={renderNextButton}
           renderDoneButton={renderDoneButton}
           onSlideChange={handleSliderChange}
-        />
+        /> */}
       </View>
-    </Wrapper>
+    </Screen>
   );
 };
 

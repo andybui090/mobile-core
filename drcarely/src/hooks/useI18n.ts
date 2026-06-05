@@ -27,20 +27,17 @@ const useI18n = () => {
   }, []);
 
   const _detectLang = useCallback(async () => {
-    const _localLang = await getStringData('@lang');
-
+    const _localLang = getStringData('@lang');
     if (_localLang) {
       setLang(_localLang);
       ApiService.setXAppLanguage(lang);
       // ApiSSO.setXAppLanguage(lang);
       return;
     }
-
     const response = await fetch(`${Config.BASE_API_URL}/${LANGUAGES}`);
 
     const json = await response.json();
     const _supportLangs = json?.items ?? [];
-
     const _deviceLang = _getSystemLanguage(_supportLangs);
     setLang(_deviceLang);
   }, [setLang, _getSystemLanguage]);
@@ -52,7 +49,6 @@ const useI18n = () => {
   useEffect(() => {
     const updateLang = async () => {
       if (lang) {
-        await i18n.reloadResources();
         i18n.changeLanguage(lang);
         storeStringData('@lang', lang);
         ApiService.setXAppLanguage(lang);
