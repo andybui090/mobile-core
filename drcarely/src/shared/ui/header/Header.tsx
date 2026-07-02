@@ -1,13 +1,14 @@
 import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@/shared/ui';
+import { Icon, Text } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 
 interface Props {
   title?: string;
   onBack?: () => void;
+  left?: React.ReactNode;
   right?: React.ReactNode;
   showBack?: boolean;
 }
@@ -15,55 +16,59 @@ interface Props {
 export const Header = ({
   title,
   onBack,
+  left,
   right,
   showBack = true,
 }: Props) => {
-
   const {
-    theme: {colors},
+    theme: { colors },
   } = useTheme();
+
   const insets = useSafeAreaInsets();
+  const hasNotch = insets.top > 20;
+  const headerHeight = hasNotch ? 44 : 48;
 
   return (
-    <View style={{ paddingTop: insets.top, backgroundColor: colors.background }}>
+    <View
+      style={{
+        height: insets.top + headerHeight,
+        // backgroundColor: colors.background,
+         backgroundColor:'yellow'
+      }}
+    >
       <View
         style={{
-          height: 48,
+          height: headerHeight,
           justifyContent: 'center',
           alignItems: 'center',
           borderBottomWidth: 1,
-          borderBottomColor: colors.border,
+          borderBottomColor: colors.cF2F2F2,
+          marginTop: insets.top,
+          backgroundColor:'red'
         }}
       >
         {/* LEFT */}
-        {showBack && (
-          <TouchableOpacity
-            onPress={onBack}
-            style={{
-              position: 'absolute',
-              left: 16,
-            }}
-          >
-            <Text>{'< Back'}</Text>
-          </TouchableOpacity>
-        )}
+        {left
+          ? left
+          : showBack && (
+              <Pressable
+                onPress={onBack}
+                style={{
+                  position: 'absolute',
+                  left: 16,
+                }}
+              >
+                <Icon type={'ionicons'} name="chevron-back" size={26} />
+              </Pressable>
+            )}
 
         {/* TITLE */}
-        <Text variant="h4" weight="semibold">
+        <Text variant="bodyLarge" weight="semibold">
           {title}
         </Text>
 
         {/* RIGHT */}
-        {right && (
-          <View
-            style={{
-              position: 'absolute',
-              right: 16,
-            }}
-          >
-            {right}
-          </View>
-        )}
+        {right && right}
       </View>
     </View>
   );

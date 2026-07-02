@@ -1,0 +1,54 @@
+{
+  "name": "Aloka",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "start": "react-native start",
+    "lint": "eslint .",
+    "test": "jest",
+    "install:newdevice": "brew install node watchman cocoapods cmake ninja",
+    "clean": "watchman watch-del-all || true && rm -rf node_modules ios/Pods ios/Podfile.lock ios/build android/build android/.gradle android/app/build $TMPDIR/metro-* $TMPDIR/react-*",
+    "clean:all": "watchman watch-del-all || true && rm -rf node_modules ios/Pods ios/Podfile.lock ios/build android/build android/.gradle android/app/build $TMPDIR/metro-* $TMPDIR/react-* && yarn cache clean",
+    "install:clean": "yarn run clean && yarn install && cd ios && pod install && cd .. && open ios/Aloka.xcworkspace && yarn reset",
+    "pods": "cd ios && pod install && cd ..",
+    "android:clean": "cd android && ./gradlew clean && cd ..",
+    "android:apk:debug": "cd android && ./gradlew assembleDebug --info --stacktrace && cd ..",
+    "android:apk:release": "cd android && ./gradlew assembleRelease --info --stacktrace && cd ..",
+    "android:aab:release": "cd android && ./gradlew bundleRelease --info --stacktrace && cd ..",
+    "reset": "react-native start --reset-cache"
+  },
+  "dependencies": {
+    "@react-navigation/native": "^7.3.5",
+    "@react-navigation/native-stack": "^7.17.7",
+    "react": "19.2.3",
+    "react-native": "0.86.0",
+    "react-native-bootsplash": "^7.3.2",
+    "react-native-safe-area-context": "^5.8.0",
+    "react-native-screens": "^4.25.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@babel/preset-env": "^7.25.3",
+    "@babel/runtime": "^7.25.0",
+    "@react-native-community/cli": "20.1.0",
+    "@react-native-community/cli-platform-android": "20.1.0",
+    "@react-native-community/cli-platform-ios": "20.1.0",
+    "@react-native/babel-preset": "0.86.0",
+    "@react-native/eslint-config": "0.86.0",
+    "@react-native/metro-config": "0.86.0",
+    "@react-native/typescript-config": "0.86.0",
+    "@types/jest": "^29.5.13",
+    "@types/react": "^19.2.0",
+    "@types/react-test-renderer": "^19.1.0",
+    "eslint": "^8.19.0",
+    "jest": "^29.6.3",
+    "prettier": "2.8.8",
+    "react-test-renderer": "19.2.3",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">= 22.11.0"
+  }
+}

@@ -1,6 +1,6 @@
 // import {
-//   // CHeader, 
-//   // ICON_TYPE, IconX, 
+//   // CHeader,
+//   // ICON_TYPE, IconX,
 //   ImageHelper, Wrapper} from '@/components';
 import {
   // GAEvents,
@@ -9,28 +9,32 @@ import {
   // getBottomSpace,
   screenStyles,
 } from '@/config';
-import {AppContext} from '@/contexts/AppContext';
+import { AppContext } from '@/contexts/AppContext';
 import useI18n from '@/hooks/useI18n';
-import {fetchTutorialsSelector, tutorialListSelector, useGlobalStore} from '@/stores/globalStore';
+import {
+  fetchTutorialsSelector,
+  tutorialListSelector,
+  useGlobalStore,
+} from '@/stores/globalStore';
 // import { Button, Loading, Text } from '@/components';
 import { makeStyles, useTheme } from '@/shared/theme';
-import {useContext, useEffect, useRef, useState, useCallback} from 'react';
-import {useTranslation} from 'react-i18next';
-import {Pressable, View} from 'react-native';
+import { useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Pressable, View } from 'react-native';
 // import AppIntroSlider from './AppIntroSlider';
-import { Screen } from '@/shared/ui';
+import { Header, Screen } from '@/shared/ui';
 import { appStyles } from '@/shared';
 
-const useStyles = makeStyles(({colors}) => ({
+const useStyles = makeStyles(({ colors }) => ({
   imgWrap: {
     ...screenStyles.centerWrap,
     height: ScreenWidth,
     width: ScreenWidth,
   },
-  txtWrap: {justifyContent: 'center', flex: 1, paddingHorizontal: 24},
-  txtSubtitle: {marginTop: 15},
-  title: {marginTop: 15},
-  rightWrapper: {right: 20, position: 'absolute', ...screenStyles.rowCenter},
+  txtWrap: { justifyContent: 'center', flex: 1, paddingHorizontal: 24 },
+  txtSubtitle: { marginTop: 15 },
+  title: { marginTop: 15 },
+  rightWrapper: { right: 20, position: 'absolute', ...screenStyles.rowCenter },
   leftWrapper: {
     position: 'absolute',
     left: 16,
@@ -43,20 +47,22 @@ const useStyles = makeStyles(({colors}) => ({
 // MAIN
 // -------------------------------
 const GettingScreen = () => {
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const styles = useStyles();
 
   const {
-    theme: {colors},
+    theme: { colors },
   } = useTheme();
 
-  const {lang} = useI18n();
-  const fetchTutorials = useGlobalStore(fetchTutorialsSelector);
-  const slideRef = useRef<any>(null);
-  
-  const {loading, data, error} = useGlobalStore(tutorialListSelector);
+  const { lang } = useI18n();
 
-  const {closeGettingStart} = useContext(AppContext);
+  const fetchTutorials = useGlobalStore(fetchTutorialsSelector);
+
+  const slideRef = useRef<any>(null);
+
+  const { loading, data, error } = useGlobalStore(tutorialListSelector);
+
+  const { closeGettingStart } = useContext(AppContext);
 
   const [showBackBtn, setShowBackBtn] = useState(false);
   const [nextIndex, setNextIndex] = useState(1);
@@ -67,7 +73,7 @@ const GettingScreen = () => {
   // -------------------------------
   useEffect(() => {
     if (!lang) return;
-    const params = {fq: 'type:onboard', sort: 'order'};
+    const params = { fq: 'type:onboard', sort: 'order' };
     fetchTutorials(params);
     // dispatch(getSettingsOnboarding({fq: 'type:onboard'}));
   }, [fetchTutorials, lang]);
@@ -76,9 +82,11 @@ const GettingScreen = () => {
   // HANDLE API RESPONSE
   // -------------------------------
   useEffect(() => {
-    // console.log("🚀 ~ GettingScreen ~ tutorialList:", tutorialList)
     if (loading || error) return;
-    if (data?.items) setListIntro(data.items);
+    if (data?.items) {
+      console.log('🚀 ~ GettingScreen ~ tutorialList:', data);
+      setListIntro(data.items);
+    }
   }, [data, error, loading]);
 
   // -------------------------------
@@ -195,11 +203,13 @@ const GettingScreen = () => {
   return (
     <Screen>
       <View style={appStyles.flex1}>
-        {/* <CHeader
-          rightComponent={renderRightHead()}
-          leftComponent={renderLeftHead()}
-          leftComponentDisable={!showBackBtn}
-        /> */}
+        <Header
+          title='Header'
+          showBack
+          // rightComponent={renderRightHead()}
+          // leftComponent={renderLeftHead()}
+          // leftComponentDisable={!showBackBtn}
+        />
 
         {/* <AppIntroSlider
           ref={slideRef}

@@ -14,9 +14,19 @@ const apiMonitor = (response: any) => {
   };
 
   if (ok) {
-    console.info('%c✓ API SUCCESS', 'color: #10b981; font-weight: bold;', logMeta);
+    console.info(
+      '%c✓ API SUCCESS',
+      'color: #10b981; font-weight: bold;',
+      url,
+      logMeta,
+    );
   } else {
-    console.error('%c✗ API FAILED', 'color: #ef4444; font-weight: bold;', logMeta);
+    console.error(
+      '%c✗ API FAILED',
+      'color: #ef4444; font-weight: bold;',
+      url,
+      logMeta,
+    );
   }
 };
 
