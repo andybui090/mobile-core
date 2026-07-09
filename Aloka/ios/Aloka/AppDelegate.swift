@@ -2,7 +2,9 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
-import RNBootSplash // ⬅️ add this import
+import RNBootSplash
+import Firebase
+import GoogleSignIn
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -15,6 +17,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    FirebaseApp.configure()
+
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
@@ -32,13 +36,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     return true
   }
+
+  // MARK: - Deep linking (FBSDK + GoogleSDK)
+  func application(
+    _ app: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
+    return GIDSignIn.sharedInstance.handle(url)
+  }
 }
 
 class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
   override func sourceURL(for bridge: RCTBridge) -> URL? {
     self.bundleURL()
   }
-  
+
   override func bundleURL() -> URL? {
 #if DEBUG
     RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
@@ -46,10 +59,9 @@ class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
     Bundle.main.url(forResource: "main", withExtension: "jsbundle")
 #endif
   }
-  
-  // ⬇️ override this method for boostplash
+
   override func customize(_ rootView: RCTRootView) {
     super.customize(rootView)
-    RNBootSplash.initWithStoryboard("BootSplash", rootView: rootView) // ⬅️ initialize the splash screen
+    RNBootSplash.initWithStoryboard("BootSplash", rootView: rootView)
   }
 }
