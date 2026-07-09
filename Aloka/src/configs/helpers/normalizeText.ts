@@ -14,15 +14,6 @@ export const pixelRatio = PixelRatio.get();
 const deviceHeight = Dimensions.get("window").height;
 const deviceWidth = Dimensions.get("window").width;
 
-// ? -- Testing Only --
-// const fontScale = PixelRatio.getFontScale();
-// const layoutSize = PixelRatio.getPixelSizeForLayoutSize(14);
-// console.log('normalizeText getPR ->', pixelRatio);
-// console.log('normalizeText getFS ->', fontScale);
-// console.log('normalizeText getDH ->', deviceHeight);
-// console.log('normalizeText getDW ->', deviceWidth);
-// console.log('normalizeText getPSFLS ->', layoutSize);
-
 const normalize = (size: number) => {
   if (pixelRatio >= 2 && pixelRatio < 3) {
     // iPhone 5s and older Androids

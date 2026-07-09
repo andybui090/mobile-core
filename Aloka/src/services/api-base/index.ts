@@ -28,6 +28,14 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   const setAuthorizationHeader = (access_token: string) => {
     return api.setHeader('Authorization', 'Bearer ' + access_token);
   };
+  const getAuthorizationHeader = () => {
+    return api.headers.Authorization;
+  };
+  const deleteAuthorizationHeader = () => delete api.headers.Authorization;
+
+  const getHeader = () => {
+    return api.headers;
+  };
 
   /*
     GLOBAL
@@ -49,6 +57,9 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     setXAppLanguage,
     setXAppContent,
     setAuthorizationHeader,
+    getAuthorizationHeader,
+    deleteAuthorizationHeader,
+    getHeader,
     //global
     getTutorials,
   };
