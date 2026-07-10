@@ -1,8 +1,8 @@
-import React from 'react';
 import { fonts, getBottomSpace, ifIphoneX } from '@/configs';
-import { Button } from '@rneui/base';
 import { Row } from '@/utils';
+import { Button } from '@rneui/base';
 import { makeStyles } from '@rneui/themed';
+import React from 'react';
 import { ViewStyle } from 'react-native';
 
 interface CButtonProps {
@@ -61,10 +61,14 @@ export const CButton = (props: CButtonProps) => {
     <Row center style={[isBottom ? styles.btnBottom : {}, style]}>
       <Button
         disabled={isDisable}
-        titleProps={{allowFontScaling:false}}
-        disabledStyle={disabledStyle ? disabledStyle : {
-          backgroundColor: 'rgba(0,128,246, 0.8)',
-        }}
+        titleProps={{ allowFontScaling: false }}
+        disabledStyle={
+          disabledStyle
+            ? disabledStyle
+            : {
+                backgroundColor: 'rgba(25,162,167, 0.8)',
+              }
+        }
         disabledTitleStyle={[
           styles.titleStyle,
           {

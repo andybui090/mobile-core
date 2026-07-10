@@ -1,8 +1,5 @@
 import React, { memo } from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
-
-/* ===================== TYPES ===================== */
-
 export interface RowProps {
   start?: boolean;
   center?: boolean;
@@ -12,8 +9,6 @@ export interface RowProps {
   style?: ViewStyle | ViewStyle[];
   children?: React.ReactNode;
 }
-
-/* ===================== COMPONENT ===================== */
 
 const RowComponent: React.FC<RowProps> = ({
   style,
@@ -40,12 +35,6 @@ const RowComponent: React.FC<RowProps> = ({
   );
 };
 
-/* ===================== EXPORT ===================== */
-
-export const Row = memo(RowComponent);
-
-/* ===================== STYLES ===================== */
-
 const styles = StyleSheet.create({
   default: {
     flexDirection: 'row',
@@ -67,3 +56,5 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
 });
+
+export const Row = memo(RowComponent);

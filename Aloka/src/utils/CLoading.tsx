@@ -13,7 +13,7 @@ interface Props {
   colorLoading?: string;
 }
 
-export const CLoading = ({ title, loadingSize, colorLoading = '#0080F6' }: Props) => {
+export const CLoading = ({ title, loadingSize, colorLoading = '#19A2A7' }: Props) => {
   const { t } = useTranslation();
   return (
     <View style={styles.viewLoading}>

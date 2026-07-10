@@ -3,13 +3,19 @@ import { ScrollView, ViewStyle } from 'react-native';
 
 interface Props {
   children: React.ReactNode;
-  contentContainerStyle?:ViewStyle | object;
+  contentContainerStyle?: ViewStyle | object;
   style?: ViewStyle | object;
-  innerRef?:any;
-  removeClippedSubviews?:boolean;
+  innerRef?: any;
+  removeClippedSubviews?: boolean;
 }
 
-export const CScrollView: React.FC<Props> = ({ children, contentContainerStyle = {}, style = {}, innerRef, removeClippedSubviews }) => {
+export const CScrollView: React.FC<Props> = ({
+  children,
+  contentContainerStyle = {},
+  style = {},
+  innerRef,
+  removeClippedSubviews,
+}) => {
   return (
     <ScrollView
       ref={innerRef}
@@ -19,7 +25,7 @@ export const CScrollView: React.FC<Props> = ({ children, contentContainerStyle =
       keyboardDismissMode="on-drag"
       scrollEventThrottle={160}
       removeClippedSubviews={removeClippedSubviews}
-      keyboardShouldPersistTaps='handled'
+      keyboardShouldPersistTaps="handled"
     >
       {children}
     </ScrollView>

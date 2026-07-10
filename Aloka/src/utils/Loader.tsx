@@ -1,7 +1,6 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {Modal, StyleSheet, View} from 'react-native';
 import LottieView from 'lottie-react-native';
-import Modal from 'react-native-modal';
 
 interface Props {
   visible: boolean;
@@ -9,13 +8,13 @@ interface Props {
 
 export const Loader = ({visible}: Props) => {
   return (
-    <Modal 
-      style={styles.modalStyle} 
-      animationIn={{ from: { opacity: 1 }, to: { opacity: 1 } }}
-      animationOut={{ from: { opacity: 0 }, to: { opacity: 0 } }}
-      animationInTiming={0}
-      animationOutTiming={0}
-      isVisible={visible}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      presentationStyle="overFullScreen"
+      statusBarTranslucent
+      onRequestClose={() => {}}>
       <View style={styles.viewLoading}>
         <LottieView
           style={{
@@ -32,13 +31,10 @@ export const Loader = ({visible}: Props) => {
 };
 
 const styles = StyleSheet.create({
-  modalStyle:{
-    margin:0,
-  },
   viewLoading: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(256, 256, 256, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
 });

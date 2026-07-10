@@ -4,6 +4,8 @@ import React, { useCallback, useRef, useState } from 'react';
 import { View, Text } from 'react-native';
 import { ImageHelper, Wrapper } from '@/components';
 import AppIntroSlider from './AppIntroSlider';
+import { CButton } from '@/utils';
+import { useTranslation } from 'react-i18next';
 
 const useStyles = makeStyles(({ colors }) => ({
   imgWrap: {
@@ -14,6 +16,7 @@ const useStyles = makeStyles(({ colors }) => ({
 }));
 
 const GettingScreen = () => {
+  const { t } = useTranslation();
   const styles = useStyles();
   const {
     theme: { colors },
@@ -24,7 +27,7 @@ const GettingScreen = () => {
 
   const [showBackBtn, setShowBackBtn] = useState(false);
   const [nextIndex, setNextIndex] = useState(1);
-  
+
   // -------------------------------
   // ACTION
   // -------------------------------
@@ -33,7 +36,16 @@ const GettingScreen = () => {
     setNextIndex(index + 1);
   }, []);
 
-  // -------------------------------
+  const handleNextSlide = useCallback(() => {
+    slideRef.current?.goToSlide(nextIndex, true);
+  }, [nextIndex]);
+
+  const handleDone = useCallback(() => {
+    // closeGettingStart();
+  }, []);
+
+  // --------
+  // -----------------------
   // RENDER
   // -------------------------------
   const renderItem = useCallback(
@@ -59,11 +71,23 @@ const GettingScreen = () => {
   );
 
   const renderNextButton = () => {
-    return null;
+    return (
+      <CButton
+        onPress={handleNextSlide}
+        title={t('common.continue')}
+        btnWidth="100%"
+      />
+    );
   };
 
   const renderDoneButton = () => {
-    return null;
+    return (
+      <CButton
+        onPress={handleDone}
+        title={t('course.getStarted')}
+        btnWidth="100%"
+      />
+    );
   };
 
   return (
