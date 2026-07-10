@@ -17,7 +17,9 @@
     "android:apk:debug": "cd android && ./gradlew assembleDebug --info --stacktrace && cd ..",
     "android:apk:release": "cd android && ./gradlew assembleRelease --info --stacktrace && cd ..",
     "android:aab:release": "cd android && ./gradlew bundleRelease --info --stacktrace && cd ..",
-    "reset": "react-native start --reset-cache"
+    "reset": "react-native start --reset-cache",
+    "clear:build_ios": "rm -rf ios/build",
+    "clear:DerivedData": "rm -rf ~/Library/Developer/Xcode/DerivedData/*"
   },
   "dependencies": {
     "@gorhom/bottom-sheet": "^5",

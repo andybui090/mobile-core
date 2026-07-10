@@ -46,8 +46,28 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Need to access your camera to take a photo then update profile picture and other support in the application</string>
+	<key>NSContactsUsageDescription</key>
+	<string>This lets you see which your friends are on Doctor Network</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Doctor Network needs to get your location to suggest the doctors, videos, and clinics closest to you</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Doctor Network needs to get your location to suggest the doctors, videos, and clinics closest to you</string>
+	<key>NSLocationUsageDescription</key>
+	<string>Doctor Network needs to get your location to suggest the doctors, videos, and clinics closest to you</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string/>
+	<string>Doctor Network needs to get your location to suggest the doctors, videos, and clinics closest to you</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Allow Microphone permission to support streams</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Need to access your photo library to select or update profile pictures and other support in the application</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>The app uses speech recognition to listen for and understand your voice responses to notifications and prompts</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Your permission allows the app to use data to measure app performance and improve user experience</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIBackgroundModes</key>
