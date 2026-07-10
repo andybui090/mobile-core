@@ -2,7 +2,7 @@ import { create } from 'apisauce';
 
 import Config from 'react-native-config';
 import apiMonitor from './monitor';
-import { GLOBAL } from './uris';
+import { GLOBAL, SETTINGS, PROFILE } from './uris';
 import i18n from 'i18next';
 
 const createApiClient = (baseURL = Config.BASE_API_URL) => {
@@ -52,6 +52,20 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     return api.get(GLOBAL.GET_TUTORIAL, payload);
   };
 
+  /*
+    SETTINGS
+  */
+  const getSettingsOnboarding = (payload: object) => {
+    return api.get(SETTINGS.GET_SETTINGS, payload);
+  };
+
+  /*
+    PROFILE
+  */
+  const getProfile = (payload: object) => {
+    return api.get(PROFILE.GET_PROFILE, payload);
+  };
+
   return {
     api,
     setXAppLanguage,
@@ -60,8 +74,21 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     getAuthorizationHeader,
     deleteAuthorizationHeader,
     getHeader,
-    //global
+
+    /*
+      GLOBAL
+    */
     getTutorials,
+
+    /*
+      SETTINGS
+    */
+    getSettingsOnboarding,
+    
+    /*
+      PROFILE
+    */
+    getProfile,
   };
 };
 

@@ -1,8 +1,12 @@
 import { combineReducers } from '@reduxjs/toolkit';
 import globalReducer from '@/redux/slices/globalSlice';
+import settingReducer from '@/redux/slices/settingSlice';
+import profileReducer from '@/redux/slices/profileSlice';
 
 const appReducer = combineReducers({
   globalReducer,
+  settingReducer,
+  profileReducer,
 });
 
 export const clearReducer = () => ({ type: 'CLEAR_REDUCER' });

@@ -37,8 +37,9 @@ import { Platform, StatusBar } from 'react-native';
 // import {useTranslation} from 'react-i18next';
 import { View } from 'react-native';
 // import {registerTranslation} from 'react-native-paper-dates';
+import BootSplash from 'react-native-bootsplash';
 
-function App({ updateTrackingApp }: any) {
+function App() {
   // const {t} = useTranslation();
   // registerTranslation('vi', {
   //   save: t('common.save'), // ví dụ key trong i18n của bạn
@@ -103,6 +104,9 @@ function App({ updateTrackingApp }: any) {
   // }, []);
 
   const hideSlashScreen = async () => {
+    await BootSplash.hide({ fade: true });
+    console.log('BootSplash has been hidden successfully');
+
     // LottieSplashScreen?.hide();
 
     // try {
@@ -225,9 +229,7 @@ function App({ updateTrackingApp }: any) {
   return (
     <View style={{ flex: 1 }}>
       <StatusBar barStyle="dark-content" />
-      <RootNavigator 
-        onCompleteLoading={hideSlashScreen} 
-      />
+      <RootNavigator onCompleteLoading={hideSlashScreen} />
       {/* <PaperProvider>
         <TourGuideProvider
           preventOutsideInteraction={true}

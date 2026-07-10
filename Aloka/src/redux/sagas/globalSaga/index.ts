@@ -15,7 +15,6 @@ function* fetchTutorials(action: actionGetTutorials) {
     ApiService.getTutorials,
     action.payload,
     getTutorialsCallback,
-    2,
   );
 }
 
