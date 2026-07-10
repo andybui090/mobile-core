@@ -58,7 +58,7 @@ import {
 } from './app-helper';
 // import MainNavigator from './app-navigator/main-navigator';
 // import CategoryApp from './category';
-// import GettingApp from './getting';
+import GettingApp from '@/screens/getting';
 import {
   detectDeeplinkOpenApp,
   detectFirebaseOpenApp,
@@ -389,24 +389,24 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
   }, [stateRoot.isLoading]);
 
   const renderRootApp = useMemo(() => {
-    return <View />;
-    // if (!stateRoot.isLoading) {
-    //   if (stateRoot.isGetting) {
-    //     return <GettingApp />;
-    //   } else {
-    //     if (stateRoot.isCategory) {
-    //       return <CategoryApp />;
-    //     } else {
-    //       let userTemp: any = stateRoot.user;
-    //       if (userTemp.username && !waitingRegisterComplete) {
-    //         return <MainNavigator isReview={firebaseConfig.isReviewApp} />;
-    //       }
-    //       return <AuthScreen />;
-    //     }
-    //   }
-    // } else {
-    //   return <View />;
-    // }
+    if (!stateRoot.isLoading) {
+      if (stateRoot.isGetting) {
+        return <GettingApp />;
+      } else {
+        return <View />;
+        // if (stateRoot.isCategory) {
+        //   return <CategoryApp />;
+        // } else {
+        //   let userTemp: any = stateRoot.user;
+        //   if (userTemp.username && !waitingRegisterComplete) {
+        //     return <MainNavigator isReview={firebaseConfig.isReviewApp} />;
+        //   }
+        //   return <AuthScreen />;
+        // }
+      }
+    } else {
+      return <View />;
+    }
   }, [stateRoot, waitingRegisterComplete, firebaseConfig.isReviewApp]);
 
   return (

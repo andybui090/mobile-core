@@ -1,10 +1,3 @@
-const workletsPluginOptions = {
-  strictGlobal: true,
-  bundleMode: true,
-  hermesBytecode: false,
-  // getHBCBinary,
-};
-
 const alias = {
   '^@/(.+)': './src/\\1',
 };
@@ -22,7 +15,7 @@ module.exports = {
     },
   },
   plugins: [
-    ['react-native-worklets/plugin', workletsPluginOptions],
+    ['react-native-worklets/plugin'],
     [
       'module-resolver',
       {

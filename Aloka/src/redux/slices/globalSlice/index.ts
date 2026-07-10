@@ -11,7 +11,9 @@ const initialState: GlobalState = {
     data: undefined,
     error: undefined,
   },
-  firebaseConfig: undefined,
+  firebaseConfig: {
+    isReviewApp:false,
+  },
 };
 
 const globalSlice = createSlice({
