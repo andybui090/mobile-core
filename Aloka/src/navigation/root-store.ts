@@ -1,6 +1,6 @@
 export const initialState: any = {
   isGetting: true,
-  isCategory: true,
+  // isCategory: true, // cho nay khong can thiet vi khong can user chon so thich 
   isLoading: true,
   user: {},
   isLogout: false,
@@ -24,7 +24,7 @@ type ACTIONTYPE =
   | {type: TYPES.SET_USER; payload: object}
   | {type: TYPES.LOGOUT_APP; payload: boolean}
   | {type: TYPES.SHOW_GETTING_START; payload: boolean}
-  | {type: TYPES.SHOW_CATEGORY; payload: boolean}
+  // | {type: TYPES.SHOW_CATEGORY; payload: boolean}
   | {type: TYPES.SET_LOCATION; payload: object};
 
 export const enum UserTypes {
@@ -43,8 +43,8 @@ export function rootReducer(
   switch (action.type) {
     case TYPES.SHOW_GETTING_START:
       return {...prevState, isGetting: action.payload};
-    case TYPES.SHOW_CATEGORY:
-      return {...prevState, isCategory: action.payload};
+    // case TYPES.SHOW_CATEGORY:
+    //   return {...prevState, isCategory: action.payload};
     case TYPES.SET_USER:
       const currentUser: any = action.payload;
       const type: UserTypes = currentUser?.personalization?.type

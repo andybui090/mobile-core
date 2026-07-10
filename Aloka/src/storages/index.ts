@@ -1,36 +1,38 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {safeJsonParse} from '@/configs';
+import { createMMKV } from 'react-native-mmkv';
+import { safeJsonParse } from '@/configs';
+import Config from 'react-native-config'
 
-const STORAGE_PREFIX = 'DoctorNetwork_';
+const STORAGE_PREFIX = 'DRAloka_';
 
-const storeStringData = async (key: string, value: string) => {
+const storage = createMMKV({
+  id: `app-storage`,
+  encryptionKey: Config.MMKV_ENCRYPTION_KEY, // Use a secure key in production
+});
+
+const storeStringData = (key: string, value: string) => {
   try {
-    let storeKey = STORAGE_PREFIX + key;
-    await AsyncStorage.setItem(storeKey, value);
+    const storeKey = STORAGE_PREFIX + key;
+    storage.set(storeKey, value);
   } catch (e) {
     console.log(`error storeString ${key}`, e);
   }
 };
 
-const storeObjectData = async (key: string, value: object) => {
+const storeObjectData = (key: string, value: object) => {
   try {
-    let storeKey = STORAGE_PREFIX + key;
+    const storeKey = STORAGE_PREFIX + key;
     const jsonValue = JSON.stringify(value);
-    await AsyncStorage.setItem(storeKey, jsonValue);
+    storage.set(storeKey, jsonValue);
   } catch (e) {
     console.log(`error storeObject ${key}`, e);
   }
 };
 
-const getStringData = async (key: string) => {
+const getStringData = (key: string) => {
   try {
-    let storeKey = STORAGE_PREFIX + key;
-    const value = await AsyncStorage.getItem(storeKey);
-    if (value !== null) {
-      return value;
-    } else {
-      return null;
-    }
+    const storeKey = STORAGE_PREFIX + key;
+    const value = storage.getString(storeKey);
+    return value ?? null;
   } catch (e) {
     console.log(`error getString ${key}`, e);
     return null;
@@ -39,65 +41,29 @@ const getStringData = async (key: string) => {
 
 const getObjectData = async <T = any>(key: string): Promise<T | null> => {
   try {
-    let storeKey = STORAGE_PREFIX + key;
-    const jsonValue = await AsyncStorage.getItem(storeKey);
-    return jsonValue !== null ? safeJsonParse<T | null>(jsonValue, null) : null;
+    const storeKey = STORAGE_PREFIX + key;
+    const jsonValue = storage.getString(storeKey);
+    return jsonValue != null ? safeJsonParse<T | null>(jsonValue, null) : null;
   } catch (e) {
     console.log(`error getObject ${key}`, e);
     return null;
   }
 };
 
-const removeValue = async (key: string) => {
+const removeValue = (key: string) => {
   try {
-    let storeKey = STORAGE_PREFIX + key;
-    await AsyncStorage.removeItem(storeKey);
+    const storeKey = STORAGE_PREFIX + key;
+    storage.remove(storeKey);
   } catch (e) {
     console.log('error remove .', key);
   }
 };
 
-const clearAll = async () => {
+const clearAll = () => {
   try {
-    await AsyncStorage.clear();
+    storage.clearAll();
   } catch (e) {
     console.log('error clearAll .', e);
-  }
-};
-
-const removeMultiValues = async (keys: any) => {
-  try {
-    await AsyncStorage.multiRemove(keys);
-    return { success: true };
-  } catch (e) {
-    return { error: e };
-  }
-};
-
-const getAllKeys = async () => {
-  let keys: any;
-  try {
-    keys = await AsyncStorage.getAllKeys();
-    return keys;
-  } catch (e) {
-    return keys;
-  }
-};
-
-const getMultiple = async (arrKey = []) => {
-  let results: any;
-  try {
-    results = await AsyncStorage.multiGet(arrKey);
-  } catch (e) {
-  }
-  return results;
-};
-
-const removeFew = async (keys = []) => {
-  try {
-    await AsyncStorage.multiRemove(keys);
-  } catch (e) {
-    console.log('error removeFew ', e);
   }
 };
 
@@ -109,8 +75,4 @@ export {
   getObjectData,
   removeValue,
   clearAll,
-  removeMultiValues,
-  getAllKeys,
-  getMultiple,
-  removeFew,
 };

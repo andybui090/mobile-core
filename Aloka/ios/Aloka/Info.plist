@@ -101,6 +101,11 @@
 		<string>Inter-ExtraLight.ttf</string>
 		<string>Inter-Black.ttf</string>
 		<string>Inter-SemiBold.ttf</string>
+		<string>Ionicons.ttf</string>
+		<string>Fontisto.ttf</string>
+		<string>AntDesign.ttf</string>
+		<string>MaterialIcons.ttf</string>
+		<string>Octicons.ttf</string>
 	</array>
 </dict>
 </plist>

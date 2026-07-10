@@ -66,6 +66,7 @@ import {
 } from './notify-helper';
 import { TYPES, initialState, rootReducer } from './root-store';
 import { getProfile } from '@/redux/slices/profileSlice';
+import AuthScreen from '@/screens/auth-screen';
 interface RootNavigatorProps {
   onCompleteLoading: () => Promise<void>;
 }
@@ -108,21 +109,28 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
     const initApp = async () => {
       let isHideIntro = await checkHideIntroApp();
       if (isHideIntro) {
-        rootDispatch({type: TYPES.SHOW_GETTING_START, payload: false});
-        let isHideCaterory = await checkHideCategoryApp();
-        if (isHideCaterory) {
-          rootDispatch({type: TYPES.SHOW_CATEGORY, payload: false});
-          await autoLoginApp(
-            (userInfo: any) => {
-              appDispatch(getProfile(null));
-              initConfigDefault();
-            },
-            () => logoutApp(),
-          );
-        } else {
-          //installed
-          logoutApp();
-        }
+        rootDispatch({ type: TYPES.SHOW_GETTING_START, payload: false });
+        await autoLoginApp(
+          (userInfo: any) => {
+            appDispatch(getProfile(null));
+            initConfigDefault();
+          },
+          () => logoutApp(),
+        );
+        // let isHideCaterory = await checkHideCategoryApp();
+        // if (isHideCaterory) {
+        //   rootDispatch({ type: TYPES.SHOW_CATEGORY, payload: false });
+        //   await autoLoginApp(
+        //     (userInfo: any) => {
+        //       appDispatch(getProfile(null));
+        //       initConfigDefault();
+        //     },
+        //     () => logoutApp(),
+        //   );
+        // } else {
+        //   //installed
+        //   logoutApp();
+        // }
       } else {
         //show Intro and clear data
         logoutApp();
@@ -267,14 +275,14 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
 
   const rootAction = useMemo(
     () => ({
-      closeGettingStart: async () => {
-        await storeStringData(STORAGEKEY.GETTING_APP, 'false');
+      closeGettingStart: () => {
+        storeStringData(STORAGEKEY.GETTING_APP, 'false');
         rootDispatch({ type: TYPES.SHOW_GETTING_START, payload: false });
       },
-      closeCategory: async () => {
-        await storeStringData(STORAGEKEY.SHOW_CATEGORY, 'false');
-        rootDispatch({ type: TYPES.SHOW_CATEGORY, payload: false });
-      },
+      // closeCategory: async () => {
+      //   storeStringData(STORAGEKEY.SHOW_CATEGORY, 'false');
+      //   rootDispatch({ type: TYPES.SHOW_CATEGORY, payload: false });
+      // },
       // login: async (userInfo: any) => {
       //   await initConfigDefault();
       //   rootDispatch({
@@ -393,15 +401,21 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       if (stateRoot.isGetting) {
         return <GettingApp />;
       } else {
-        return <View />;
+        return <AuthScreen />;
+        // const userTemp: any = stateRoot.user;
+        // if (userTemp.username && !waitingRegisterComplete) {
+
+        // }
         // if (stateRoot.isCategory) {
-        //   return <CategoryApp />;
+        //   return <View />;
+        //   // return <CategoryApp />;
         // } else {
-        //   let userTemp: any = stateRoot.user;
-        //   if (userTemp.username && !waitingRegisterComplete) {
-        //     return <MainNavigator isReview={firebaseConfig.isReviewApp} />;
-        //   }
-        //   return <AuthScreen />;
+        //   return <View />;
+        //   // let userTemp: any = stateRoot.user;
+        //   // if (userTemp.username && !waitingRegisterComplete) {
+        //   //   return <MainNavigator isReview={firebaseConfig.isReviewApp} />;
+        //   // }
+        //   // return <AuthScreen />;
         // }
       }
     } else {

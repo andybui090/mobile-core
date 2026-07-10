@@ -1,27 +1,144 @@
 import { images } from '@/configs';
-import { useMemo, useState } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
+import { useState } from 'react';
 import { Image, ImageStyle, Platform, StyleSheet, View } from 'react-native';
 import { Blurhash } from 'react-native-blurhash';
-import CachedImage, { ResizeMode, Source } from 'react-native-fast-image';
+import CachedImage, { ResizeMode } from 'react-native-fast-image';
+
+type FastImageProps = ComponentProps<typeof CachedImage>;
+type FastImageSource = FastImageProps['source'];
 
 interface ImageHelperProps {
-  renderPlaceholder?: (() => React.ReactNode) | null;
-  renderErrorImage?: React.ReactNode | (() => React.ReactNode);
-  onError?: () => void;
-  onLoad?: (e?: any) => void;
+  renderPlaceholder?: (() => ReactNode) | null;
+  renderErrorImage?: ReactNode | (() => ReactNode);
+  onError?: FastImageProps['onError'];
+  onLoad?: FastImageProps['onLoad'];
   imageStyle?: ImageStyle | ImageStyle[];
   resizeMode?: ResizeMode;
-  source: Source;
+  source: FastImageSource;
   isLogo?: boolean;
   sizeLogo?: number;
 }
+
+const PLACEHOLDER_BLURHASH = 'LGFFaXYk^6#M@-5c,1J5@[or[Q6.';
+
+const hasRemoteSource = (
+  source: FastImageSource,
+): source is Exclude<FastImageSource, number> => {
+  return typeof source === 'object' && source !== null && 'uri' in source && !!source.uri;
+};
+
+type FallbackImageProps = {
+  renderErrorImage: ImageHelperProps['renderErrorImage'];
+  isLogo?: boolean;
+  sizeLogo: number;
+  layout: {width: number; height: number};
+};
+
+const FallbackImage = ({
+  renderErrorImage,
+  isLogo,
+  sizeLogo,
+  layout,
+}: FallbackImageProps) => {
+  if (typeof renderErrorImage === 'function') {
+    return renderErrorImage();
+  }
+
+  if (renderErrorImage != null) {
+    return renderErrorImage;
+  }
+
+  if (isLogo) {
+    return (
+      <Image
+        source={images.global.logo_app}
+        resizeMode="contain"
+        style={{
+          width: sizeLogo,
+          height: sizeLogo,
+        }}
+      />
+    );
+  }
+
+  const size = Math.min(layout.width, layout.height);
+
+  return (
+    <View style={styles.bgDefault}>
+      <Image
+        source={images.global.img_default}
+        style={{
+          width: size - 20,
+          height: size - 20,
+        }}
+      />
+    </View>
+  );
+};
+
+type RemoteImageProps = {
+  source: Exclude<FastImageSource, number>;
+  resizeMode: ResizeMode;
+  onError?: FastImageProps['onError'];
+  onLoad?: FastImageProps['onLoad'];
+  isLoading: boolean;
+  isError: boolean;
+  renderLoading: () => ReactNode;
+  renderDefaultImage: () => ReactNode;
+  setLoading: (value: boolean) => void;
+  setIsError: (value: boolean) => void;
+  otherProps: Omit<
+    FastImageProps,
+    'source' | 'resizeMode' | 'style' | 'onError' | 'onLoad' | 'onLoadEnd'
+  >;
+};
+
+const RemoteImage = ({
+  source,
+  resizeMode,
+  onError,
+  onLoad,
+  isLoading,
+  isError,
+  renderLoading,
+  renderDefaultImage,
+  setLoading,
+  setIsError,
+  otherProps,
+}: RemoteImageProps) => {
+  return (
+    <>
+      <CachedImage
+        {...otherProps}
+        source={source}
+        resizeMode={resizeMode}
+        style={styles.image}
+        fallback={Platform.OS === 'android'} // optimize android
+        onError={() => {
+          setLoading(false);
+          setIsError(true);
+          onError?.();
+        }}
+        onLoadEnd={() => {
+          setLoading(false);
+        }}
+        onLoad={event => {
+          onLoad?.(event);
+        }}
+      />
+      {isLoading && renderLoading()}
+      {isError && renderDefaultImage()}
+    </>
+  );
+};
 
 const ImageHelper = ({
   renderPlaceholder = null,
   renderErrorImage = null,
   onError,
   onLoad,
-  imageStyle = { width: '100%', height: '100%' },
+  imageStyle = {width: '100%', height: '100%'},
   resizeMode = 'cover',
   source,
   isLogo,
@@ -30,15 +147,16 @@ const ImageHelper = ({
 }: ImageHelperProps) => {
   const [isLoading, setLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  const [layout, setLayout] = useState({ width: 50, height: 50 });
+  const [layout, setLayout] = useState({width: 50, height: 50});
 
   const renderLoading = () => {
     if (typeof renderPlaceholder === 'function') {
       return renderPlaceholder();
     }
+
     return (
       <Blurhash
-        blurhash={'LGFFaXYk^6#M@-5c,1J5@[or[Q6.'}
+        blurhash={PLACEHOLDER_BLURHASH}
         decodeAsync={false}
         style={styles.blurHashDe}
         resizeMode="cover"
@@ -46,87 +164,51 @@ const ImageHelper = ({
     );
   };
 
-  const _renderImageDefault = () => {
-    if (typeof renderErrorImage === 'function') {
-      return renderErrorImage();
-    }
-    if (isLogo) {
-      return (
-        <Image
-          source={images.global.logo_app}
-          resizeMode="contain"
-          style={{
-            width: sizeLogo,
-            height: sizeLogo,
-          }}
-        />
-      );
-    }
-    let size = layout.width >= layout.height ? layout.height : layout.width;
+  const renderDefaultImage = () => {
     return (
-      <View style={styles.bgDefault}>
-        <Image
-          style={{
-            height: size - 20,
-            width: size - 20,
-          }}
-          source={images.global.img_default}
-        />
-      </View>
+      <FallbackImage
+        renderErrorImage={renderErrorImage}
+        isLogo={isLogo}
+        sizeLogo={sizeLogo}
+        layout={layout}
+      />
     );
   };
 
-  const CachedImageMemoized = useMemo(() => {
+  const handleLayout = (event: {
+    nativeEvent: {layout: {width: number; height: number}};
+  }) => {
+    const {width, height} = event.nativeEvent.layout;
+    setLayout({width, height});
+  };
+
+  const renderContent = () => {
+    if (!hasRemoteSource(source)) {
+      return renderDefaultImage();
+    }
+
     return (
-      <CachedImage
-        {...otherProps}
+      <RemoteImage
         source={source}
         resizeMode={resizeMode}
-        style={styles.image}
-        onError={() => {
-          setLoading(false);
-          setIsError(true);
-          onError && onError();
-        }}
-        onLoadEnd={() => {
-          setLoading(false);
-        }}
-        onLoad={e => {
-          onLoad && onLoad(e);
-        }}
-        fallback={Platform.OS === 'android'} //optimize android
+        onError={onError}
+        onLoad={onLoad}
+        isLoading={isLoading}
+        isError={isError}
+        renderLoading={renderLoading}
+        renderDefaultImage={renderDefaultImage}
+        setLoading={setLoading}
+        setIsError={setIsError}
+        otherProps={otherProps}
       />
     );
-  }, [onError, onLoad, otherProps]);
+  };
 
-  if (source.uri) {
-    //kiem tra anh chua ky tu dac biet
-    return (
-      <View
-        onLayout={event => {
-          var { width, height } = event.nativeEvent.layout;
-          setLayout({ width, height });
-        }}
-        style={[styles.cont, imageStyle]}
-      >
-        {CachedImageMemoized}
-        {isLoading && renderLoading()}
-        {isError && _renderImageDefault()}
-      </View>
-    );
-  } else {
-    return (
-      <View
-        onLayout={event => {
-          var { width, height } = event.nativeEvent.layout;
-          setLayout({ width, height });
-        }}
-        style={[styles.cont, imageStyle]}
-      >
-        {_renderImageDefault()}
-      </View>
-    );
-  }
+  return (
+    <View onLayout={handleLayout} style={[styles.cont, imageStyle]}>
+      {renderContent()}
+    </View>
+  );
 };
 
 ImageHelper.priority = CachedImage.priority;

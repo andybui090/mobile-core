@@ -10,8 +10,13 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
 import App from './App';
 import { navigationRef } from './navigation/RootNavigation';
+import useI18n from './hooks/useI18n';
 
 function ContainerApp(): ReactElement {
+
+  
+  useI18n();
+
   return (
     <GestureHandlerRootView>
       <SafeAreaProvider>
