@@ -2,7 +2,7 @@ import { create } from 'apisauce';
 
 import Config from 'react-native-config';
 import apiMonitor from './monitor';
-import { GLOBAL, SETTINGS, PROFILE } from './uris';
+import { GLOBAL, SETTINGS, PROFILE, CHANNELS } from './uris';
 import i18n from 'i18next';
 
 const createApiClient = (baseURL = Config.BASE_API_URL) => {
@@ -66,6 +66,24 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     return api.get(PROFILE.GET_PROFILE, payload);
   };
 
+  /*
+    CHANNELS & SCHEDULES
+  */
+  const getChannelDetail = (channelId: string) => {
+    return api.get(CHANNELS.GET_CHANNEL_DETAIL(channelId));
+  };
+
+  const updateChannel = (payload: {
+    id: string;
+    schedules: string | Array<Record<string, any>>;
+    [key: string]: any;
+  }) => {
+    const { id, ...rest } = payload;
+    return api.put(CHANNELS.UPDATE_CHANNEL_SCHEDULE(id), rest);
+  };
+
+  const updateChannelSchedule = updateChannel;
+
   return {
     api,
     setXAppLanguage,
@@ -89,6 +107,13 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
       PROFILE
     */
     getProfile,
+
+    /*
+      CHANNELS & SCHEDULES
+    */
+    getChannelDetail,
+    updateChannel,
+    updateChannelSchedule,
   };
 };
 

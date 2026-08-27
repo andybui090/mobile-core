@@ -67,6 +67,7 @@ import {
 import { TYPES, initialState, rootReducer } from './root-store';
 import { getProfile } from '@/redux/slices/profileSlice';
 import AuthScreen from '@/screens/auth-screen';
+import AppTabNavigator from './app-navigator/tab-navigator';
 interface RootNavigatorProps {
   onCompleteLoading: () => Promise<void>;
 }
@@ -401,7 +402,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       if (stateRoot.isGetting) {
         return <GettingApp />;
       } else {
-        return <AuthScreen />;
+        return <AppTabNavigator />;
         // const userTemp: any = stateRoot.user;
         // if (userTemp.username && !waitingRegisterComplete) {
 

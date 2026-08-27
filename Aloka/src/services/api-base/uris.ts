@@ -12,3 +12,8 @@ export const SETTINGS = {
 export const PROFILE = {
   GET_PROFILE: '/me',
 };
+
+export const CHANNELS = {
+  GET_CHANNEL_DETAIL: (channelId: string) => `/channels/${channelId}`,
+  UPDATE_CHANNEL_SCHEDULE: (channelId: string) => `/channels/${channelId}`,
+};
