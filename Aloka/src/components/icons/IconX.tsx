@@ -16,7 +16,17 @@ const ICON_MAP = {
   materialicons: MaterialIcons,
 };
 
+export const ICON_TYPE = {
+  ICONICONS: 'ionicons' as const,
+  FONTISTO: 'fontisto' as const,
+  ANTDESIGN: 'antdesign' as const,
+  OCTICONS: 'octicons' as const,
+  MATERIALICONS: 'materialicons' as const,
+  FONT_AWESOME5: 'ionicons' as const,
+};
+
 export type IconType = keyof typeof ICON_MAP;
+
 
 // 👉 base props
 type BaseProps = {
@@ -29,7 +39,7 @@ type BaseProps = {
 // 👉 type-safe name
 type IconProps = {
   type?: 'ionicons' | 'fontisto' | 'antdesign' | 'octicons' | 'materialicons';
-  name: React.ComponentProps<typeof Ionicons>['name'];
+  name: string;
 } & BaseProps;
 
 export const IconX = ({

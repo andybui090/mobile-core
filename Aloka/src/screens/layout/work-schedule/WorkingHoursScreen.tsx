@@ -14,19 +14,17 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   getChannelDetail,
   updateChannel,
-  updateChannelSchedule,
 } from '@/redux/slices/channelSlice';
 import {
   Alert,
   ScrollView,
-  StyleSheet,
   TouchableOpacity,
   View,
 } from 'react-native';
 import {
-  formatSchedulePayload,
   parseScheduleResponse,
 } from './scheduleHelper';
+
 
 interface TimeSlot {
   id: string;

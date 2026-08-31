@@ -1,8 +1,9 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import WorkScheduleManageScreen from '@/screens/work-schedule';
-import WorkingHoursScreen from '@/screens/work-schedule/WorkingHoursScreen';
-import WorkScheduleScreen from '@/screens/work-schedule/WorkScheduleScreen';
+import WorkScheduleManageScreen from '@/screens/layout/work-schedule';
+import WorkingHoursScreen from '@/screens/layout/work-schedule/WorkingHoursScreen';
+import WorkScheduleScreen from '@/screens/layout/work-schedule/WorkScheduleScreen';
+
 
 export type WorkScheduleStackParamList = {
   WorkScheduleManageScreen: undefined;

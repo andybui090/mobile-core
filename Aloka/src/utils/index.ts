@@ -6,3 +6,4 @@ export {CLoading} from './CLoading';
 export {CText} from './CText';
 export {Loader} from './Loader';
 export {CButton} from './CButton';
+export {onShare} from './shareHelper';

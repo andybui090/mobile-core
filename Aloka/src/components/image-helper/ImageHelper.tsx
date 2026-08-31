@@ -8,14 +8,15 @@ import CachedImage, { ResizeMode } from 'react-native-fast-image';
 type FastImageProps = ComponentProps<typeof CachedImage>;
 type FastImageSource = FastImageProps['source'];
 
-interface ImageHelperProps {
+export interface ImageHelperProps {
   renderPlaceholder?: (() => ReactNode) | null;
   renderErrorImage?: ReactNode | (() => ReactNode);
   onError?: FastImageProps['onError'];
   onLoad?: FastImageProps['onLoad'];
   imageStyle?: ImageStyle | ImageStyle[];
-  resizeMode?: ResizeMode;
-  source: FastImageSource;
+  style?: ImageStyle | ImageStyle[];
+  resizeMode?: ResizeMode | any;
+  source: FastImageSource | any;
   isLogo?: boolean;
   sizeLogo?: number;
 }
@@ -32,7 +33,7 @@ type FallbackImageProps = {
   renderErrorImage: ImageHelperProps['renderErrorImage'];
   isLogo?: boolean;
   sizeLogo: number;
-  layout: {width: number; height: number};
+  layout: { width: number; height: number };
 };
 
 const FallbackImage = ({
@@ -133,12 +134,13 @@ const RemoteImage = ({
   );
 };
 
-const ImageHelper = ({
+export const ImageHelper = ({
   renderPlaceholder = null,
   renderErrorImage = null,
   onError,
   onLoad,
-  imageStyle = {width: '100%', height: '100%'},
+  imageStyle,
+  style,
   resizeMode = 'cover',
   source,
   isLogo,
@@ -147,7 +149,9 @@ const ImageHelper = ({
 }: ImageHelperProps) => {
   const [isLoading, setLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  const [layout, setLayout] = useState({width: 50, height: 50});
+  const [layout, setLayout] = useState({ width: 50, height: 50 });
+
+  const combinedStyle = [styles.cont, imageStyle, style];
 
   const renderLoading = () => {
     if (typeof renderPlaceholder === 'function') {
@@ -176,36 +180,50 @@ const ImageHelper = ({
   };
 
   const handleLayout = (event: {
-    nativeEvent: {layout: {width: number; height: number}};
+    nativeEvent: { layout: { width: number; height: number } };
   }) => {
-    const {width, height} = event.nativeEvent.layout;
-    setLayout({width, height});
+    const { width, height } = event.nativeEvent.layout;
+    setLayout({ width, height });
   };
 
   const renderContent = () => {
-    if (!hasRemoteSource(source)) {
+    if (!source) {
       return renderDefaultImage();
     }
 
-    return (
-      <RemoteImage
-        source={source}
-        resizeMode={resizeMode}
-        onError={onError}
-        onLoad={onLoad}
-        isLoading={isLoading}
-        isError={isError}
-        renderLoading={renderLoading}
-        renderDefaultImage={renderDefaultImage}
-        setLoading={setLoading}
-        setIsError={setIsError}
-        otherProps={otherProps}
-      />
-    );
+    if (typeof source === 'number') {
+      return (
+        <Image
+          source={source}
+          resizeMode={resizeMode as any}
+          style={styles.image}
+        />
+      );
+    }
+
+    if (hasRemoteSource(source)) {
+      return (
+        <RemoteImage
+          source={source}
+          resizeMode={resizeMode}
+          onError={onError}
+          onLoad={onLoad}
+          isLoading={isLoading}
+          isError={isError}
+          renderLoading={renderLoading}
+          renderDefaultImage={renderDefaultImage}
+          setLoading={setLoading}
+          setIsError={setIsError}
+          otherProps={otherProps}
+        />
+      );
+    }
+
+    return renderDefaultImage();
   };
 
   return (
-    <View onLayout={handleLayout} style={[styles.cont, imageStyle]}>
+    <View onLayout={handleLayout} style={combinedStyle}>
       {renderContent()}
     </View>
   );

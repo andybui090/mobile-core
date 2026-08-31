@@ -5,11 +5,11 @@ import { makeStyles, useTheme } from '@rneui/themed';
 import React, { useState } from 'react';
 import {
   ScrollView,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
 
 interface DateItem {
   dayName: string;
@@ -202,6 +202,9 @@ const useStyles = makeStyles(({ colors }) => ({
     flex: 1,
     paddingHorizontal: 16,
   },
+  timelineScrollContent: {
+    paddingBottom: 40,
+  },
   timelineRow: {
     flexDirection: 'row',
     marginBottom: 14,
@@ -248,6 +251,13 @@ const useStyles = makeStyles(({ colors }) => ({
     marginTop: 6,
     lineHeight: 16,
   },
+  eventAddressTimeOnly: {
+    fontSize: 12,
+    color: colors.c667085,
+    marginTop: 4,
+    lineHeight: 16,
+  },
+
   // Current time line
   currentTimeRow: {
     flexDirection: 'row',
@@ -386,7 +396,7 @@ export const WorkScheduleScreen: React.FC = () => {
       <ScrollView
         style={styles.timelineScroll}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={styles.timelineScrollContent}
       >
         {TIMELINE_HOURS.map(hour => {
           const matchedEvent = filteredEvents.find(
@@ -437,10 +447,11 @@ export const WorkScheduleScreen: React.FC = () => {
                     </View>
 
                     {!matchedEvent.address && (
-                      <CText style={[styles.eventAddressText, { marginTop: 4 }]}>
+                      <CText style={styles.eventAddressTimeOnly}>
                         {matchedEvent.timeRange}
                       </CText>
                     )}
+
 
                     {matchedEvent.address && (
                       <CText style={styles.eventAddressText}>
