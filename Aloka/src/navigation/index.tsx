@@ -32,7 +32,7 @@ import ApiService from '@/services/api-base';
 import { getStringData, removeValue, storeStringData } from '@/storages';
 // import notifee from '@notifee/react-native';
 // import Geolocation from '@react-native-community/geolocation';
-import messaging from '@react-native-firebase/messaging';
+// import messaging from '@react-native-firebase/messaging';
 import { useThemeMode } from '@rneui/themed';
 import { t } from 'i18next';
 import React, {
@@ -67,6 +67,7 @@ import {
 import { TYPES, initialState, rootReducer } from './root-store';
 import { getProfile } from '@/redux/slices/profileSlice';
 import AuthScreen from '@/screens/auth-screen';
+import ApiSSO from '@/services/api-sso';
 interface RootNavigatorProps {
   onCompleteLoading: () => Promise<void>;
 }
@@ -75,7 +76,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
   const { appTheme } = useAppSelector(state => state.settingReducer);
   const { firebaseConfig } = useAppSelector(state => state.globalReducer);
 
-  // const {profileData} = useAppSelector(state => state.profileReducer);
+  const {profileData} = useAppSelector(state => state.profileReducer);
 
   // const {firebaseTokenUpdate} = useAppSelector(state => state.notifyReducer);
 
@@ -139,54 +140,54 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
     initApp();
   }, []);
 
-  // const initFirebaseToken = async () => {
-  //   if (firstStart) {
-  //     let firebaseToken = await getStringData(STORAGEKEY.FIREBASE_TOKEN);
-  //     if (firebaseToken) {
-  //       setFirstStart(false);
-  //       appDispatch(getTotalNotifyUnread(null));
-  //       appDispatch(
-  //         updateFirebaseToken({
-  //           token: firebaseToken,
-  //         }),
-  //       );
-  //       // adjustService.trackUninstallAndroidFCM(firebaseToken);
-  //     } else {
-  //       await notifee.requestPermission();
-  //       if (Platform.OS == 'android') {
-  //         await notifee.createChannel({
-  //           id: 'doctornetwork_globalnotify',
-  //           name: 'Doctor Network',
-  //         });
-  //       }
-  //       messaging()
-  //         .requestPermission({
-  //           alert: true,
-  //           badge: true,
-  //           sound: true,
-  //         })
-  //         .then(authStatus => {
-  //           if (
-  //             authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-  //             authStatus === messaging.AuthorizationStatus.PROVISIONAL
-  //           ) {
-  //             messaging()
-  //               .getToken()
-  //               .then(token => {
-  //                 setFirstStart(false);
-  //                 appDispatch(getTotalNotifyUnread(null));
-  //                 appDispatch(
-  //                   updateFirebaseToken({
-  //                     token,
-  //                   }),
-  //                 );
-  //                 storeStringData(STORAGEKEY.FIREBASE_TOKEN, token);
-  //               });
-  //           }
-  //         });
-  //     }
-  //   }
-  // };
+  const initFirebaseToken = async () => {
+    // if (firstStart) {
+    //   let firebaseToken = getStringData(STORAGEKEY.FIREBASE_TOKEN);
+    //   if (firebaseToken) {
+    //     setFirstStart(false);
+    //     appDispatch(getTotalNotifyUnread(null));
+    //     appDispatch(
+    //       updateFirebaseToken({
+    //         token: firebaseToken,
+    //       }),
+    //     );
+    //     // adjustService.trackUninstallAndroidFCM(firebaseToken);
+    //   } else {
+    //     await notifee.requestPermission();
+    //     if (Platform.OS == 'android') {
+    //       await notifee.createChannel({
+    //         id: 'doctornetwork_globalnotify',
+    //         name: 'Doctor Network',
+    //       });
+    //     }
+    //     messaging()
+    //       .requestPermission({
+    //         alert: true,
+    //         badge: true,
+    //         sound: true,
+    //       })
+    //       .then(authStatus => {
+    //         if (
+    //           authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+    //           authStatus === messaging.AuthorizationStatus.PROVISIONAL
+    //         ) {
+    //           messaging()
+    //             .getToken()
+    //             .then(token => {
+    //               setFirstStart(false);
+    //               appDispatch(getTotalNotifyUnread(null));
+    //               appDispatch(
+    //                 updateFirebaseToken({
+    //                   token,
+    //                 }),
+    //               );
+    //               storeStringData(STORAGEKEY.FIREBASE_TOKEN, token);
+    //             });
+    //         }
+    //       });
+    //   }
+    // }
+  };
 
   // const initSocketIO = async () => {
   //   if (!socketService.isConnected()) {
@@ -201,43 +202,43 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
   //   }
   // };
 
-  // useEffect(() => {
-  //   const processAPIProfileUser = async () => {
-  //     const {loading, data, error} = profileData;
-  //     if (!loading) {
-  //       if (data) {
-  //         const dataRes: any = data;
-  //         // console.log(
-  //         //   '🚀 ~ processAPIProfileUser ~ dataRes.result:',
-  //         //   dataRes.result,
-  //         // );
-  //         if (dataRes.result && dataRes.result.username) {
-  //           rootDispatch({
-  //             type: TYPES.SET_USER,
-  //             payload: dataRes.result,
-  //           });
-  //           initFirebaseToken();
-  //           // initSocketIO();
-  //         } else {
-  //           logoutApp();
-  //         }
-  //       } else if (error) {
-  //         console.log('🚀 ~ processAPIProfileUser ~ error:', error);
-  //         if (
-  //           error &&
-  //           typeof error === 'object' &&
-  //           'problem' in error &&
-  //           (error as any).problem == API_MESSAGE.NETWORK_ERROR
-  //         ) {
-  //           logoutAppWhenLostNetwork();
-  //         } else {
-  //           logoutApp();
-  //         }
-  //       }
-  //     }
-  //   };
-  //   processAPIProfileUser();
-  // }, [profileData]);
+  useEffect(() => {
+    const processAPIProfileUser = async () => {
+      const {loading, data, error} = profileData;
+      if (!loading) {
+        if (data) {
+          const dataRes: any = data;
+          console.log(
+            '🚀 ~ processAPIProfileUser ~ dataRes.result:',
+            dataRes.result,
+          );
+          if (dataRes.result && dataRes.result.username) {
+            rootDispatch({
+              type: TYPES.SET_USER,
+              payload: dataRes.result,
+            });
+            // initFirebaseToken();
+            // initSocketIO();
+          } else {
+            logoutApp();
+          }
+        } else if (error) {
+          console.log('🚀 ~ processAPIProfileUser ~ error:', error);
+          if (
+            error &&
+            typeof error === 'object' &&
+            'problem' in error &&
+            (error as any).problem == API_MESSAGE.NETWORK_ERROR
+          ) {
+            logoutAppWhenLostNetwork();
+          } else {
+            logoutApp();
+          }
+        }
+      }
+    };
+    processAPIProfileUser();
+  }, [profileData]);
 
   // useEffect(() => {
   //   const checkFirebaseToken = () => {
@@ -253,9 +254,9 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
   // }, [firebaseTokenUpdate]);
 
   const logoutApp = async () => {
-    await removeValue(STORAGEKEY.JWT_TOKEN);
+    removeValue(STORAGEKEY.JWT_TOKEN);
     ApiService.deleteAuthorizationHeader();
-    // ApiSSO.deleteAuthorizationHeader();
+    ApiSSO.deleteAuthorizationHeader();
     // APIUpload.deleteAuthorizationHeader();
     // APIECommerceService.deleteAuthorizationHeader();
     appDispatch(clearReducer()); //open comment when done
@@ -283,15 +284,16 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       //   storeStringData(STORAGEKEY.SHOW_CATEGORY, 'false');
       //   rootDispatch({ type: TYPES.SHOW_CATEGORY, payload: false });
       // },
-      // login: async (userInfo: any) => {
-      //   await initConfigDefault();
-      //   rootDispatch({
-      //     type: TYPES.SET_USER,
-      //     payload: userInfo,
-      //   });
-      //   setFirstStart(true);
-      //   appDispatch(getProfile(null));
-      // },
+      login: async (userInfo: any) => {
+        console.log("🚀 ~ RootNavigator ~ userInfo sso:", userInfo)
+        await initConfigDefault();
+        // rootDispatch({
+        //   type: TYPES.SET_USER,
+        //   payload: userInfo,
+        // });
+        setFirstStart(true);
+        appDispatch(getProfile(null));
+      },
       // registerComplete: async (userInfo: any, loginType: any) => {
       //   GALogEvent(GAEvents.REGISTER_COMPLETE, {
       //     method: 'App register complete',
@@ -325,9 +327,9 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       // showModalAuth: async () => {
       //   setShowModalAuth(true);
       // },
-      // onCompleteAuth: async () => {
-      //   setWaitingRegisterComplete(false);
-      // },
+      onCompleteAuth: async () => {
+        setWaitingRegisterComplete(false);
+      },
       // setAdmodData: (data: any) => {
       //   parseAdmod(data || {});
       // },
@@ -401,22 +403,13 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       if (stateRoot.isGetting) {
         return <GettingApp />;
       } else {
+        // return <AuthScreen />;
+        const userTemp: any = stateRoot.user;
+        if (userTemp.username && !waitingRegisterComplete) {
+          return <View style={{ flex: 1, backgroundColor: 'pink' }} />;
+          // return <MainNavigator isReview={firebaseConfig.isReviewApp} />
+        }
         return <AuthScreen />;
-        // const userTemp: any = stateRoot.user;
-        // if (userTemp.username && !waitingRegisterComplete) {
-
-        // }
-        // if (stateRoot.isCategory) {
-        //   return <View />;
-        //   // return <CategoryApp />;
-        // } else {
-        //   return <View />;
-        //   // let userTemp: any = stateRoot.user;
-        //   // if (userTemp.username && !waitingRegisterComplete) {
-        //   //   return <MainNavigator isReview={firebaseConfig.isReviewApp} />;
-        //   // }
-        //   // return <AuthScreen />;
-        // }
       }
     } else {
       return <View />;

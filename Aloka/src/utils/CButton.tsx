@@ -24,8 +24,8 @@ interface CButtonProps {
 
 const useStyles = makeStyles(({ colors }) => ({
   titleStyle: {
-    fontWeight: '600',
-    textTransform: 'none',
+    fontWeight: '600' as const,
+    textTransform: 'none' as const,
     fontFamily: fonts.inter,
   },
   btnBgColor: {

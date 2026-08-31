@@ -3,6 +3,7 @@
  */
 export const GLOBAL = {
   GET_TUTORIAL: '/tutorials',
+  GET_LAGUAGES: '/languages',
 };
 
 export const SETTINGS = {

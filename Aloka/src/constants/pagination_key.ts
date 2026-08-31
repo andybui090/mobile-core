@@ -12,5 +12,4 @@ export const PAGINATION = {
   ITEMS_50: 50,
   ITEMS_100: 100,
   ITEMS_500: 500,
-  ITEMS_1000: 1000,
 };

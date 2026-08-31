@@ -8,3 +8,21 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# Device info
+-keepclassmembers class com.android.installreferrer.api.** {
+  *;
+}
+-keep class com.google.android.gms.common.** {*;}
+-keep class com.google.android.play.core.** { *; }
+#-keep class com.facebook.hermes.unicode.** { *; }
+#-keep class com.facebook.jni.** { *; }
+# end
+
+# fastimage
+-keep public class com.dylanvann.fastimage.* {*;}
+-keep public class com.dylanvann.fastimage.** {*;}
+-keep public enum com.bumptech.glide.load.ImageHeaderParser$** {
+  **[] $VALUES;
+  public *;
+}

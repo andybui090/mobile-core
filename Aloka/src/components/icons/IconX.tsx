@@ -6,6 +6,7 @@ import { Fontisto } from '@react-native-vector-icons/fontisto';
 import { AntDesign } from '@react-native-vector-icons/ant-design';
 import { Octicons } from '@react-native-vector-icons/octicons';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
+import { Entypo } from '@react-native-vector-icons/entypo';
 
 // 👉 map icon
 const ICON_MAP = {
@@ -14,6 +15,7 @@ const ICON_MAP = {
   antdesign: AntDesign,
   octicons: Octicons,
   materialicons: MaterialIcons,
+  entypo: Entypo,
 };
 
 export type IconType = keyof typeof ICON_MAP;
@@ -28,7 +30,7 @@ type BaseProps = {
 
 // 👉 type-safe name
 type IconProps = {
-  type?: 'ionicons' | 'fontisto' | 'antdesign' | 'octicons' | 'materialicons';
+  type?: 'ionicons' | 'fontisto' | 'antdesign' | 'octicons' | 'materialicons' | 'entypo';
   name: React.ComponentProps<typeof Ionicons>['name'];
 } & BaseProps;
 

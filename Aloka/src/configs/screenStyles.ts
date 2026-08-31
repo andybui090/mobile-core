@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { getBottomSpace, ifIphoneX } from './helpers/Notch';
 
 export const screenStyles = StyleSheet.create({
   flex1: {
@@ -11,6 +12,15 @@ export const screenStyles = StyleSheet.create({
   flexGrow1: {
     flexGrow: 1,
   },
+  flex1EndBottom: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  flexGrowBottom: {
+    flexGrow: 1,
+    paddingBottom: getBottomSpace() + ifIphoneX(5, 10),
+  },
   rowCenter: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -18,9 +28,50 @@ export const screenStyles = StyleSheet.create({
   colCenter: {
     alignItems: 'center',
   },
+  hitSlop20: {
+    top: 20,
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
+  wrapModalTop: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  modalTopHeader: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  modalTopSearchBar: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+  },
+  rowBettween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  bottomLine: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#EAECF0',
+  },
   //
   // MARGIN
   //
+  mT10: {
+    marginTop: 10,
+  },
+  mT15: {
+    marginTop: 15,
+  },
+  mT30: {
+    marginTop: 30,
+  },
+  mH5: {
+    marginHorizontal: 5,
+  },
   mH8: {
     marginHorizontal: 8,
   },
@@ -29,6 +80,63 @@ export const screenStyles = StyleSheet.create({
   },
   mH16: {
     marginHorizontal: 16,
+  },
+  mL5: {
+    marginLeft: 5,
+  },
+  mL8: {
+    marginLeft: 8,
+  },
+  mL10: {
+    marginLeft: 10,
+  },
+  mL12: {
+    marginLeft: 12,
+  },
+  mL15: {
+    marginLeft: 15,
+  },
+  mL20: {
+    marginLeft: 20,
+  },
+  mT5: { marginTop: 5 },
+  mT8: { marginTop: 8 },
+  mT12: { marginTop: 12 },
+  mT20: { marginTop: 20 },
+  //  PADDING
+  pH5: {
+    paddingHorizontal: 5,
+  },
+  pH8: {
+    paddingHorizontal: 8,
+  },
+  pH10: {
+    paddingHorizontal: 10,
+  },
+  pH12: {
+    paddingHorizontal: 12,
+  },
+  pH14: {
+    paddingHorizontal: 14,
+  },
+  pH16: {
+    paddingHorizontal: 16,
+  },
+  pH24: {
+    paddingHorizontal: 24,
+  },
+  pH20: {
+    paddingHorizontal: 20,
+  },
+  pV13: {
+    paddingVertical: 13,
+  },
+  pFirstRow: {
+    paddingBottom: 13,
+    paddingTop: 5,
+  },
+  pR8: {
+    paddingRight: 8,
   },
   //
   // BOX

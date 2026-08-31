@@ -5,7 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { ThemeProvider } from '@rneui/themed';
 import { ReactElement } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { KeyboardProvider } from 'react-native-keyboard-controller';
+// import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
 import App from './App';
@@ -13,21 +13,19 @@ import { navigationRef } from './navigation/RootNavigation';
 import useI18n from './hooks/useI18n';
 
 function ContainerApp(): ReactElement {
-
-  
   useI18n();
 
   return (
-    <GestureHandlerRootView>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider theme={theme}>
           <Provider store={store}>
             <BottomSheetModalProvider>
-              <KeyboardProvider>
+              {/* <KeyboardProvider preload={false}> */}
                 <NavigationContainer ref={navigationRef}>
                   <App />
                 </NavigationContainer>
-              </KeyboardProvider>
+              {/* </KeyboardProvider> */}
             </BottomSheetModalProvider>
           </Provider>
         </ThemeProvider>

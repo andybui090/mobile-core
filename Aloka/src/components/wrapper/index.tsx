@@ -33,8 +33,8 @@ const FocusAwareStatusBar = memo(
     return (
       <StatusBar
         barStyle={barStyle}
-        backgroundColor="transparent"
-        translucent
+        // backgroundColor="transparent"
+        // translucent
         hidden={hidden}
       />
     );

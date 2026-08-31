@@ -3,23 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>885495895711-jn6319q4150kefm68560lseu2snd47f7.apps.googleusercontent.com</string>
+	<string>453220095309-dbj5s39km5esbg3ec5ptkvj6608ketbl.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.885495895711-jn6319q4150kefm68560lseu2snd47f7</string>
-	<key>ANDROID_CLIENT_ID</key>
-	<string>885495895711-0rkkqcvucroo3ug5eom3389e0d2iept1.apps.googleusercontent.com</string>
+	<string>com.googleusercontent.apps.453220095309-dbj5s39km5esbg3ec5ptkvj6608ketbl</string>
 	<key>API_KEY</key>
-	<string>AIzaSyC3d2CogoUue9acoOf6kXpx3VXjGksaXqo</string>
+	<string>AIzaSyC6F_Ubj4ppmgv7YCEunWhJbGcMMERBf9c</string>
 	<key>GCM_SENDER_ID</key>
-	<string>885495895711</string>
+	<string>453220095309</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.doctornetwork.homecare</string>
 	<key>PROJECT_ID</key>
-	<string>doctor-network-379903</string>
+	<string>aloka-503b1</string>
 	<key>STORAGE_BUCKET</key>
-	<string>doctor-network-379903.appspot.com</string>
+	<string>aloka-503b1.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -31,8 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:885495895711:ios:4d57ac796c5156c21474aa</string>
-	<key>DATABASE_URL</key>
-	<string>https://doctor-network-379903-default-rtdb.asia-southeast1.firebasedatabase.app</string>
+	<string>1:453220095309:ios:3ae4b6c486ec216a121304</string>
 </dict>
 </plist>

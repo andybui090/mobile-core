@@ -22,6 +22,8 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>GIDClientID</key>
+	<string>453220095309-dbj5s39km5esbg3ec5ptkvj6608ketbl.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -31,7 +33,7 @@
 			<string>google</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.885495895711-jn6319q4150kefm68560lseu2snd47f7</string>
+				<string>com.googleusercontent.apps.453220095309-dbj5s39km5esbg3ec5ptkvj6608ketbl</string>
 			</array>
 		</dict>
 	</array>
@@ -106,6 +108,7 @@
 		<string>AntDesign.ttf</string>
 		<string>MaterialIcons.ttf</string>
 		<string>Octicons.ttf</string>
+		<string>Entypo.ttf</string>
 	</array>
 </dict>
 </plist>

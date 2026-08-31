@@ -52,6 +52,10 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     return api.get(GLOBAL.GET_TUTORIAL, payload);
   };
 
+  const getLanguage = (payload: object) => {
+    return api.get(GLOBAL.GET_LAGUAGES, payload);
+  };
+
   /*
     SETTINGS
   */
@@ -79,12 +83,12 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
       GLOBAL
     */
     getTutorials,
-
+    getLanguage,
     /*
       SETTINGS
     */
     getSettingsOnboarding,
-    
+
     /*
       PROFILE
     */

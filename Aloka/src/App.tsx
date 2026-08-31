@@ -11,16 +11,10 @@ import { Platform, StatusBar } from 'react-native';
 //   requestTrackingPermission,
 // } from 'react-native-tracking-transparency';
 
-// import FirebaseConfigProvider from './FirebaseConfigProvider';
-// import {TourGuideProvider} from './components/rn-tourguide-custom';
-
-// import {GAEvents, GALogEvent} from '@/configs';
 // import {PaperProvider} from 'react-native-paper';
 // import {STORAGEKEY} from './constants';
-// import {AppreviewProvider} from './contexts/AppreviewContext';
 // import customEventEmitter, {CUSTOM_EVENTS} from './notify-helper';
 // import {storeStringData} from './storages';
-// import {NetworkAwareProvider} from './utils';
 
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 // import {getApp} from '@react-native-firebase/app';
@@ -38,6 +32,8 @@ import { Platform, StatusBar } from 'react-native';
 import { View } from 'react-native';
 // import {registerTranslation} from 'react-native-paper-dates';
 import BootSplash from 'react-native-bootsplash';
+import FirebaseConfigProvider from './utils/FirebaseConfigProvider';
+import { NetworkAwareProvider } from './utils/NetworkAwareProvider';
 
 function App() {
   // const {t} = useTranslation();
@@ -230,16 +226,10 @@ function App() {
     <View style={{ flex: 1 }}>
       <StatusBar barStyle="dark-content" />
       <RootNavigator onCompleteLoading={hideSlashScreen} />
-      {/* <PaperProvider>
-        <TourGuideProvider
-          preventOutsideInteraction={true}
-          androidStatusBarVisible={true}>
-          <RootNavigator onCompleteLoading={hideSlashScreen} />
-        </TourGuideProvider>
-      </PaperProvider>
-      <NetworkAwareProvider />
       <FirebaseConfigProvider />
-      <AppreviewProvider />
+      <NetworkAwareProvider />
+      {/*
+      
       <Toast /> */}
     </View>
   );

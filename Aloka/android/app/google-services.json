@@ -1,196 +1,41 @@
 {
   "project_info": {
-    "project_number": "885495895711",
-    "firebase_url": "https://doctor-network-379903-default-rtdb.asia-southeast1.firebasedatabase.app",
-    "project_id": "doctor-network-379903",
-    "storage_bucket": "doctor-network-379903.appspot.com"
+    "project_number": "453220095309",
+    "project_id": "aloka-503b1",
+    "storage_bucket": "aloka-503b1.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:885495895711:android:013f5c7689e4890a1474aa",
-        "android_client_info": {
-          "package_name": "com.anonymous.doctornetwork"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "885495895711-34d6ljc3urrdkrau1h4lv8htj8hkgs14.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.anonymous.doctornetwork",
-            "certificate_hash": "2b3c86b56b0cf782f30f7bf5545155c06b323dce"
-          }
-        },
-        {
-          "client_id": "885495895711-ap1m747oc1n9gb6nh8p53u0k2u4a5edh.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.anonymous.doctornetwork",
-            "certificate_hash": "9d2e245a63f57a86b0aa91287ddc489cc3e1b40e"
-          }
-        },
-        {
-          "client_id": "885495895711-lrjmotrula41fda73b43g5muvquesij4.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.anonymous.doctornetwork",
-            "certificate_hash": "6c06c1db1619ecb91aac187b339a311ef4327858"
-          }
-        },
-        {
-          "client_id": "885495895711-ucfpp914k76isndi6h0beq13b67fkmcl.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.anonymous.doctornetwork",
-            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
-          }
-        },
-        {
-          "client_id": "885495895711-14d8v02j768mfu1ft5f8aj14l2sajvv3.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyD8-zgZq7PYGK9MV9fg4YpCpd8ff5LUNsU"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "885495895711-14d8v02j768mfu1ft5f8aj14l2sajvv3.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "885495895711-1abc8ubqle0cjjdgine3nsnudto97n3g.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.dev.doctornetwork",
-                "app_store_id": "1671676828"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:885495895711:android:872bf805ea33a6231474aa",
+        "mobilesdk_app_id": "1:453220095309:android:db7e87875e81a431121304",
         "android_client_info": {
           "package_name": "com.doctornetwork.homecare"
         }
       },
       "oauth_client": [
         {
-          "client_id": "885495895711-63se19cvvf6q1nan4jqnr32ggmpckatr.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.doctornetwork.homecare",
-            "certificate_hash": "4d4ef074fd68a94080757ec1ff88faf3a49ab1d6"
-          }
-        },
-        {
-          "client_id": "885495895711-plqffdmqpp12il5lt518l6r2j8hj3a59.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.doctornetwork.homecare",
-            "certificate_hash": "1defde445c22528a82083c516f71914553ebcf4b"
-          }
-        },
-        {
-          "client_id": "885495895711-14d8v02j768mfu1ft5f8aj14l2sajvv3.apps.googleusercontent.com",
+          "client_id": "453220095309-rj3ru4sq4r6vgtht93ene0is8bd4h7aj.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyD8-zgZq7PYGK9MV9fg4YpCpd8ff5LUNsU"
+          "current_key": "AIzaSyCdYH-2TQkxxE9OErV9alBKH6NRlL0wAK8"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "885495895711-14d8v02j768mfu1ft5f8aj14l2sajvv3.apps.googleusercontent.com",
+              "client_id": "453220095309-rj3ru4sq4r6vgtht93ene0is8bd4h7aj.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "885495895711-1abc8ubqle0cjjdgine3nsnudto97n3g.apps.googleusercontent.com",
+              "client_id": "453220095309-dbj5s39km5esbg3ec5ptkvj6608ketbl.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.dev.doctornetwork",
-                "app_store_id": "1671676828"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:885495895711:android:955a429f726f35771474aa",
-        "android_client_info": {
-          "package_name": "com.doctornetwork.staging"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "885495895711-0rkkqcvucroo3ug5eom3389e0d2iept1.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.doctornetwork.staging",
-            "certificate_hash": "6c06c1db1619ecb91aac187b339a311ef4327858"
-          }
-        },
-        {
-          "client_id": "885495895711-0varmre8r87sl51pvf3kshlmocb48a31.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.doctornetwork.staging",
-            "certificate_hash": "2b3c86b56b0cf782f30f7bf5545155c06b323dce"
-          }
-        },
-        {
-          "client_id": "885495895711-540qjac1dmeaddjnhegrb3a1akc79jc2.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.doctornetwork.staging",
-            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
-          }
-        },
-        {
-          "client_id": "885495895711-s50nml3knsflu35lhp4uado3r79c5l1e.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.doctornetwork.staging",
-            "certificate_hash": "9d2e245a63f57a86b0aa91287ddc489cc3e1b40e"
-          }
-        },
-        {
-          "client_id": "885495895711-14d8v02j768mfu1ft5f8aj14l2sajvv3.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyD8-zgZq7PYGK9MV9fg4YpCpd8ff5LUNsU"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "885495895711-14d8v02j768mfu1ft5f8aj14l2sajvv3.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "885495895711-1abc8ubqle0cjjdgine3nsnudto97n3g.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.dev.doctornetwork",
-                "app_store_id": "1671676828"
+                "bundle_id": "com.doctornetwork.homecare",
+                "app_store_id": "6786619509"
               }
             }
           ]
