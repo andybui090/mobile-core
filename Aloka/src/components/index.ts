@@ -1,6 +1,7 @@
 import Wrapper from './wrapper';
 import ReCaptcha from './ReCaptcha';
 import CSearchBar from './CSearchBar';
+import Toast from './toast';
 
 export { CInput } from './inputs';
 export * from './image-helper';
@@ -10,4 +11,5 @@ export { Wrapper };
 export { ReCaptcha };
 export { CSearchBar };
 export { ModalLanguage } from './modal-language';
+export { Toast };
 export { ActionSheet } from './action-sheet/ActionSheet';

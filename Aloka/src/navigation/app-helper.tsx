@@ -3,13 +3,15 @@ import ApiService from '@/services/api-base';
 import { getObjectData, getStringData } from '@/storages';
 
 export const checkHideIntroApp = async () => {
-  const isGetting = await getStringData(STORAGEKEY.GETTING_APP);
+  const isGetting = getStringData(STORAGEKEY.GETTING_APP);
   return isGetting === 'false';
 };
 
 export const checkHideCategoryApp = async () => {
-  const isGetting = await getStringData(STORAGEKEY.SHOW_CATEGORY);
-  return isGetting === 'false';
+  // const isGetting = await getStringData(STORAGEKEY.SHOW_CATEGORY);
+  // return isGetting === 'false';
+
+  return false;
 };
 
 export const autoLoginApp = async (

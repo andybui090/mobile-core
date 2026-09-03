@@ -314,7 +314,7 @@ const OTP = ({
             <View>
               <View style={styles.logo}>
                 <Image
-                  source={images.global.logo_dog_trans}
+                  source={images.global.logo_app_trans}
                   style={styles.logo}
                 />
               </View>

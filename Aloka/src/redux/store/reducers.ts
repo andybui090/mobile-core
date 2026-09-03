@@ -3,12 +3,16 @@ import globalReducer from '@/redux/slices/globalSlice';
 import settingReducer from '@/redux/slices/settingSlice';
 import profileReducer from '@/redux/slices/profileSlice';
 import authReducer from '@/redux/slices/authSlice';
+import homeReducer from '@/redux/slices/homeSlice';
+import carelyReducer from '@/redux/slices/carelySlice';
 
 const appReducer = combineReducers({
   globalReducer,
   settingReducer,
   profileReducer,
   authReducer,
+  homeReducer,
+  carelyReducer,
 });
 
 export const clearReducer = () => ({ type: 'CLEAR_REDUCER' });

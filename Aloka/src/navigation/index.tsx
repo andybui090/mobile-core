@@ -68,6 +68,7 @@ import { TYPES, initialState, rootReducer } from './root-store';
 import { getProfile } from '@/redux/slices/profileSlice';
 import AuthScreen from '@/screens/auth-screen';
 import ApiSSO from '@/services/api-sso';
+import MainNavigator from './app-navigator/main-navigator';
 interface RootNavigatorProps {
   onCompleteLoading: () => Promise<void>;
 }
@@ -76,7 +77,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
   const { appTheme } = useAppSelector(state => state.settingReducer);
   const { firebaseConfig } = useAppSelector(state => state.globalReducer);
 
-  const {profileData} = useAppSelector(state => state.profileReducer);
+  const { profileData } = useAppSelector(state => state.profileReducer);
 
   // const {firebaseTokenUpdate} = useAppSelector(state => state.notifyReducer);
 
@@ -112,7 +113,8 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       if (isHideIntro) {
         rootDispatch({ type: TYPES.SHOW_GETTING_START, payload: false });
         await autoLoginApp(
-          (userInfo: any) => {
+          (userInfoSSO: any) => {
+            console.log('🚀 ~ initApp ~ userInfoSSO:', userInfoSSO);
             appDispatch(getProfile(null));
             initConfigDefault();
           },
@@ -203,16 +205,16 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
   // };
 
   useEffect(() => {
-    const processAPIProfileUser = async () => {
-      const {loading, data, error} = profileData;
+    const processAPIProfileUser = () => {
+      const { loading, data, error } = profileData;
       if (!loading) {
         if (data) {
           const dataRes: any = data;
-          console.log(
-            '🚀 ~ processAPIProfileUser ~ dataRes.result:',
-            dataRes.result,
-          );
-          if (dataRes.result && dataRes.result.username) {
+          // console.log(
+          //   '🚀 ~ processAPIProfileUser ~ dataRes.result:',
+          //   dataRes?.result,
+          // );
+          if (dataRes?.result?.username) {
             rootDispatch({
               type: TYPES.SET_USER,
               payload: dataRes.result,
@@ -285,13 +287,13 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       //   rootDispatch({ type: TYPES.SHOW_CATEGORY, payload: false });
       // },
       login: async (userInfo: any) => {
-        console.log("🚀 ~ RootNavigator ~ userInfo sso:", userInfo)
-        await initConfigDefault();
+        console.log('🚀 ~ RootNavigator ~ userInfo SSO:', userInfo);
+        // await initConfigDefault();
         // rootDispatch({
         //   type: TYPES.SET_USER,
         //   payload: userInfo,
         // });
-        setFirstStart(true);
+        // setFirstStart(true);
         appDispatch(getProfile(null));
       },
       // registerComplete: async (userInfo: any, loginType: any) => {
@@ -406,8 +408,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
         // return <AuthScreen />;
         const userTemp: any = stateRoot.user;
         if (userTemp.username && !waitingRegisterComplete) {
-          return <View style={{ flex: 1, backgroundColor: 'pink' }} />;
-          // return <MainNavigator isReview={firebaseConfig.isReviewApp} />
+          return <MainNavigator />;
         }
         return <AuthScreen />;
       }

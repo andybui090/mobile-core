@@ -21,6 +21,10 @@ export const screenStyles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: getBottomSpace() + ifIphoneX(5, 10),
   },
+  fillParent: {
+    width: '100%',
+    height: '100%',
+  },
   rowCenter: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -60,12 +64,25 @@ export const screenStyles = StyleSheet.create({
   //
   // MARGIN
   //
+  mT3: {
+    marginTop: 3,
+  },
+  mT5: {
+    marginTop: 5,
+  },
+  mT8: {
+    marginTop: 8,
+  },
   mT10: {
     marginTop: 10,
+  },
+  mT12: {
+    marginTop: 12,
   },
   mT15: {
     marginTop: 15,
   },
+  mT20: { marginTop: 20 },
   mT30: {
     marginTop: 30,
   },
@@ -96,13 +113,12 @@ export const screenStyles = StyleSheet.create({
   mL15: {
     marginLeft: 15,
   },
+  mL16: {
+    marginLeft: 16,
+  },
   mL20: {
     marginLeft: 20,
   },
-  mT5: { marginTop: 5 },
-  mT8: { marginTop: 8 },
-  mT12: { marginTop: 12 },
-  mT20: { marginTop: 20 },
   //  PADDING
   pH5: {
     paddingHorizontal: 5,
@@ -137,6 +153,18 @@ export const screenStyles = StyleSheet.create({
   },
   pR8: {
     paddingRight: 8,
+  },
+  pV12: {
+    paddingVertical: 12,
+  },
+  pV14: {
+    paddingVertical: 14,
+  },
+  pV16: {
+    paddingVertical: 16,
+  },
+  pT8: {
+    paddingTop: 8,
   },
   //
   // BOX

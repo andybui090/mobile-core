@@ -131,3 +131,111 @@ export function isValidDate(dateStr: any) {
   }
   return false;
 }
+
+export function safeDecodeURIComponent(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch (error) {
+    console.log('safeDecodeURIComponent error', error);
+    return value;
+  }
+}
+
+export function parseQueryParameters(url: string) {
+  if (!url || typeof url !== 'string') {
+    return {};
+  }
+
+  const regex = /[?&]([^=#]+)=([^&#]*)/g;
+  const params: Record<string, string> = {};
+  let match;
+
+  while ((match = regex.exec(url))) {
+    params[safeDecodeURIComponent(match[1])] = safeDecodeURIComponent(match[2]);
+  }
+
+  return params;
+}
+
+export const calculateDistance = (
+  lat1?: number | null,
+  lon1?: number | null,
+  lat2?: number | null,
+  lon2?: number | null,
+) => {
+  const isValidNumber = (value: any) =>
+    typeof value === 'number' && !isNaN(value);
+
+  const isValidLat = (lat: any) =>
+    isValidNumber(lat) && lat >= -90 && lat <= 90;
+
+  const isValidLng = (lng: any) =>
+    isValidNumber(lng) && lng >= -180 && lng <= 180;
+
+  if (
+    !isValidLat(lat1) ||
+    !isValidLng(lon1) ||
+    !isValidLat(lat2) ||
+    !isValidLng(lon2)
+  ) {
+    return null;
+  }
+
+  // 👇 TS hiểu chắc chắn là number
+  const safeLat1 = lat1 as number;
+  const safeLon1 = lon1 as number;
+  const safeLat2 = lat2 as number;
+  const safeLon2 = lon2 as number;
+
+  const toRad = (value: number) => (value * Math.PI) / 180;
+
+  const R = 6371;
+
+  const dLat = toRad(safeLat2 - safeLat1);
+  const dLon = toRad(safeLon2 - safeLon1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(safeLat1)) *
+      Math.cos(toRad(safeLat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return Number((R * c).toFixed(2));
+};
+
+export const formatMoneyVND = (money: any, characterReplace: string) => {
+  if (money) {
+    if (money.toString().length > 0) {
+      let str = String(money);
+      return (
+        str
+          .replace(/\D/g, '')
+          .replace(/\B(?=(\d{3})+(?!\d))/g, characterReplace) + 'đ'
+      );
+    } else {
+      return money + 'đ';
+    }
+  }
+  return '0đ';
+};
+
+export const parseValueToNumber = (value: unknown) => {
+  if (typeof value === 'string') {
+    // Bỏ dấu chấm phân tách nghìn
+    value = value.replace(/\./g, '');
+  }
+  return Number(value) || 0;
+};
+
+export const parsePricePackage = (
+  stagePrice: unknown,
+  stateDiscount: unknown,
+) => {
+  return {
+    rootPrice: parseValueToNumber(stagePrice),
+    discountPrice: parseValueToNumber(stateDiscount),
+  };
+};

@@ -3,7 +3,16 @@ import globalSaga from './globalSaga';
 import settingSaga from './settingSaga';
 import profileSaga from './profileSaga';
 import authSaga from './authSaga';
+import homeSaga from './homeSaga';
+import carelySaga from './carelySaga';
 
 export default function* rootSaga() {
-  yield all([...globalSaga, ...settingSaga, ...profileSaga, ...authSaga]);
+  yield all([
+    ...globalSaga,
+    ...settingSaga,
+    ...profileSaga,
+    ...authSaga,
+    ...homeSaga,
+    ...carelySaga,
+  ]);
 }

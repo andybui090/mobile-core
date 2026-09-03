@@ -2,7 +2,7 @@ import { create } from 'apisauce';
 
 import Config from 'react-native-config';
 import apiMonitor from './monitor';
-import { GLOBAL, SETTINGS, PROFILE } from './uris';
+import { GLOBAL, HOME, SETTINGS, PROFILE, CARELY } from './uris';
 import i18n from 'i18next';
 
 const createApiClient = (baseURL = Config.BASE_API_URL) => {
@@ -57,6 +57,15 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   };
 
   /*
+    HOME
+  */
+  const getBanner = (payload: object) => {
+    return api.get(HOME.BANNER, payload);
+  };
+  const getHistoryBookings = (payload: object) => {
+    return api.get(HOME.APPOINTMENTS, payload);
+  };
+  /*
     SETTINGS
   */
   const getSettingsOnboarding = (payload: object) => {
@@ -68,6 +77,13 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   */
   const getProfile = (payload: object) => {
     return api.get(PROFILE.GET_PROFILE, payload);
+  };
+
+  /*
+    CARELY
+  */
+  const getCarelyServices = (payload: any) => {
+    return api.get(CARELY.SERVICES, payload);
   };
 
   return {
@@ -85,6 +101,11 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     getTutorials,
     getLanguage,
     /*
+      HOME
+    */
+    getBanner,
+    getHistoryBookings,
+    /*
       SETTINGS
     */
     getSettingsOnboarding,
@@ -93,6 +114,10 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
       PROFILE
     */
     getProfile,
+    /*
+      CARELY
+    */
+    getCarelyServices,
   };
 };
 

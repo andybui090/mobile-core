@@ -1,54 +1,51 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import { CHeader, Wrapper } from '@/components';
+import { useAppDispatch } from '@/redux/store/customReduxHook';
+import { makeStyles, useTheme } from '@rneui/themed';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
 
-import { useEffect } from 'react';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+const useStyles = makeStyles(() => ({
+}));
 
-import BootSplash from 'react-native-bootsplash';
+const App: React.FC<any> = ({ navigation, route }: any) => {
+  const { t } = useTranslation();
+  const styles = useStyles();
+  const {
+    theme: { colors },
+  } = useTheme();
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+  const dispatch = useAppDispatch();
 
-  useEffect(() => {
-    const init = async () => {
-      // …do multiple sync or async tasks
-    };
+  // -------------------------------
+  // STATE
+  // -------------------------------
 
-    init().finally(async () => {
-      await BootSplash.hide({ fade: true });
-      console.log('BootSplash has been hidden successfully');
-    });
-  }, []);
 
-  return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
-  );
-}
+  // -------------------------------
+  // ACTION
+  // -------------------------------
 
-function AppContent() {
-  // const safeAreaInsets = useSafeAreaInsets();
+  // -------------------------------
+  // RENDER UI
+  // -------------------------------
+
+  const renderContent = () => {
+    return null;
+  };
+
+  const renderLeftHead = () => null;
+
+  const renderRightHead = () => null;
 
   return (
-    <View style={styles.container}>
-    </View>
+    <Wrapper>
+      <CHeader
+        rightComponent={renderRightHead()}
+        leftComponent={renderLeftHead()}
+      />
+      {renderContent()}
+    </Wrapper>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
+};
 
 export default App;

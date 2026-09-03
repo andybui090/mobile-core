@@ -414,7 +414,7 @@ export const Signin: React.FC<SignInProps> = ({
     <Row>
       <View>
         <View style={styles.logo}>
-          <Image source={images.global.logo_dog_trans} style={styles.logo} />
+          <Image source={images.global.logo_app_trans} style={styles.logo} />
         </View>
         <CText h1 w600 color={'#0e7c7a'} center>
           {'Aloka'}

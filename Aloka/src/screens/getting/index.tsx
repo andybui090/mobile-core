@@ -19,13 +19,13 @@ const useStyles = makeStyles(() => ({
     width: ScreenWidth,
   },
   leftWrapper: {
-    position: 'absolute',
+    position: 'absolute' as const,
     left: 16,
     ...screenStyles.rowCenter,
-    alignItems: 'center',
+    alignItems: 'center' as const,
   },
-  rightWrapper: { right: 20, position: 'absolute', ...screenStyles.rowCenter },
-  txtWrap: { justifyContent: 'center', flex: 1, paddingHorizontal: 24 },
+  rightWrapper: { right: 20, position: 'absolute' as const, ...screenStyles.rowCenter },
+  txtWrap: { justifyContent: 'center' as const, flex: 1, paddingHorizontal: 24 },
   txtSubtitle: { marginTop: 15 },
   title: { marginTop: 15 },
 }));

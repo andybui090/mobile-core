@@ -1,3 +1,3 @@
 import CHeader from './CHeader';
-
-export { CHeader };
+import HeaderBar from './HeaderBar';
+export { CHeader, HeaderBar };
