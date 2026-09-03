@@ -67,7 +67,7 @@ import {
 import { TYPES, initialState, rootReducer } from './root-store';
 import { getProfile } from '@/redux/slices/profileSlice';
 import AuthScreen from '@/screens/auth-screen';
-import AppTabNavigator from './app-navigator/tab-navigator';
+import PartnerAppNavigator from './app-navigator/partner-navigator';
 import HomeBookingLayout, { HomeBooking } from '@/screens/layout/home';
 import { AppointmentList, BookingCancelPolicyModal, BookingChat, BookingConfirm, BookingSchedule, NotificationList, NurseProfile, ReviewService, SearchFilter, SearchService, ServiceDetail } from '@/screens/layout';
 interface RootNavigatorProps {
@@ -404,8 +404,8 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       if (stateRoot.isGetting) {
         return <GettingApp />;
       } else {
-        // return <AppTabNavigator />;
-        return <HomeBooking />;
+        return <PartnerAppNavigator />;
+        // return <HomeBooking />;
         // const userTemp: any = stateRoot.user;
         // if (userTemp.username && !waitingRegisterComplete) {
 

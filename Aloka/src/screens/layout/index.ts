@@ -9,3 +9,4 @@ export * from './appointment-list';
 export * from './review-service';
 export * from './work-schedule';
 export * from './notification';
+export * from './partner-profile';

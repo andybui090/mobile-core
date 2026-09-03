@@ -1,6 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import PartnerProfileScreen, {
+import {
   IncomeManageScreen,
   TotalIncomeWalletScreen,
   WithdrawScreen,
@@ -8,37 +8,26 @@ import PartnerProfileScreen, {
   WorkHistoryScreen,
   PartnerChatScreen,
 } from '@/screens/layout/partner-profile';
-import WorkScheduleManageScreen from '@/screens/layout/work-schedule';
-import WorkingHoursScreen from '@/screens/layout/work-schedule/WorkingHoursScreen';
-import WorkScheduleScreen from '@/screens/layout/work-schedule/WorkScheduleScreen';
 
-export type WorkScheduleStackParamList = {
-  PartnerProfileScreen: undefined;
+export type WalletStackParamList = {
   IncomeManageScreen: undefined;
   TotalIncomeWalletScreen: undefined;
   WorkHistoryScreen: undefined;
   WithdrawScreen: undefined;
   TransactionSuccessScreen: { amount?: string | number } | undefined;
-  WorkScheduleManageScreen: undefined;
-  WorkingHoursScreen: undefined;
-  WorkScheduleScreen: undefined;
 };
 
-const Stack = createNativeStackNavigator<WorkScheduleStackParamList>();
+const Stack = createNativeStackNavigator<WalletStackParamList>();
 
-export const WorkScheduleNavigator: React.FC = () => {
+export const WalletNavigator: React.FC = () => {
   return (
     <Stack.Navigator
-      initialRouteName="WorkScheduleManageScreen"
+      initialRouteName="IncomeManageScreen"
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen
-        name="PartnerProfileScreen"
-        component={PartnerProfileScreen}
-      />
       <Stack.Screen
         name="IncomeManageScreen"
         component={IncomeManageScreen}
@@ -59,20 +48,8 @@ export const WorkScheduleNavigator: React.FC = () => {
         name="TransactionSuccessScreen"
         component={TransactionSuccessScreen}
       />
-      <Stack.Screen
-        name="WorkScheduleManageScreen"
-        component={WorkScheduleManageScreen}
-      />
-      <Stack.Screen
-        name="WorkingHoursScreen"
-        component={WorkingHoursScreen}
-      />
-      <Stack.Screen
-        name="WorkScheduleScreen"
-        component={WorkScheduleScreen}
-      />
     </Stack.Navigator>
   );
 };
 
-export default WorkScheduleNavigator;
+export default WalletNavigator;

@@ -12,7 +12,7 @@ import WorkScheduleManageScreen from '@/screens/layout/work-schedule';
 import WorkingHoursScreen from '@/screens/layout/work-schedule/WorkingHoursScreen';
 import WorkScheduleScreen from '@/screens/layout/work-schedule/WorkScheduleScreen';
 
-export type WorkScheduleStackParamList = {
+export type ProfileStackParamList = {
   PartnerProfileScreen: undefined;
   IncomeManageScreen: undefined;
   TotalIncomeWalletScreen: undefined;
@@ -24,12 +24,12 @@ export type WorkScheduleStackParamList = {
   WorkScheduleScreen: undefined;
 };
 
-const Stack = createNativeStackNavigator<WorkScheduleStackParamList>();
+const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
-export const WorkScheduleNavigator: React.FC = () => {
+export const ProfileNavigator: React.FC = () => {
   return (
     <Stack.Navigator
-      initialRouteName="WorkScheduleManageScreen"
+      initialRouteName="PartnerProfileScreen"
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
@@ -75,4 +75,4 @@ export const WorkScheduleNavigator: React.FC = () => {
   );
 };
 
-export default WorkScheduleNavigator;
+export default ProfileNavigator;
