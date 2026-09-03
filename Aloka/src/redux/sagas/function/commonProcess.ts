@@ -25,16 +25,23 @@ export function* processAPISaga(
           error: null,
         }),
       );
+      if (payload && typeof payload.callback === 'function') {
+        payload.callback({ success: true, data: data ? data : {} });
+      }
     } else {
+      const errorObj = Object.assign(data || {}, {
+        status,
+        problem: getAPIErrorMessage(problem),
+      });
       yield put(
         callBack({
           data: null,
-          error: Object.assign(data || {}, {
-            status,
-            problem: getAPIErrorMessage(problem),
-          }),
+          error: errorObj,
         }),
       );
+      if (payload && typeof payload.callback === 'function') {
+        payload.callback({ success: false, error: errorObj });
+      }
     }
   } catch (error) {
     yield put(
@@ -43,5 +50,9 @@ export function* processAPISaga(
         error: error,
       }),
     );
+    if (payload && typeof payload.callback === 'function') {
+      payload.callback({ success: false, error });
+    }
   }
 }
+
