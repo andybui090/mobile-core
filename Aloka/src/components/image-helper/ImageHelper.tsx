@@ -114,7 +114,7 @@ const RemoteImage = ({
         {...otherProps}
         source={source}
         resizeMode={resizeMode}
-        style={styles.image}
+        style={styles.image as any}
         fallback={Platform.OS === 'android'} // optimize android
         onError={() => {
           setLoading(false);

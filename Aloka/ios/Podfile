@@ -20,6 +20,9 @@ node_require('react-native-permissions/scripts/setup.rb')
 
 platform :ios, min_ios_version_supported
 
+# Run patch-package before react native codegen
+system("npx patch-package")
+
 prepare_react_native_project!
 
 # Keep React Native Firebase on CocoaPods instead of SPM

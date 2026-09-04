@@ -249,8 +249,10 @@ const useStyles = makeStyles(({ colors }) =>
   },
   confirmSection: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 12,
     backgroundColor: colors.white,
+    borderTopWidth: 1,
+    borderTopColor: colors.cEAECF0 || '#EAECF0',
   },
   confirmBtn: {
     backgroundColor: colors.primary || '#19A2A7',
@@ -642,21 +644,23 @@ export const WithdrawScreen: React.FC = () => {
             <CText style={styles.addBankText}>Thêm liên kết</CText>
           </TouchableOpacity>
         </View>
-
-        {/* Confirm Action Button */}
-        <View style={styles.confirmSection}>
-          <TouchableOpacity
-            style={styles.confirmBtn}
-            activeOpacity={0.8}
-            onPress={handleOpenPinModal}
-          >
-            <CText style={styles.confirmBtnText}>Xác nhận</CText>
-          </TouchableOpacity>
-        </View>
-
-        {/* Bottom Background Filler */}
-        <View style={styles.bottomFiller} />
       </ScrollView>
+
+      {/* Confirm Action Button Fixed at Bottom */}
+      <View
+        style={[
+          styles.confirmSection,
+          { paddingBottom: insets.bottom > 0 ? insets.bottom : 16 },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.confirmBtn}
+          activeOpacity={0.8}
+          onPress={handleOpenPinModal}
+        >
+          <CText style={styles.confirmBtnText}>Xác nhận</CText>
+        </TouchableOpacity>
+      </View>
 
       {/* Modal / BottomSheet: Nhập mật khẩu */}
       <Modal

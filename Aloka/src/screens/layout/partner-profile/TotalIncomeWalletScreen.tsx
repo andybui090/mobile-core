@@ -119,8 +119,10 @@ const useStyles = makeStyles(({ colors }) =>
   },
   actionSection: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 12,
     backgroundColor: colors.white,
+    borderTopWidth: 1,
+    borderTopColor: colors.cEAECF0 || '#EAECF0',
   },
   withdrawBtn: {
     backgroundColor: colors.primary || '#19A2A7',
@@ -255,21 +257,23 @@ export const TotalIncomeWalletScreen: React.FC = () => {
             <CText style={styles.statLabel}>Số lượng (giờ) hoàn thành</CText>
           </TouchableOpacity>
         </View>
-
-        {/* Action Section: Withdraw Button */}
-        <View style={styles.actionSection}>
-          <TouchableOpacity
-            style={styles.withdrawBtn}
-            activeOpacity={0.8}
-            onPress={handleWithdraw}
-          >
-            <CText style={styles.withdrawBtnText}>Rút tiền</CText>
-          </TouchableOpacity>
-        </View>
-
-        {/* Bottom Background Filler */}
-        <View style={styles.bottomFiller} />
       </ScrollView>
+
+      {/* Action Section: Withdraw Button Fixed at Bottom */}
+      <View
+        style={[
+          styles.actionSection,
+          { paddingBottom: insets.bottom > 0 ? insets.bottom : 16 },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.withdrawBtn}
+          activeOpacity={0.8}
+          onPress={handleWithdraw}
+        >
+          <CText style={styles.withdrawBtnText}>Rút tiền</CText>
+        </TouchableOpacity>
+      </View>
     </Wrapper>
   );
 };

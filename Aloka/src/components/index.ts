@@ -14,6 +14,8 @@ export { Wrapper };
 export { ReCaptcha };
 export { CSearchBar };
 export { ModalLanguage } from './modal-language';
+export { ModalGender } from './modal-gender';
+export { CDatePicker } from './CDatePicker';
 export { Toast };
 export { ActionSheet } from './action-sheet/ActionSheet';
 

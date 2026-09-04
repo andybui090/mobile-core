@@ -7,6 +7,7 @@ import PartnerProfileScreen, {
   TransactionSuccessScreen,
   WorkHistoryScreen,
   PartnerChatScreen,
+  EditProfileScreen,
 } from '@/screens/layout/partner-profile';
 import WorkScheduleManageScreen from '@/screens/layout/work-schedule';
 import WorkingHoursScreen from '@/screens/layout/work-schedule/WorkingHoursScreen';
@@ -22,6 +23,7 @@ export type ProfileStackParamList = {
   WorkScheduleManageScreen: undefined;
   WorkingHoursScreen: undefined;
   WorkScheduleScreen: undefined;
+  EditProfileScreen: undefined;
 };
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -70,6 +72,10 @@ export const ProfileNavigator: React.FC = () => {
       <Stack.Screen
         name="WorkScheduleScreen"
         component={WorkScheduleScreen}
+      />
+      <Stack.Screen
+        name="EditProfileScreen"
+        component={EditProfileScreen}
       />
     </Stack.Navigator>
   );

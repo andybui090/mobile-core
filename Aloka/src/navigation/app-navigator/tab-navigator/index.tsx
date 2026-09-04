@@ -13,6 +13,7 @@ import PartnerProfileScreen, {
   TransactionSuccessScreen,
   WorkHistoryScreen,
   PartnerChatScreen,
+  EditProfileScreen,
 } from '@/screens/layout/partner-profile';
 import WorkScheduleManageScreen from '@/screens/layout/work-schedule';
 import WorkingHoursScreen from '@/screens/layout/work-schedule/WorkingHoursScreen';
@@ -148,6 +149,10 @@ function AccountStack() {
       <StackAccount.Screen
         name="NotificationScreen"
         component={mainStack.NotificationScreen}
+      />
+      <StackAccount.Screen
+        name="EditProfileScreen"
+        component={EditProfileScreen}
       />
     </StackAccount.Navigator>
   );

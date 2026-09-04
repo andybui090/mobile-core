@@ -100,7 +100,7 @@ const useStyles = makeStyles(({ colors }) =>
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 40,
+    paddingBottom: 24,
   },
   totalIncomeCard: {
     backgroundColor: '#EFFBFA',
@@ -266,8 +266,11 @@ const useStyles = makeStyles(({ colors }) =>
     color: '#F04438',
   },
   actionSection: {
-    marginTop: 8,
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    backgroundColor: colors.white,
+    borderTopWidth: 1,
+    borderTopColor: colors.cEAECF0 || '#EAECF0',
   },
   withdrawBtn: {
     backgroundColor: colors.primary || '#19A2A7',
@@ -548,18 +551,23 @@ export const WorkHistoryScreen: React.FC = () => {
             </View>
           );
         })}
-
-        {/* Withdraw Action Button */}
-        <View style={styles.actionSection}>
-          <TouchableOpacity
-            style={styles.withdrawBtn}
-            activeOpacity={0.8}
-            onPress={handleWithdraw}
-          >
-            <CText style={styles.withdrawBtnText}>Rút tiền</CText>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
+
+      {/* Withdraw Action Button Fixed at Bottom */}
+      <View
+        style={[
+          styles.actionSection,
+          { paddingBottom: insets.bottom > 0 ? insets.bottom : 16 },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.withdrawBtn}
+          activeOpacity={0.8}
+          onPress={handleWithdraw}
+        >
+          <CText style={styles.withdrawBtnText}>Rút tiền</CText>
+        </TouchableOpacity>
+      </View>
     </Wrapper>
   );
 };

@@ -22,6 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   parseScheduleResponse,
 } from './scheduleHelper';
@@ -58,7 +59,7 @@ const useStyles = makeStyles(({ colors }) =>
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 40,
+    paddingBottom: 24,
   },
   // Date Range Section
   dateRangeSection: {
@@ -261,6 +262,13 @@ const useStyles = makeStyles(({ colors }) =>
     color: '#0088FF',
     fontWeight: '600',
   },
+  bottomBar: {
+    backgroundColor: colors.white,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.cEAECF0 || '#EAECF0',
+  },
   // Update button
   updateButton: {
     backgroundColor: colors.primary,
@@ -268,7 +276,6 @@ const useStyles = makeStyles(({ colors }) =>
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
   },
   updateButtonText: {
     color: colors.white,
@@ -283,6 +290,7 @@ const DEFAULT_CHANNEL_ID = '129882f2-2db9-46cf-92a4-2078eff195fd';
 export const WorkingHoursScreen: React.FC = () => {
   const styles = useStyles();
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const dispatch = useDispatch();
   const {
@@ -768,8 +776,15 @@ export const WorkingHoursScreen: React.FC = () => {
             <CText style={styles.addDayOffText}>+ Thêm ngày nghỉ</CText>
           </TouchableOpacity>
         </View>
+      </ScrollView>
 
-        {/* Update Button */}
+      {/* Fixed Bottom Action Bar */}
+      <View
+        style={[
+          styles.bottomBar,
+          { paddingBottom: insets.bottom > 0 ? insets.bottom : 16 },
+        ]}
+      >
         <TouchableOpacity
           style={styles.updateButton}
           activeOpacity={0.8}
@@ -777,7 +792,7 @@ export const WorkingHoursScreen: React.FC = () => {
         >
           <CText style={styles.updateButtonText}>Cập nhật</CText>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
 
       {/* Date Range Picker Calendar Modal for Working Schedule (Image 1) */}
       <DateRangePickerModal

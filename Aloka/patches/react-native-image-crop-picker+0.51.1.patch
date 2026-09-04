@@ -1,0 +1,22 @@
+diff --git a/node_modules/react-native-image-crop-picker/ios/src/ImageCropPicker.h b/node_modules/react-native-image-crop-picker/ios/src/ImageCropPicker.h
+index b6a925a..923a309 100644
+--- a/node_modules/react-native-image-crop-picker/ios/src/ImageCropPicker.h
++++ b/node_modules/react-native-image-crop-picker/ios/src/ImageCropPicker.h
+@@ -12,15 +12,11 @@
+ 
+ #if __has_include(<React/RCTBridgeModule.h>)
+ #import <React/RCTBridgeModule.h>
+-#import <React/RCTImageURLLoader.h>
+-#import <React/RCTImageShadowView.h>
+-#import <React/RCTImageView.h>
++#import <React/RCTConvert.h>
+ #import <React/RCTImageLoaderProtocol.h>
+ #else
+ #import "RCTBridgeModule.h"
+-#import "RCTImageURLLoader.h"
+-#import "RCTImageShadowView.h"
+-#import "RCTImageView.h"
++#import "RCTConvert.h"
+ #import "RCTImageLoaderProtocol.h"
+ #endif
+ 

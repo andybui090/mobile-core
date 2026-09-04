@@ -412,7 +412,7 @@ export const PartnerProfileScreen: React.FC = () => {
               style={styles.editProfileBtn}
               activeOpacity={0.7}
               onPress={() => {
-                Alert.alert('Chỉnh sửa', 'Chức năng chỉnh sửa thông tin hồ sơ đối tác');
+                navigation.navigate('EditProfileScreen');
               }}
             >
               <IconX

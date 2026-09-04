@@ -4,6 +4,7 @@
 export const GLOBAL = {
   GET_TUTORIAL: '/tutorials',
   GET_LAGUAGES: '/languages',
+  GET_PROVINCE: '/states',
 };
 
 export const HOME = {
@@ -17,6 +18,7 @@ export const SETTINGS = {
 
 export const PROFILE = {
   GET_PROFILE: '/me',
+  UPDATE_PROFILE: '/me',
 };
 
 export const CARELY = {

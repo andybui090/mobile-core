@@ -51,6 +51,17 @@ if (__DEV__) {
   reactotron = tron.connect();
 
   console.tron = reactotron;
+
+  const originalWarn = console.warn;
+  console.warn = (...args: any[]) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('dependencies should only be used in web implementation')
+    ) {
+      return;
+    }
+    originalWarn(...args);
+  };
 }
 
 export default reactotron;

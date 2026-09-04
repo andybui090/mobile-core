@@ -56,6 +56,10 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     return api.get(GLOBAL.GET_LAGUAGES, payload);
   };
 
+  const getProvinces = (payload?: object) => {
+    return api.get(GLOBAL.GET_PROVINCE, payload);
+  };
+
   /*
     HOME
   */
@@ -77,6 +81,10 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   */
   const getProfile = (payload: object) => {
     return api.get(PROFILE.GET_PROFILE, payload);
+  };
+
+  const updateProfile = (payload: any) => {
+    return api.put(PROFILE.UPDATE_PROFILE, payload);
   };
 
   /*
@@ -112,6 +120,7 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     */
     getTutorials,
     getLanguage,
+    getProvinces,
     /*
       HOME
     */
@@ -126,6 +135,7 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
       PROFILE
     */
     getProfile,
+    updateProfile,
     /*
       CARELY
     */
