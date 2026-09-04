@@ -3,7 +3,7 @@ import { CText } from '@/utils';
 import { useNavigation } from '@react-navigation/native';
 import { makeStyles, useTheme } from '@rneui/themed';
 import React from 'react';
-import { TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 interface MenuItem {
   id: string;
@@ -15,8 +15,9 @@ interface MenuItem {
   onPress?: () => void;
 }
 
-const useStyles = makeStyles(({ colors }) => ({
-  container: {
+const useStyles = makeStyles(({ colors }) =>
+  StyleSheet.create({
+    container: {
     flex: 1,
     backgroundColor: colors.white,
   },
@@ -47,7 +48,8 @@ const useStyles = makeStyles(({ colors }) => ({
     backgroundColor: colors.cEAECF0,
     marginLeft: 50,
   },
-}));
+  })
+);
 
 export const WorkScheduleManageScreen: React.FC = () => {
   const styles = useStyles();

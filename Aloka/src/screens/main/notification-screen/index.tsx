@@ -1,10 +1,14 @@
-import { CHeader, Wrapper } from '@/components';
+import { Wrapper } from '@/components';
 import { useAppDispatch } from '@/redux/store/customReduxHook';
 import { makeStyles, useTheme } from '@rneui/themed';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import NotificationList from '@/screens/layout/notification';
 
 const useStyles = makeStyles(() => ({
+  container: {
+    flex: 1,
+  },
 }));
 
 const NotificationScreen: React.FC<any> = ({ navigation, route }: any) => {
@@ -20,29 +24,26 @@ const NotificationScreen: React.FC<any> = ({ navigation, route }: any) => {
   // STATE
   // -------------------------------
 
-
   // -------------------------------
   // ACTION
   // -------------------------------
+
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    }
+  };
 
   // -------------------------------
   // RENDER UI
   // -------------------------------
 
   const renderContent = () => {
-    return null;
+    return <NotificationList onBack={handleBack} />;
   };
 
-  const renderLeftHead = () => null;
-
-  const renderRightHead = () => null;
-
   return (
-    <Wrapper>
-      <CHeader
-        rightComponent={renderRightHead()}
-        leftComponent={renderLeftHead()}
-      />
+    <Wrapper style={styles.container}>
       {renderContent()}
     </Wrapper>
   );

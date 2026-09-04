@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import {
   Alert,
   Image,
@@ -11,21 +11,23 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useTheme } from '@rneui/themed';
-import { IconX, Wrapper } from '@/components';
+import { IconX, ImageHelper, Wrapper } from '@/components';
 import { images } from '@/configs/image';
 import { CText } from '@/utils';
+import { AppContext } from '@/contexts';
 
 interface WalletCardItem {
   id: string;
   title: string;
   amountText: string;
-  iconName: string;
+  iconName: any;
   iconType: 'ionicons' | 'materialicons' | 'fontisto' | 'antdesign' | 'octicons';
   onPress?: () => void;
 }
 
-const useStyles = makeStyles(({ colors }) => ({
-  container: {
+const useStyles = makeStyles(({ colors }) =>
+  StyleSheet.create({
+    container: {
     flex: 1,
     backgroundColor: colors.white,
   },
@@ -185,7 +187,8 @@ const useStyles = makeStyles(({ colors }) => ({
     fontWeight: '500',
     color: colors.primary || '#19A2A7',
   },
-}));
+  })
+);
 
 export const IncomeManageScreen: React.FC = () => {
   const styles = useStyles();
@@ -194,6 +197,42 @@ export const IncomeManageScreen: React.FC = () => {
   const {
     theme: { colors },
   } = useTheme();
+  const { user } = useContext<any>(AppContext) || {};
+
+  const displayName =
+    user?.full_name ||
+    user?.personalization?.channel_name ||
+    user?.username ||
+    '';
+
+  const position =
+    user?.personalization?.position || user?.personalization?.type || '';
+  const specializations = Array.isArray(user?.personalization?.specializations)
+    ? user.personalization.specializations
+        .map((s: any) => s?.name)
+        .filter(Boolean)
+        .join(', ')
+    : '';
+
+  const displaySubtitle =
+    position && specializations
+      ? `${position}  ·  ${specializations}`
+      : position || specializations || '';
+
+  const displayPhone = user?.phone || '';
+
+  const displayEmail = user?.email || '';
+
+  const avatar =
+    user?.avatar ||
+    user?.personalization?.avatar ||
+    user?.channels?.[0]?.avatar;
+
+  const avatarSource = avatar
+    ? typeof avatar === 'string'
+      ? { uri: avatar }
+      : avatar
+    : images.common.img_default;
 
   const handleCall = (phoneNumber: string) => {
     Linking.openURL(`tel:${phoneNumber}`).catch(() => {
@@ -201,9 +240,9 @@ export const IncomeManageScreen: React.FC = () => {
     });
   };
 
-  const handleEmail = (email: string) => {
-    Linking.openURL(`mailto:${email}`).catch(() => {
-      Alert.alert('Thông báo', `Không thể mở email tới ${email}`);
+  const handleEmail = (emailStr: string) => {
+    Linking.openURL(`mailto:${emailStr}`).catch(() => {
+      Alert.alert('Thông báo', `Không thể mở email tới ${emailStr}`);
     });
   };
 
@@ -271,16 +310,17 @@ export const IncomeManageScreen: React.FC = () => {
         <View style={styles.profileSection}>
           <View style={styles.profileMainRow}>
             <View style={styles.avatarWrap}>
-              <Image
-                source={images.common.nurse_minh_hieu || images.common.img_default}
+              <ImageHelper
+                source={avatarSource}
                 style={styles.avatarImage}
+                resizeMode="cover"
               />
             </View>
             <View style={styles.profileInfoCol}>
-              <CText style={styles.profileName}>Minh Hiếu</CText>
-              <CText style={styles.profileSubtitle}>
-                Thạc sĩ Y tá  ·  Bệnh viện Nhi Đồng II
-              </CText>
+              <CText style={styles.profileName}>{displayName}</CText>
+              {!!displaySubtitle && (
+                <CText style={styles.profileSubtitle}>{displaySubtitle}</CText>
+              )}
             </View>
           </View>
 
@@ -288,33 +328,37 @@ export const IncomeManageScreen: React.FC = () => {
 
           <View style={styles.profileBottomRow}>
             <View style={styles.contactList}>
-              <TouchableOpacity
-                style={styles.contactItem}
-                activeOpacity={0.7}
-                onPress={() => handleCall('0909764948')}
-              >
-                <IconX
-                  type="ionicons"
-                  name="call-outline"
-                  size={15}
-                  color={colors.c98A2B3 || '#98A2B3'}
-                />
-                <CText style={styles.contactText}>0909 764 948</CText>
-              </TouchableOpacity>
+              {!!displayPhone && (
+                <TouchableOpacity
+                  style={styles.contactItem}
+                  activeOpacity={0.7}
+                  onPress={() => handleCall(displayPhone)}
+                >
+                  <IconX
+                    type="ionicons"
+                    name="call-outline"
+                    size={15}
+                    color={colors.c98A2B3 || '#98A2B3'}
+                  />
+                  <CText style={styles.contactText}>{displayPhone}</CText>
+                </TouchableOpacity>
+              )}
 
-              <TouchableOpacity
-                style={styles.contactItem}
-                activeOpacity={0.7}
-                onPress={() => handleEmail('minhhieu.nguyen@gmail.com')}
-              >
-                <IconX
-                  type="ionicons"
-                  name="mail-outline"
-                  size={15}
-                  color={colors.c98A2B3 || '#98A2B3'}
-                />
-                <CText style={styles.contactText}>minhhieu.nguyen@gmail.com</CText>
-              </TouchableOpacity>
+              {!!displayEmail && (
+                <TouchableOpacity
+                  style={styles.contactItem}
+                  activeOpacity={0.7}
+                  onPress={() => handleEmail(displayEmail)}
+                >
+                  <IconX
+                    type="ionicons"
+                    name="mail-outline"
+                    size={15}
+                    color={colors.c98A2B3 || '#98A2B3'}
+                  />
+                  <CText style={styles.contactText}>{displayEmail}</CText>
+                </TouchableOpacity>
+              )}
             </View>
 
             <TouchableOpacity

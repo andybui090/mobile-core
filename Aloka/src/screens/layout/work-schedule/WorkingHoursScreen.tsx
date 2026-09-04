@@ -18,6 +18,7 @@ import {
 import {
   Alert,
   ScrollView,
+  StyleSheet,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -48,8 +49,9 @@ const DAYS_OF_WEEK = [
   { id: 'CN', label: 'CN' },
 ];
 
-const useStyles = makeStyles(({ colors }) => ({
-  container: {
+const useStyles = makeStyles(({ colors }) =>
+  StyleSheet.create({
+    container: {
     flex: 1,
     backgroundColor: colors.white,
   },
@@ -273,7 +275,8 @@ const useStyles = makeStyles(({ colors }) => ({
     fontSize: 15,
     fontWeight: '700',
   },
-}));
+  })
+);
 
 const DEFAULT_CHANNEL_ID = '129882f2-2db9-46cf-92a4-2078eff195fd';
 

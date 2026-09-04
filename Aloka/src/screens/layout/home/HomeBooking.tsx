@@ -64,7 +64,7 @@ export const HomeBooking: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      <StatusBar barStyle="dark-content" />
 
       {/* Top Header Background Image bgHome */}
       <View style={styles.topBgContainer}>

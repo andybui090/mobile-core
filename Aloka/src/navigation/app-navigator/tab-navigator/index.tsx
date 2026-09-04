@@ -4,8 +4,19 @@ import {
   drnetworkTabRoute,
   homeTabRoute,
 } from '@/constants';
-import { accountStack, appointmentStack, homeStack } from '@/screens';
+import { accountStack, appointmentStack, homeStack, mainStack } from '@/screens';
 import DrNetworkScreen from '@/screens/drnetwork-screen';
+import PartnerProfileScreen, {
+  IncomeManageScreen,
+  TotalIncomeWalletScreen,
+  WithdrawScreen,
+  TransactionSuccessScreen,
+  WorkHistoryScreen,
+  PartnerChatScreen,
+} from '@/screens/layout/partner-profile';
+import WorkScheduleManageScreen from '@/screens/layout/work-schedule';
+import WorkingHoursScreen from '@/screens/layout/work-schedule/WorkingHoursScreen';
+import WorkScheduleScreen from '@/screens/layout/work-schedule/WorkScheduleScreen';
 import {
   BottomTabNavigationOptions,
   createBottomTabNavigator,
@@ -88,17 +99,56 @@ function AccountStack() {
   return (
     <StackAccount.Navigator
       screenOptions={screenOptions}
-      initialRouteName={accountTabRoute.accountScreen}
+      initialRouteName={accountTabRoute.partnerProfileScreen}
     >
-      {Object.values(accountTabRoute).map(item => {
-        return (
-          <StackAccount.Screen
-            key={item}
-            name={item}
-            component={accountStack[item as keyof typeof accountStack]}
-          />
-        );
-      })}
+      <StackAccount.Screen
+        name={accountTabRoute.partnerProfileScreen}
+        component={PartnerProfileScreen}
+      />
+      <StackAccount.Screen
+        name={accountTabRoute.accountScreen}
+        component={accountStack.AccountScreen}
+      />
+      <StackAccount.Screen
+        name="IncomeManageScreen"
+        component={IncomeManageScreen}
+      />
+      <StackAccount.Screen
+        name="TotalIncomeWalletScreen"
+        component={TotalIncomeWalletScreen}
+      />
+      <StackAccount.Screen
+        name="WorkHistoryScreen"
+        component={WorkHistoryScreen}
+      />
+      <StackAccount.Screen
+        name="WithdrawScreen"
+        component={WithdrawScreen}
+      />
+      <StackAccount.Screen
+        name="TransactionSuccessScreen"
+        component={TransactionSuccessScreen}
+      />
+      <StackAccount.Screen
+        name="WorkScheduleManageScreen"
+        component={WorkScheduleManageScreen}
+      />
+      <StackAccount.Screen
+        name="WorkingHoursScreen"
+        component={WorkingHoursScreen}
+      />
+      <StackAccount.Screen
+        name="WorkScheduleScreen"
+        component={WorkScheduleScreen}
+      />
+      <StackAccount.Screen
+        name="PartnerChatScreen"
+        component={PartnerChatScreen}
+      />
+      <StackAccount.Screen
+        name="NotificationScreen"
+        component={mainStack.NotificationScreen}
+      />
     </StackAccount.Navigator>
   );
 }

@@ -49,8 +49,9 @@ const KEYPAD_ROWS = [
   ],
 ];
 
-const useStyles = makeStyles(({ colors }) => ({
-  container: {
+const useStyles = makeStyles(({ colors }) =>
+  StyleSheet.create({
+    container: {
     flex: 1,
     backgroundColor: colors.white,
   },
@@ -394,7 +395,8 @@ const useStyles = makeStyles(({ colors }) => ({
     fontWeight: '500',
     letterSpacing: 2,
   },
-}));
+  })
+);
 
 export const WithdrawScreen: React.FC = () => {
   const styles = useStyles();

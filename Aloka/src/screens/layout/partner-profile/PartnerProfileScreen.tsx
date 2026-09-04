@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import {
   Alert,
   Dimensions,
@@ -12,193 +12,196 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { makeStyles, useTheme } from '@rneui/themed';
-import { IconX, Wrapper } from '@/components';
+import { IconX, ImageHelper, Wrapper } from '@/components';
 import { images } from '@/configs/image';
 import { CText } from '@/utils';
+import { AppContext } from '@/contexts';
 
 const { width } = Dimensions.get('window');
 
 interface MenuItem {
   id: string;
   title: string;
-  iconName: string;
+  iconName: any;
   iconType: 'ionicons' | 'fontisto' | 'antdesign' | 'octicons' | 'materialicons';
   iconBgColor: string;
   onPress?: () => void;
 }
 
-const useStyles = makeStyles(({ colors }) => ({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  headerBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    width: '100%',
-    height: 240,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 8 : 16,
-    paddingBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.c101828 || '#101828',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  headerIconButton: {
-    padding: 4,
-  },
-  profileCard: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  profileMainRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    overflow: 'hidden',
-    backgroundColor: '#E6FAFA',
-    borderWidth: 2,
-    borderColor: colors.white,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  profileInfoCol: {
-    marginLeft: 16,
-    flex: 1,
-  },
-  profileName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.c101828 || '#101828',
-    marginBottom: 4,
-  },
-  profileSubtitle: {
-    fontSize: 13,
-    color: colors.c667085 || '#667085',
-    lineHeight: 18,
-  },
-  profileBottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 4,
-  },
-  contactList: {
-    flex: 1,
-    gap: 6,
-  },
-  contactItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  contactText: {
-    fontSize: 13,
-    color: colors.c667085 || '#667085',
-  },
-  editProfileBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 9,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: colors.primary || '#19A2A7',
-    backgroundColor: colors.white,
-    gap: 6,
-  },
-  editProfileText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.primary || '#19A2A7',
-  },
-  sectionDivider: {
-    height: 8,
-    backgroundColor: colors.cF2F4F7 || '#F2F4F7',
-  },
-  sectionContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 6,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.c101828 || '#101828',
-    marginBottom: 12,
-  },
-  introBox: {
-    backgroundColor: colors.cF9FAFB || '#F9FAFB',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.cEAECF0 || '#EAECF0',
-  },
-  introText: {
-    fontSize: 14,
-    color: colors.c344054 || '#344054',
-    lineHeight: 22,
-  },
-  menuListContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  menuItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-  },
-  menuIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  menuItemTitle: {
-    flex: 1,
-    marginLeft: 14,
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.c1D2939 || '#1D2939',
-  },
-  menuDivider: {
-    height: 1,
-    backgroundColor: colors.cEAECF0 || '#EAECF0',
-    marginLeft: 52,
-  },
-}));
+const useStyles = makeStyles(({ colors }) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.white,
+    },
+    scrollContent: {
+      paddingBottom: 40,
+    },
+    headerBackground: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      width: '100%',
+      height: 240,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingTop: Platform.OS === 'ios' ? 8 : 16,
+      paddingBottom: 16,
+    },
+    headerTitle: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.c101828 || '#101828',
+    },
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+    },
+    headerIconButton: {
+      padding: 4,
+    },
+    profileCard: {
+      paddingHorizontal: 20,
+      paddingBottom: 20,
+    },
+    profileMainRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    avatarWrap: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      overflow: 'hidden',
+      backgroundColor: '#E6FAFA',
+      borderWidth: 2,
+      borderColor: colors.white,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
+      resizeMode: 'cover',
+    },
+    profileInfoCol: {
+      marginLeft: 16,
+      flex: 1,
+    },
+    profileName: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.c101828 || '#101828',
+      marginBottom: 4,
+    },
+    profileSubtitle: {
+      fontSize: 13,
+      color: colors.c667085 || '#667085',
+      lineHeight: 18,
+    },
+    profileBottomRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: 4,
+    },
+    contactList: {
+      flex: 1,
+      gap: 6,
+    },
+    contactItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    contactText: {
+      fontSize: 13,
+      color: colors.c667085 || '#667085',
+    },
+    editProfileBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 9,
+      paddingHorizontal: 16,
+      borderRadius: 10,
+      borderWidth: 1.5,
+      borderColor: colors.primary || '#19A2A7',
+      backgroundColor: colors.white,
+      gap: 6,
+    },
+    editProfileText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.primary || '#19A2A7',
+    },
+    sectionDivider: {
+      height: 8,
+      backgroundColor: colors.cF2F4F7 || '#F2F4F7',
+    },
+    sectionContainer: {
+      paddingHorizontal: 20,
+      paddingTop: 18,
+      paddingBottom: 6,
+    },
+    sectionTitle: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: colors.c101828 || '#101828',
+      marginBottom: 12,
+    },
+    introBox: {
+      backgroundColor: colors.cF9FAFB || '#F9FAFB',
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.cEAECF0 || '#EAECF0',
+    },
+    introText: {
+      fontSize: 14,
+      color: colors.c344054 || '#344054',
+      lineHeight: 22,
+    },
+    menuListContainer: {
+      paddingHorizontal: 20,
+      paddingTop: 8,
+    },
+    menuItemRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+    },
+    menuIconBox: {
+      width: 38,
+      height: 38,
+      borderRadius: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    menuItemTitle: {
+      flex: 1,
+      marginLeft: 14,
+      fontSize: 15,
+      fontWeight: '500',
+      color: colors.c1D2939 || '#1D2939',
+    },
+    menuDivider: {
+      height: 1,
+      backgroundColor: colors.cEAECF0 || '#EAECF0',
+      marginLeft: 52,
+    },
+  })
+);
 
 export const PartnerProfileScreen: React.FC = () => {
   const styles = useStyles();
@@ -206,6 +209,48 @@ export const PartnerProfileScreen: React.FC = () => {
   const {
     theme: { colors },
   } = useTheme();
+  const { user } = useContext<any>(AppContext) || {};
+  // Extract exact fields from user object
+  const displayName =
+    user?.full_name ||
+    user?.personalization?.channel_name ||
+    user?.username ||
+    '';
+
+  const position =
+    user?.personalization?.position || user?.personalization?.type || '';
+  const specializations = Array.isArray(user?.personalization?.specializations)
+    ? user.personalization.specializations
+      .map((s: any) => s?.name)
+      .filter(Boolean)
+      .join(', ')
+    : '';
+
+  const displaySubtitle =
+    position && specializations
+      ? `${position}  ·  ${specializations}`
+      : position || specializations || '';
+
+  const displayPhone = user?.phone || '';
+
+  const displayEmail = user?.email || '';
+
+  const displayIntro =
+    user?.personalization?.description ||
+    user?.channels?.[0]?.description ||
+    user?.personalization?.channels?.[0]?.description ||
+    '';
+
+  const avatar =
+    user?.avatar ||
+    user?.personalization?.avatar ||
+    user?.channels?.[0]?.avatar;
+
+  const avatarSource = avatar
+    ? typeof avatar === 'string'
+      ? { uri: avatar }
+      : avatar
+    : images.common.img_default;
 
   const handleCall = (phoneNumber: string) => {
     Linking.openURL(`tel:${phoneNumber}`).catch(() => {
@@ -213,9 +258,9 @@ export const PartnerProfileScreen: React.FC = () => {
     });
   };
 
-  const handleEmail = (email: string) => {
-    Linking.openURL(`mailto:${email}`).catch(() => {
-      Alert.alert('Thông báo', `Không thể mở ứng dụng gửi thư tới ${email}`);
+  const handleEmail = (emailStr: string) => {
+    Linking.openURL(`mailto:${emailStr}`).catch(() => {
+      Alert.alert('Thông báo', `Không thể mở ứng dụng gửi thư tới ${emailStr}`);
     });
   };
 
@@ -314,48 +359,53 @@ export const PartnerProfileScreen: React.FC = () => {
         <View style={styles.profileCard}>
           <View style={styles.profileMainRow}>
             <View style={styles.avatarWrap}>
-              <Image
-                source={images.common.nurse_minh_hieu || images.common.img_default}
+              <ImageHelper
+                source={avatarSource}
                 style={styles.avatarImage}
+                resizeMode="cover"
               />
             </View>
             <View style={styles.profileInfoCol}>
-              <CText style={styles.profileName}>Minh Hiếu</CText>
-              <CText style={styles.profileSubtitle}>
-                Thạc sĩ Y tá  ·  Bệnh viện Nhi Đồng II
-              </CText>
+              <CText style={styles.profileName}>{displayName}</CText>
+              {!!displaySubtitle && (
+                <CText style={styles.profileSubtitle}>{displaySubtitle}</CText>
+              )}
             </View>
           </View>
 
           <View style={styles.profileBottomRow}>
             <View style={styles.contactList}>
-              <TouchableOpacity
-                style={styles.contactItem}
-                activeOpacity={0.7}
-                onPress={() => handleCall('0909764948')}
-              >
-                <IconX
-                  type="ionicons"
-                  name="call-outline"
-                  size={15}
-                  color={colors.c98A2B3 || '#98A2B3'}
-                />
-                <CText style={styles.contactText}>0909 764 948</CText>
-              </TouchableOpacity>
+              {!!displayPhone && (
+                <TouchableOpacity
+                  style={styles.contactItem}
+                  activeOpacity={0.7}
+                  onPress={() => handleCall(displayPhone)}
+                >
+                  <IconX
+                    type="ionicons"
+                    name="call-outline"
+                    size={15}
+                    color={colors.c98A2B3 || '#98A2B3'}
+                  />
+                  <CText style={styles.contactText}>{displayPhone}</CText>
+                </TouchableOpacity>
+              )}
 
-              <TouchableOpacity
-                style={styles.contactItem}
-                activeOpacity={0.7}
-                onPress={() => handleEmail('minhhieu.nguyen@gmail.com')}
-              >
-                <IconX
-                  type="ionicons"
-                  name="mail-outline"
-                  size={15}
-                  color={colors.c98A2B3 || '#98A2B3'}
-                />
-                <CText style={styles.contactText}>minhhieu.nguyen@gmail.com</CText>
-              </TouchableOpacity>
+              {!!displayEmail && (
+                <TouchableOpacity
+                  style={styles.contactItem}
+                  activeOpacity={0.7}
+                  onPress={() => handleEmail(displayEmail)}
+                >
+                  <IconX
+                    type="ionicons"
+                    name="mail-outline"
+                    size={15}
+                    color={colors.c98A2B3 || '#98A2B3'}
+                  />
+                  <CText style={styles.contactText}>{displayEmail}</CText>
+                </TouchableOpacity>
+              )}
             </View>
 
             <TouchableOpacity
@@ -377,14 +427,14 @@ export const PartnerProfileScreen: React.FC = () => {
         </View>
 
         {/* Section: Giới thiệu */}
-        <View style={styles.sectionContainer}>
-          <CText style={styles.sectionTitle}>Giới thiệu</CText>
-          <View style={styles.introBox}>
-            <CText style={styles.introText}>
-              Chuyên chăm sóc mẹ và bé sau sinh, hỗ trợ tiêu hóa, ăn uống, tắm bé chăm sóc toàn diện
-            </CText>
+        {!!displayIntro && (
+          <View style={styles.sectionContainer}>
+            <CText style={styles.sectionTitle}>Giới thiệu</CText>
+            <View style={styles.introBox}>
+              <CText style={styles.introText}>{displayIntro}</CText>
+            </View>
           </View>
-        </View>
+        )}
 
         <View style={{ height: 12 }} />
 

@@ -61,8 +61,9 @@ const JOBS_DATA: JobItem[] = [
   },
 ];
 
-const useStyles = makeStyles(({ colors }) => ({
-  container: {
+const useStyles = makeStyles(({ colors }) =>
+  StyleSheet.create({
+    container: {
     flex: 1,
     backgroundColor: colors.white,
   },
@@ -285,7 +286,8 @@ const useStyles = makeStyles(({ colors }) => ({
     fontWeight: '600',
     color: colors.white,
   },
-}));
+  })
+);
 
 export const WorkHistoryScreen: React.FC = () => {
   const styles = useStyles();

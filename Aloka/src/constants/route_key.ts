@@ -13,6 +13,7 @@ export const appointmentTabRoute = {
 };
 
 export const accountTabRoute = {
+  partnerProfileScreen: 'PartnerProfileScreen',
   accountScreen: 'AccountScreen',
 };
 

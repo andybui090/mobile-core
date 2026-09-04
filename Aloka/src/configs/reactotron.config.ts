@@ -1,7 +1,14 @@
 import Reactotron from 'reactotron-react-native';
-import { reactotronRedux } from 'reactotron-redux';
-import sagaPlugin from 'reactotron-redux-saga';
 import { NativeModules, Platform } from 'react-native';
+
+let reactotronRedux: any = null;
+let sagaPlugin: any = null;
+try {
+  reactotronRedux = require('reactotron-redux')?.reactotronRedux;
+} catch (e) {}
+try {
+  sagaPlugin = require('reactotron-redux-saga')?.default || require('reactotron-redux-saga');
+} catch (e) {}
 
 declare global {
   interface Console {
@@ -20,7 +27,7 @@ if (__DEV__) {
     }
   }
 
-  reactotron = (Reactotron as any)
+  let tron = (Reactotron as any)
     .configure({
       name: 'Aloka',
       host: host,
@@ -33,10 +40,15 @@ if (__DEV__) {
       editor: false,
       errors: { veto: () => false },
       overlay: false,
-    })
-    .use(reactotronRedux() as any)
-    .use(sagaPlugin({} as any) as any)
-    .connect();
+    });
+
+  if (reactotronRedux) {
+    tron = tron.use(reactotronRedux());
+  }
+  if (sagaPlugin) {
+    tron = tron.use(sagaPlugin({}));
+  }
+  reactotron = tron.connect();
 
   console.tron = reactotron;
 }

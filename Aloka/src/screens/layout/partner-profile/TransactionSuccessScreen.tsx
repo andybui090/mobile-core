@@ -19,8 +19,9 @@ const formatNumber = (val: number | string) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 };
 
-const useStyles = makeStyles(({ colors }) => ({
-  container: {
+const useStyles = makeStyles(({ colors }) =>
+  StyleSheet.create({
+    container: {
     flex: 1,
     backgroundColor: colors.white,
   },
@@ -113,7 +114,8 @@ const useStyles = makeStyles(({ colors }) => ({
     fontWeight: '600',
     color: colors.white,
   },
-}));
+  })
+);
 
 export const TransactionSuccessScreen: React.FC = () => {
   const styles = useStyles();

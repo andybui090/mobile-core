@@ -9,23 +9,14 @@ import {
   UIManager,
   View,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import { IconX, ImageHelper } from '@/components';
 import { images } from '@/configs/image';
 import { CText, onShare } from '@/utils';
 
 const { width } = Dimensions.get('window');
 
-const hasNativeLinearGradient = !!(
-  UIManager.getViewManagerConfig &&
-  (UIManager.getViewManagerConfig('BVLinearGradient') || UIManager.getViewManagerConfig('RNLinearGradient'))
-);
-
-const SafeLinearGradient = (props: any) => {
-  if (hasNativeLinearGradient) {
-    return <LinearGradient {...props} />;
-  }
-  return <View style={props.style}>{props.children}</View>;
+const SafeLinearGradient = ({ children, style }: any) => {
+  return <View style={style}>{children}</View>;
 };
 
 interface HighlightService {
@@ -123,7 +114,7 @@ export const NurseProfile: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <StatusBar barStyle="light-content" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

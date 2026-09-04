@@ -17,8 +17,9 @@ import { CText } from '@/utils';
 
 const { width } = Dimensions.get('window');
 
-const useStyles = makeStyles(({ colors }) => ({
-  container: {
+const useStyles = makeStyles(({ colors }) =>
+  StyleSheet.create({
+    container: {
     flex: 1,
     backgroundColor: colors.white,
   },
@@ -143,7 +144,8 @@ const useStyles = makeStyles(({ colors }) => ({
     backgroundColor: colors.cF9FAFB || '#F9FAFB',
     minHeight: 180,
   },
-}));
+  })
+);
 
 export const TotalIncomeWalletScreen: React.FC = () => {
   const styles = useStyles();

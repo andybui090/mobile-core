@@ -25,3 +25,9 @@ export const CARELY = {
   REFUND: '/orders/refund',
   REVIEW: '/rating',
 };
+
+export const CHANNEL = {
+  DETAIL: (id: string) => `/channels/${id}`,
+  UPDATE: (id: string) => `/channels/${id}`,
+};
+

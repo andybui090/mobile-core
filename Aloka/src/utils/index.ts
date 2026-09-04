@@ -8,3 +8,4 @@ export { Loader } from './Loader';
 export { CButton } from './CButton';
 export { CEmptySearch } from './CEmptySearch';
 export { CEmptyData } from './CEmptyData';
+export * from './shareHelper';

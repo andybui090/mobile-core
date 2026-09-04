@@ -84,9 +84,7 @@ const HeaderBarCarely: React.FC<HeaderProps> = props => {
   }, [user]);
 
   const handleNotify = () => {
-    // if (user.id) {
-    //   navigation.navigate(mainRoute.notifyScreen as never);
-    // }
+    navigation.navigate('NotificationScreen' as never);
   };
 
   // const handleOpenProfile = () => {

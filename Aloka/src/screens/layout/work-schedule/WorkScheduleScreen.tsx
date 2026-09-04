@@ -5,6 +5,7 @@ import { makeStyles, useTheme } from '@rneui/themed';
 import React, { useState } from 'react';
 import {
   ScrollView,
+  StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
@@ -104,8 +105,9 @@ const TIMELINE_HOURS = [
   '14:00',
 ];
 
-const useStyles = makeStyles(({ colors }) => ({
-  container: {
+const useStyles = makeStyles(({ colors }) =>
+  StyleSheet.create({
+    container: {
     flex: 1,
     backgroundColor: colors.white,
   },
@@ -276,7 +278,8 @@ const useStyles = makeStyles(({ colors }) => ({
     height: 1.5,
     backgroundColor: '#F97066',
   },
-}));
+  })
+);
 
 export const WorkScheduleScreen: React.FC = () => {
   const styles = useStyles();

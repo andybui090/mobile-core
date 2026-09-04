@@ -1,37 +1,52 @@
 import { ImageHelper } from "@/components";
-import { formatISOToVietnameseDate, formatTimeRangeWithDurationFromISO, images, isIOS, keyExtractor, screenStyles, ScreenWidth } from "@/configs";
+import { images, isIOS, keyExtractor, screenStyles, ScreenWidth } from "@/configs";
 import { AppContext } from "@/contexts";
 import i18n from "@/i18n";
 import { CText, Row } from "@/utils";
 import { makeStyles, useTheme } from '@rneui/themed';
-import { useContext, useRef } from "react";
+import React, { useContext, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, FlatList, Image, Pressable, View } from "react-native";
+import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, View } from "react-native";
 import { BookingLoading } from "./BookingLoading";
+import moment from "moment";
 
-const useStyles = makeStyles(({ colors }) => ({
-    page1TopWrap: {
-        borderRadius: 16,
-        borderColor: colors.cEAECF0,
-        borderWidth: 1,
-        overflow: 'hidden',
-        marginRight: 16,
-        width: ScreenWidth - 80,
-        backgroundColor: colors.cF9FAFB
-    },
-    topWrap: {
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-    },
-    thumn: {
-        width: 60,
-        height: 60,
-        borderRadius: 8,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: colors.cEAECF0
-    },
-}));
+const formatISOToVietnameseDate = (isoString?: string, _lang = 'vi', _t?: any) => {
+    if (!isoString) return '';
+    return moment(isoString).format('DD/MM/YYYY');
+};
+
+const formatTimeRangeWithDurationFromISO = (isoString?: string, duration = 0) => {
+    if (!isoString) return '';
+    const start = moment(isoString).format('HH:mm');
+    const end = moment(isoString).add(duration, 'minutes').format('HH:mm');
+    return `${start} - ${end}`;
+};
+
+const useStyles = makeStyles(({ colors }) =>
+    StyleSheet.create({
+        page1TopWrap: {
+            borderRadius: 16,
+            borderColor: colors.cEAECF0,
+            borderWidth: 1,
+            overflow: 'hidden',
+            marginRight: 16,
+            width: ScreenWidth - 80,
+            backgroundColor: colors.cF9FAFB,
+        },
+        topWrap: {
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+        },
+        thumn: {
+            width: 60,
+            height: 60,
+            borderRadius: 8,
+            overflow: 'hidden',
+            borderWidth: 1,
+            borderColor: colors.cEAECF0,
+        },
+    })
+);
 
 const CarelyBookings = (props: any) => {
     const {
@@ -45,7 +60,7 @@ const CarelyBookings = (props: any) => {
 
     const { loading, listData, onLoadMore, finalLoad, onEndReached, setOnEndReached, onPressItem } = props;
     const renderErrorImage = () => {
-        return <Image source={images.bottomTab.carely} style={screenStyles.box30} resizeMode="contain" />;
+        return <Image source={(images.bottomTab as any)?.carely || images.common.img_default} style={screenStyles.box30} resizeMode="contain" />;
     };
 
     const renderItem = ({ item, index }: any) => {
@@ -65,15 +80,15 @@ const CarelyBookings = (props: any) => {
                             {packageInfo?.name?.toString().trim() && <CText h4 w500 color={colors.c1D2939}>
                                 {packageInfo?.name?.toString().trim()}
                             </CText>}
-                            <CText h5 color={colors.c98A2B3} style={[screenStyles.mT2, { flexShrink: 1 }]} numberOfLines={1}>
+                            <CText h5 color={colors.c98A2B3} style={[{ marginTop: 2, flexShrink: 1 }]} numberOfLines={1}>
                                 {isViewByDoctor
                                     ? userBooking.full_name || ""
                                     : doctor.full_name || ""}
                             </CText>
-                            <CText h5 color={colors.c1D2939} style={[screenStyles.mT2, { flexShrink: 1 }]} numberOfLines={1}>
+                            <CText h5 color={colors.c1D2939} style={[{ marginTop: 2, flexShrink: 1 }]} numberOfLines={1}>
                                 {dateShow}
                             </CText>
-                            <CText h5 color={colors.c1D2939} style={[screenStyles.mT2, { flexShrink: 1 }]} numberOfLines={1}>
+                            <CText h5 color={colors.c1D2939} style={[{ marginTop: 2, flexShrink: 1 }]} numberOfLines={1}>
                                 {timeShow1}
                             </CText>
                         </View>

@@ -1,10 +1,15 @@
-import { CHeader, Wrapper } from '@/components';
-import { useAppDispatch } from '@/redux/store/customReduxHook';
+import { Wrapper } from '@/components';
 import { makeStyles, useTheme } from '@rneui/themed';
-import React from 'react';
+import React, { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAppDispatch } from '@/redux/store/customReduxHook';
+import { AppContext } from '@/contexts';
+import PartnerProfileScreen from '@/screens/layout/partner-profile/PartnerProfileScreen';
 
 const useStyles = makeStyles(() => ({
+  container: {
+    flex: 1,
+  },
 }));
 
 const AccountScreen: React.FC<any> = ({ navigation, route }: any) => {
@@ -15,11 +20,11 @@ const AccountScreen: React.FC<any> = ({ navigation, route }: any) => {
   } = useTheme();
 
   const dispatch = useAppDispatch();
+  const { user } = useContext<any>(AppContext) || {};
 
   // -------------------------------
   // STATE
   // -------------------------------
-
 
   // -------------------------------
   // ACTION
@@ -30,19 +35,11 @@ const AccountScreen: React.FC<any> = ({ navigation, route }: any) => {
   // -------------------------------
 
   const renderContent = () => {
-    return null;
+    return <PartnerProfileScreen />;
   };
-
-  const renderLeftHead = () => null;
-
-  const renderRightHead = () => null;
 
   return (
     <Wrapper>
-      <CHeader
-        rightComponent={renderRightHead()}
-        leftComponent={renderLeftHead()}
-      />
       {renderContent()}
     </Wrapper>
   );

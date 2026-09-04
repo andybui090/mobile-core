@@ -86,6 +86,18 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     return api.get(CARELY.SERVICES, payload);
   };
 
+  /*
+    CHANNEL
+  */
+  const getChannelDetail = (channelId: string) => {
+    return api.get(`/channels/${channelId}`);
+  };
+
+  const updateChannel = (payload: any) => {
+    const { id, ...data } = payload || {};
+    return api.put(`/channels/${id}`, data);
+  };
+
   return {
     api,
     setXAppLanguage,
@@ -118,6 +130,11 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
       CARELY
     */
     getCarelyServices,
+    /*
+      CHANNEL
+    */
+    getChannelDetail,
+    updateChannel,
   };
 };
 

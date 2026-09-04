@@ -1,2 +1,4 @@
 import AccountScreen from './account-screen';
-export { AccountScreen };
+import PartnerProfileScreen from '@/screens/layout/partner-profile/PartnerProfileScreen';
+
+export { AccountScreen, PartnerProfileScreen };

@@ -128,8 +128,9 @@ const INITIAL_REQUESTS: WorkRequestItem[] = [
   },
 ];
 
-const useStyles = makeStyles(({ colors }) => ({
-  container: {
+const useStyles = makeStyles(({ colors }) =>
+  StyleSheet.create({
+    container: {
     flex: 1,
     backgroundColor: colors.white,
   },
@@ -726,7 +727,8 @@ const useStyles = makeStyles(({ colors }) => ({
     justifyContent: 'center',
     alignItems: 'center',
   },
-}));
+  })
+);
 
 export const PartnerWorkScreen: React.FC = () => {
   const styles = useStyles();
