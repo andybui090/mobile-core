@@ -1,24 +1,11 @@
-import React, { useEffect } from 'react';
 import {
   accountTabRoute,
   appointmentTabRoute,
   drnetworkTabRoute,
   homeTabRoute,
 } from '@/constants';
-import { accountStack, appointmentStack, homeStack, mainStack } from '@/screens';
+import { accountStack, appointmentStack, homeStack } from '@/screens';
 import DrNetworkScreen from '@/screens/drnetwork-screen';
-import PartnerProfileScreen, {
-  IncomeManageScreen,
-  TotalIncomeWalletScreen,
-  WithdrawScreen,
-  TransactionSuccessScreen,
-  WorkHistoryScreen,
-  PartnerChatScreen,
-  EditProfileScreen,
-} from '@/screens/layout/partner-profile';
-import WorkScheduleManageScreen from '@/screens/layout/work-schedule';
-import WorkingHoursScreen from '@/screens/layout/work-schedule/WorkingHoursScreen';
-import WorkScheduleScreen from '@/screens/layout/work-schedule/WorkScheduleScreen';
 import {
   BottomTabNavigationOptions,
   createBottomTabNavigator,
@@ -27,6 +14,7 @@ import {
   StackNavigationOptions,
   createStackNavigator,
 } from '@react-navigation/stack';
+import React from 'react';
 import { TabBar } from './bottom-tab';
 
 const Tab = createBottomTabNavigator();
