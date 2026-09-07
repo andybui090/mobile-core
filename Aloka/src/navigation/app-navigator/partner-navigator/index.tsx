@@ -1,6 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AppTab as PartnerTabNavigator } from '../tab-navigator';
+import { PartnerTabNavigator } from './PartnerTabNavigator';
 import { PartnerChatScreen } from '@/screens/layout/partner-profile';
 
 export type PartnerAppStackParamList = {
@@ -31,4 +31,5 @@ export const PartnerAppNavigator: React.FC = () => {
   );
 };
 
+export { PartnerTabNavigator };
 export default PartnerAppNavigator;

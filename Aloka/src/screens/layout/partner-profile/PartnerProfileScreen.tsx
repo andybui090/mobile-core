@@ -16,6 +16,7 @@ import { IconX, ImageHelper, Wrapper } from '@/components';
 import { images } from '@/configs/image';
 import { CText } from '@/utils';
 import { AppContext } from '@/contexts';
+import { rootRoute } from '@/constants';
 
 const { width } = Dimensions.get('window');
 
@@ -52,6 +53,15 @@ const useStyles = makeStyles(({ colors }) =>
       paddingHorizontal: 20,
       paddingTop: Platform.OS === 'ios' ? 8 : 16,
       paddingBottom: 16,
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    backButton: {
+      padding: 4,
+      marginRight: 8,
+      marginLeft: -4,
     },
     headerTitle: {
       fontSize: 24,
@@ -307,6 +317,20 @@ export const PartnerProfileScreen: React.FC = () => {
     },
   ];
 
+  const handleBackToHome = () => {
+    const mainNavigator = navigation.getParent()?.getParent();
+    if (mainNavigator && mainNavigator.canGoBack()) {
+      mainNavigator.goBack();
+      return;
+    }
+    const parentNavigator = navigation.getParent();
+    if (parentNavigator && parentNavigator.canGoBack()) {
+      parentNavigator.goBack();
+      return;
+    }
+    navigation.navigate(rootRoute, { screen: 'HomeTab' });
+  };
+
   return (
     <Wrapper safeTop style={styles.container} statusBarStyle="dark-content">
       {/* Background image header */}
@@ -318,7 +342,21 @@ export const PartnerProfileScreen: React.FC = () => {
 
       {/* Top Header */}
       <View style={styles.headerRow}>
-        <CText style={styles.headerTitle}>Hồ sơ</CText>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            style={styles.backButton}
+            activeOpacity={0.7}
+            onPress={handleBackToHome}
+          >
+            <IconX
+              type="ionicons"
+              name="chevron-back"
+              size={26}
+              color={colors.c101828 || '#101828'}
+            />
+          </TouchableOpacity>
+          <CText style={styles.headerTitle}>Hồ sơ</CText>
+        </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.headerIconButton}
@@ -338,7 +376,13 @@ export const PartnerProfileScreen: React.FC = () => {
             style={styles.headerIconButton}
             activeOpacity={0.7}
             onPress={() => {
-              Alert.alert('Cài đặt', 'Màn hình cài đặt tài khoản đối tác');
+              Alert.alert('Cài đặt', 'Tuỳ chọn tài khoản đối tác', [
+                {
+                  text: 'Chuyển về trang khách hàng',
+                  onPress: handleBackToHome,
+                },
+                { text: 'Đóng', style: 'cancel' },
+              ]);
             }}
           >
             <IconX

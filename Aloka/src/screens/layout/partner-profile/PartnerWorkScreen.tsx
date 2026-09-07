@@ -21,6 +21,7 @@ import { makeStyles, useTheme } from '@rneui/themed';
 import { IconX, Wrapper } from '@/components';
 import { images } from '@/configs/image';
 import { CText } from '@/utils';
+import { rootRoute } from '@/constants';
 
 const { width } = Dimensions.get('window');
 
@@ -859,6 +860,20 @@ export const PartnerWorkScreen: React.FC = () => {
 
   const currentList = requestsList.filter(item => item.status === subStatus);
 
+  const handleBackToHome = () => {
+    const mainNavigator = navigation.getParent()?.getParent();
+    if (mainNavigator && mainNavigator.canGoBack()) {
+      mainNavigator.goBack();
+      return;
+    }
+    const parent = navigation.getParent();
+    if (parent && parent.canGoBack()) {
+      parent.goBack();
+      return;
+    }
+    navigation.navigate(rootRoute, { screen: 'HomeTab' });
+  };
+
   return (
     <Wrapper style={styles.container}>
       {/* Header */}
@@ -867,13 +882,7 @@ export const PartnerWorkScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.headerLeftBtn}
             activeOpacity={0.65}
-            onPress={() => {
-              if (navigation.canGoBack()) {
-                navigation.goBack();
-              } else {
-                navigation.navigate('AccountTab');
-              }
-            }}
+            onPress={handleBackToHome}
           >
             <IconX
               type="ionicons"

@@ -8,7 +8,6 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from '@rneui/themed';
-import { useTranslation } from 'react-i18next';
 import { Divider } from '@rneui/base';
 import { CSearchBar, IconX } from '@/components';
 import { changeAlias, keyExtractor, screenStyles } from '@/configs';
@@ -19,6 +18,9 @@ export interface ModalGenderProps {
   hideModal: () => void;
   chooseGender: (gender: any) => void;
   genderChoose?: any;
+  title?: string;
+  searchPlaceholder?: string;
+  btnTitle?: string;
 }
 
 export const ModalGender: React.FC<ModalGenderProps> = ({
@@ -26,31 +28,48 @@ export const ModalGender: React.FC<ModalGenderProps> = ({
   hideModal,
   chooseGender,
   genderChoose,
+  title = 'Chọn giới tính',
+  searchPlaceholder = 'Tìm kiếm...',
+  btnTitle = 'Chọn',
 }) => {
   const {
     theme: { colors },
   } = useTheme();
-  const { t } = useTranslation();
 
   const [searchValue, setSearchValue] = useState<string>('');
   const [itemChoose, setItemChoose] = useState<any>({});
 
   const defaultData = [
-    { value: 'Male', name: t('gender.male', 'Nam'), label: t('gender.male', 'Nam') },
-    { value: 'Female', name: t('gender.female', 'Nữ'), label: t('gender.female', 'Nữ') },
-    { value: 'Undisclosed', name: t('gender.undisclosed', 'Khác'), label: t('gender.undisclosed', 'Khác') },
+    { value: 'Male', name: 'Nam', label: 'Nam' },
+    { value: 'Female', name: 'Nữ', label: 'Nữ' },
+    { value: 'Undisclosed', name: 'Khác', label: 'Khác' },
   ];
 
   const [listGender, setListGender] = useState<any[]>(defaultData);
 
   useEffect(() => {
     if (typeof genderChoose === 'string') {
+      const lower = genderChoose.toLowerCase();
       const found = defaultData.find(
-        g => g.name === genderChoose || g.value === genderChoose || g.label === genderChoose
+        g =>
+          g.name.toLowerCase() === lower ||
+          g.value.toLowerCase() === lower ||
+          g.label.toLowerCase() === lower,
       );
-      setItemChoose(found || { name: genderChoose, value: genderChoose, label: genderChoose });
-    } else if (genderChoose) {
-      setItemChoose(genderChoose);
+      setItemChoose(
+        found || { name: genderChoose, value: genderChoose, label: genderChoose },
+      );
+    } else if (genderChoose?.value || genderChoose?.name) {
+      const lowerVal = (genderChoose.value || '').toLowerCase();
+      const lowerName = (genderChoose.name || '').toLowerCase();
+      const found = defaultData.find(
+        g =>
+          g.value.toLowerCase() === lowerVal ||
+          g.name.toLowerCase() === lowerName ||
+          g.value.toLowerCase() === lowerName ||
+          g.name.toLowerCase() === lowerVal,
+      );
+      setItemChoose(found || genderChoose);
     } else {
       setItemChoose({});
     }
@@ -81,8 +100,9 @@ export const ModalGender: React.FC<ModalGenderProps> = ({
 
   const renderItemList = ({ item, index }: any) => {
     const isSelected =
-      itemChoose?.name === item.name ||
       itemChoose?.value === item.value ||
+      itemChoose?.name === item.name ||
+      itemChoose === item.value ||
       itemChoose === item.name;
 
     const paddingCommon = index !== 0 ? screenStyles.pV13 : screenStyles.pFirstRow;
@@ -138,7 +158,7 @@ export const ModalGender: React.FC<ModalGenderProps> = ({
             <IconX name="close" type="antdesign" color="#667085" size={22} />
           </Pressable>
           <CText h4 w600 color={colors.c101828}>
-            {t('onboarding.selectGender', 'Chọn giới tính')}
+            {title}
           </CText>
           <View style={{ width: 22 }} />
         </Row>
@@ -146,7 +166,7 @@ export const ModalGender: React.FC<ModalGenderProps> = ({
         <View style={screenStyles.modalTopSearchBar}>
           <CSearchBar
             value={searchValue}
-            placeholder={t('search.searchPlaceholder', 'Tìm kiếm...')}
+            placeholder={searchPlaceholder}
             onChangeText={onChangeTextSearch}
             onClear={() => {
               setSearchValue('');
@@ -165,7 +185,7 @@ export const ModalGender: React.FC<ModalGenderProps> = ({
         />
         <View style={[screenStyles.pH24, { paddingBottom: 16 }]}>
           <CButton
-            title={t('common.choose', 'Chọn')}
+            title={btnTitle}
             btnWidth="100%"
             onPress={handleSubmit}
             isBottom
@@ -206,3 +226,5 @@ const styles = StyleSheet.create({
     height: '60%',
   },
 });
+
+export default ModalGender;

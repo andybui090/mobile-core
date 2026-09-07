@@ -18,4 +18,5 @@ export { ModalGender } from './modal-gender';
 export { CDatePicker } from './CDatePicker';
 export { Toast };
 export { ActionSheet } from './action-sheet/ActionSheet';
+export { CKeyboardAvoidingView } from './wrapper/CKeyboardAvoidingView';
 

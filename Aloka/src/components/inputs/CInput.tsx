@@ -29,6 +29,8 @@ type CInputProps = {
   isVerifyOTP?: boolean;
   isVerified?: boolean;
   onBlur?: () => void;   // 🔥 thêm dòng này
+  onFocus?: () => void;
+  onLayout?: (event: any) => void;
 };
 
 export const CInput = (props: CInputProps) => {
@@ -56,6 +58,8 @@ export const CInput = (props: CInputProps) => {
     isVerifyOTP,
     isVerified,
     onBlur,
+    onFocus,
+    onLayout,
   } = props;
 
   const {
@@ -85,10 +89,13 @@ export const CInput = (props: CInputProps) => {
 
   const _onFocus = () => {
     setBorderColor(colors.primary);
+    if (onFocus) {
+      onFocus();
+    }
   };
 
   return (
-    <View style={{ marginVertical: 6, width: '100%' }}>
+    <View onLayout={onLayout} style={{ marginVertical: 6, width: '100%' }}>
       {label ? (
         <Row between>
           <CText h5 color={colors.c344054}>

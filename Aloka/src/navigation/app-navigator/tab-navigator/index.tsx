@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import {
   accountTabRoute,
   appointmentTabRoute,
@@ -100,59 +101,11 @@ function AccountStack() {
   return (
     <StackAccount.Navigator
       screenOptions={screenOptions}
-      initialRouteName={accountTabRoute.partnerProfileScreen}
+      initialRouteName={accountTabRoute.accountScreen}
     >
-      <StackAccount.Screen
-        name={accountTabRoute.partnerProfileScreen}
-        component={PartnerProfileScreen}
-      />
       <StackAccount.Screen
         name={accountTabRoute.accountScreen}
         component={accountStack.AccountScreen}
-      />
-      <StackAccount.Screen
-        name="IncomeManageScreen"
-        component={IncomeManageScreen}
-      />
-      <StackAccount.Screen
-        name="TotalIncomeWalletScreen"
-        component={TotalIncomeWalletScreen}
-      />
-      <StackAccount.Screen
-        name="WorkHistoryScreen"
-        component={WorkHistoryScreen}
-      />
-      <StackAccount.Screen
-        name="WithdrawScreen"
-        component={WithdrawScreen}
-      />
-      <StackAccount.Screen
-        name="TransactionSuccessScreen"
-        component={TransactionSuccessScreen}
-      />
-      <StackAccount.Screen
-        name="WorkScheduleManageScreen"
-        component={WorkScheduleManageScreen}
-      />
-      <StackAccount.Screen
-        name="WorkingHoursScreen"
-        component={WorkingHoursScreen}
-      />
-      <StackAccount.Screen
-        name="WorkScheduleScreen"
-        component={WorkScheduleScreen}
-      />
-      <StackAccount.Screen
-        name="PartnerChatScreen"
-        component={PartnerChatScreen}
-      />
-      <StackAccount.Screen
-        name="NotificationScreen"
-        component={mainStack.NotificationScreen}
-      />
-      <StackAccount.Screen
-        name="EditProfileScreen"
-        component={EditProfileScreen}
       />
     </StackAccount.Navigator>
   );

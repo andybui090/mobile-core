@@ -17,6 +17,9 @@ export interface CDatePickerProps {
   closeModal: () => void;
   onChangeDate: (date: Date) => void;
   dateTimeValue?: any;
+  title?: string;
+  cancelText?: string;
+  confirmText?: string;
 }
 
 const useStyles = makeStyles(({ colors }) =>
@@ -56,7 +59,15 @@ const useStyles = makeStyles(({ colors }) =>
 );
 
 export const CDatePicker = React.memo<CDatePickerProps>(props => {
-  const { isModalVisible, closeModal, onChangeDate, dateTimeValue } = props;
+  const {
+    isModalVisible,
+    closeModal,
+    onChangeDate,
+    dateTimeValue,
+    title = 'Ngày sinh',
+    cancelText = 'Huỷ',
+    confirmText = 'Chọn',
+  } = props;
   const { t } = useTranslation();
   const styles = useStyles();
   const {
@@ -111,17 +122,17 @@ export const CDatePicker = React.memo<CDatePickerProps>(props => {
           <View style={styles.titleWrapper}>
             <Pressable onPress={closeModal} hitSlop={screenStyles.hitSlop20}>
               <CText h5 w500 color={colors.c667085 || '#667085'}>
-                {t('common.cancel', 'Huỷ')}
+                {cancelText}
               </CText>
             </Pressable>
             <View style={screenStyles.centerWrap}>
               <CText h4 w600 color={colors.c101828}>
-                {t('onboarding.birthday', 'Ngày sinh')}
+                {title}
               </CText>
             </View>
             <Pressable onPress={handleDongY} hitSlop={screenStyles.hitSlop20}>
               <CText h5 w600 color={colors.primary}>
-                {t('common.choose', 'Chọn')}
+                {confirmText}
               </CText>
             </Pressable>
           </View>

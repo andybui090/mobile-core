@@ -29,6 +29,10 @@ export const TabBar = ({ state, descriptors, navigation }: any) => {
         type: 'tabPress',
         target: route.key,
       });
+      if (route.name === 'AccountTab') {
+        navigation.navigate('PartnerTabNavigator');
+        return;
+      }
       if (!isFocused && !event.defaultPrevented) {
         navigation.navigate(route.name);
       } else {

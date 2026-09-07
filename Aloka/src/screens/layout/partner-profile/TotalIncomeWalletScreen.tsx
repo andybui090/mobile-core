@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { makeStyles, useTheme } from '@rneui/themed';
 import { IconX, Wrapper } from '@/components';
 import { CText } from '@/utils';
+import { rootRoute } from '@/constants';
 
 const { width } = Dimensions.get('window');
 
@@ -171,6 +172,20 @@ export const TotalIncomeWalletScreen: React.FC = () => {
     navigation.navigate('WithdrawScreen');
   };
 
+  const handleBackToHome = () => {
+    const mainNavigator = navigation.getParent()?.getParent();
+    if (mainNavigator && mainNavigator.canGoBack()) {
+      mainNavigator.goBack();
+      return;
+    }
+    const parent = navigation.getParent();
+    if (parent && parent.canGoBack()) {
+      parent.goBack();
+      return;
+    }
+    navigation.navigate(rootRoute, { screen: 'HomeTab' });
+  };
+
   return (
     <Wrapper style={styles.container}>
       {/* Pixel-perfect Header matching mockup */}
@@ -179,11 +194,7 @@ export const TotalIncomeWalletScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.headerLeftBtn}
             activeOpacity={0.65}
-            onPress={() => {
-              if (navigation.canGoBack()) {
-                navigation.goBack();
-              }
-            }}
+            onPress={handleBackToHome}
           >
             <IconX
               type="ionicons"

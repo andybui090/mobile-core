@@ -1,9 +1,11 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
   Image,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -19,11 +21,13 @@ import { makeStyles, useTheme } from '@rneui/themed';
 import {
   CDatePicker,
   CInput,
+  CKeyboardAvoidingView,
   IconX,
   ImageHelper,
   ModalGender,
   Wrapper,
 } from '@/components';
+import { useKeyboardAwareScroll } from '@/hooks';
 import { images } from '@/configs/image';
 import { AppContext } from '@/contexts';
 import { useAppDispatch } from '@/redux/store/customReduxHook';
@@ -196,6 +200,16 @@ const useStyles = makeStyles(({ colors }) =>
       fontSize: 14,
       color: '#19A2A7',
       fontWeight: '500',
+    },
+    errorHelperText: {
+      fontSize: 12,
+      color: '#F04438',
+      marginTop: 4,
+      marginLeft: 2,
+    },
+    borderError: {
+      borderColor: '#F04438',
+      backgroundColor: '#FEF3F2',
     },
     bottomBar: {
       backgroundColor: '#FFFFFF',
@@ -372,13 +386,25 @@ export const EditProfileScreen: React.FC = () => {
     specializationsInitial || ''
   );
 
-  // Chứng chỉ hành nghề attachment (Document picker  )
+  const existingCertificate: any = '';
+
+  // Chứng chỉ hành nghề attachment (Document picker)
   const [certificateFile, setCertificateFile] = useState<{
     name: string;
     size: string;
     uri?: string;
     type?: string;
-  } | null>(null);
+  } | null>(() => {
+    if (existingCertificate && typeof existingCertificate === 'string') {
+      const parts = existingCertificate.split('/');
+      return {
+        name: parts[parts.length - 1] || 'chung_chi_hanh_nghe.pdf',
+        size: '',
+        uri: existingCertificate,
+      };
+    }
+    return null;
+  });
 
   const [certificateNumber, setCertificateNumber] = useState<string>(
     user?.personalization?.certificate_number || user?.certificate_number || ''
@@ -399,6 +425,34 @@ export const EditProfileScreen: React.FC = () => {
   const [provinces, setProvinces] = useState<any[]>([]);
   const [searchArea, setSearchArea] = useState<string>('');
   const [isLoadingAreas, setIsLoadingAreas] = useState<boolean>(false);
+
+  const [errors, setErrors] = useState<{
+    fullName?: string;
+    certificateNumber?: string;
+    certificateFile?: string;
+    workingArea?: string;
+  }>({});
+
+  const {
+    scrollViewRef,
+    isKeyboardVisible,
+    registerInput,
+    scrollToField,
+    onScrollViewLayout,
+    onScroll,
+    contentPaddingBottom,
+  } = useKeyboardAwareScroll({
+    bottomOffset: 20,
+    inputHeight: 90,
+  });
+
+  const isFormValid = Boolean(
+    fullName.trim() &&
+    certificateFile &&
+    certificateNumber.trim() &&
+    workingArea &&
+    workingArea.trim()
+  );
 
   useEffect(() => {
     const fetchProvinces = async () => {
@@ -558,6 +612,7 @@ export const EditProfileScreen: React.FC = () => {
         uri: document.uri,
         type: document.type || undefined,
       });
+      setErrors(prev => ({ ...prev, certificateFile: undefined }));
     } catch (err: any) {
       if (
         typeof err === 'object' &&
@@ -573,16 +628,49 @@ export const EditProfileScreen: React.FC = () => {
   };
 
   const handleUpdateProfile = async () => {
-    // if (!fullName.trim()) {
-    //   Alert.alert('Lỗi', 'Vui lòng nhập họ và tên');
-    //   return;
+    const newErrors: typeof errors = {};
+
+    if (!fullName.trim()) {
+      newErrors.fullName = 'Vui lòng nhập họ và tên';
+    }
+
+    if (!certificateFile) {
+      newErrors.certificateFile = 'Vui lòng tải lên chứng chỉ hành nghề';
+    }
+
+    if (!certificateNumber.trim()) {
+      newErrors.certificateNumber = 'Vui lòng bổ sung số CCHN';
+    }
+
+    // if (!workingArea || !workingArea.trim()) {
+    //   newErrors.workingArea = 'Vui lòng chọn khu vực làm việc';
     // }
 
-    // if (!certificateNumber.trim() && !certificateFile) {
-    //   Alert.alert('Lỗi', 'Vui lòng cung cấp Chứng chỉ Hành Nghề hoặc số CCHN');
-    //   return;
-    // }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
 
+      const firstError =
+        newErrors.fullName ||
+        newErrors.certificateFile ||
+        newErrors.certificateNumber ||
+        newErrors.workingArea;
+
+      Alert.alert(
+        'Thông báo',
+        firstError || 'Vui lòng điền đầy đủ các trường bắt buộc (*)',
+      );
+
+      if (newErrors.fullName) {
+        scrollToField('fullName', 50, true);
+      } else if (newErrors.certificateFile || newErrors.certificateNumber) {
+        scrollToField('certificateNumber', 50, true);
+      } else if (newErrors.workingArea) {
+        scrollToField('movingRadius', 50, true);
+      }
+      return;
+    }
+
+    setErrors({});
     setIsSubmitting(true);
     try {
       // Format DOB to YYYY-MM-DD for backend API
@@ -699,256 +787,315 @@ export const EditProfileScreen: React.FC = () => {
         <View style={styles.headerRightPlaceholder} />
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Avatar Section */}
-        <View style={styles.avatarSection}>
-          <TouchableOpacity
-            style={styles.avatarWrap}
-            activeOpacity={0.8}
-            onPress={handlePickAvatar}
-          >
-            <ImageHelper
-              source={avatarSource}
-              style={styles.avatarImage}
-              resizeMode="cover"
-            />
-          </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.7} onPress={handlePickAvatar}>
-            <CText style={styles.editAvatarText}>Chỉnh sửa đại diện</CText>
-          </TouchableOpacity>
-        </View>
-
-        {/* 1. Họ và tên */}
-        <CInput
-          label="Họ và tên"
-          placeHolder="Nhập họ và tên"
-          value={fullName}
-          onChange={setFullName}
-          autoCapitalize="words"
-        />
-
-        {/* 2. Giới tính */}
-        <View style={styles.formGroup}>
-          <View style={styles.labelRow}>
-            <CText style={styles.label}>Giới tính</CText>
-          </View>
-          <TouchableOpacity
-            style={styles.selectBox}
-            activeOpacity={0.7}
-            onPress={() => setShowGenderModal(true)}
-          >
-            <CText
-              style={
-                (gender?.name || (typeof gender === 'string' && gender))
-                  ? styles.selectText
-                  : styles.placeholderText
-              }
+      <CKeyboardAvoidingView style={{ flex: 1 }}>
+        <ScrollView
+          ref={scrollViewRef}
+          onLayout={onScrollViewLayout}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: contentPaddingBottom },
+          ]}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Avatar Section */}
+          <View style={styles.avatarSection}>
+            <TouchableOpacity
+              style={styles.avatarWrap}
+              activeOpacity={0.8}
+              onPress={handlePickAvatar}
             >
-              {gender?.name || (typeof gender === 'string' ? gender : '') || 'Chọn giới tính'}
-            </CText>
-            <IconX
-              type="ionicons"
-              name="chevron-down"
-              size={18}
-              color="#667085"
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* 3. Ngày sinh */}
-        <View style={styles.formGroup}>
-          <View style={styles.labelRow}>
-            <CText style={styles.label}>Ngày sinh</CText>
+              <ImageHelper
+                source={avatarSource}
+                style={styles.avatarImage}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.7} onPress={handlePickAvatar}>
+              <CText style={styles.editAvatarText}>Chỉnh sửa đại diện</CText>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.selectBox}
-            activeOpacity={0.7}
-            onPress={() => setShowDobModal(true)}
-          >
-            <CText style={dob ? styles.selectText : styles.placeholderText}>
-              {dob || 'Chọn ngày sinh'}
-            </CText>
-            <IconX
-              type="ionicons"
-              name="calendar-outline"
-              size={18}
-              color="#667085"
-            />
-          </TouchableOpacity>
-        </View>
 
-        {/* 4. Số điện thoại */}
-        <CInput
-          label="Số điện thoại"
-          placeHolder="Nhập số điện thoại"
-          value={phone}
-          onChange={setPhone}
-          keyboardType="phone-pad"
-          maxLength={15}
-        />
+          {/* 1. Họ và tên */}
+          <CInput
+            label="Họ và tên"
+            placeHolder="Nhập họ và tên"
+            value={fullName}
+            onChange={val => {
+              setFullName(val);
+              if (errors.fullName) {
+                setErrors(prev => ({ ...prev, fullName: undefined }));
+              }
+            }}
+            errorText={errors.fullName}
+            autoCapitalize="words"
+            isRequire
+            {...registerInput('fullName')}
+          />
 
-        {/* 5. Email */}
-        <CInput
-          label="Email"
-          placeHolder="Nhập email"
-          value={email}
-          onChange={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-
-        {/* 6. Học hàm / Chức vị */}
-        <CInput
-          label="Học hàm / Chức vị"
-          placeHolder="Nhập học hàm / chức vị"
-          value={position}
-          onChange={setPosition}
-        />
-
-        {/* 7. Chuyên khoa */}
-        <CInput
-          label="Chuyên khoa"
-          placeHolder="Nhập chuyên khoa"
-          value={specialization}
-          onChange={setSpecialization}
-        />
-
-        {/* 8. Chứng chỉ Hành Nghề * */}
-        <View style={styles.formGroup}>
-          <View style={styles.labelRow}>
-            <CText style={styles.label}>Chứng chỉ Hành Nghề</CText>
-            <CText style={styles.requiredMark}>*</CText>
+          {/* 2. Giới tính */}
+          <View style={styles.formGroup}>
+            <View style={styles.labelRow}>
+              <CText style={styles.label}>Giới tính</CText>
+            </View>
+            <TouchableOpacity
+              style={styles.selectBox}
+              activeOpacity={0.7}
+              onPress={() => setShowGenderModal(true)}
+            >
+              <CText
+                style={
+                  (gender?.name || (typeof gender === 'string' && gender))
+                    ? styles.selectText
+                    : styles.placeholderText
+                }
+              >
+                {gender?.name || (typeof gender === 'string' ? gender : '') || 'Chọn giới tính'}
+              </CText>
+              <IconX
+                type="ionicons"
+                name="chevron-down"
+                size={18}
+                color="#667085"
+              />
+            </TouchableOpacity>
           </View>
-          {certificateFile ? (
-            <View style={styles.attachmentCard}>
-              <View style={styles.attachmentLeft}>
-                <IconX
-                  type="ionicons"
-                  name="document-text-outline"
-                  size={18}
-                  color="#667085"
-                />
-                <CText style={styles.attachmentName} numberOfLines={1}>
-                  {certificateFile.name} ({certificateFile.size})
-                </CText>
+
+          {/* 3. Ngày sinh */}
+          <View style={styles.formGroup}>
+            <View style={styles.labelRow}>
+              <CText style={styles.label}>Ngày sinh</CText>
+            </View>
+            <TouchableOpacity
+              style={styles.selectBox}
+              activeOpacity={0.7}
+              onPress={() => setShowDobModal(true)}
+            >
+              <CText style={dob ? styles.selectText : styles.placeholderText}>
+                {dob || 'Chọn ngày sinh'}
+              </CText>
+              <IconX
+                type="ionicons"
+                name="calendar-outline"
+                size={18}
+                color="#667085"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* 4. Số điện thoại */}
+          <CInput
+            label="Số điện thoại"
+            placeHolder="Nhập số điện thoại"
+            value={phone}
+            onChange={setPhone}
+            keyboardType="phone-pad"
+            maxLength={15}
+            {...registerInput('phone')}
+          />
+
+          {/* 5. Email */}
+          <CInput
+            label="Email"
+            placeHolder="Nhập email"
+            value={email}
+            onChange={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            {...registerInput('email')}
+          />
+
+          {/* 6. Học hàm / Chức vị */}
+          <CInput
+            label="Học hàm / Chức vị"
+            placeHolder="Nhập học hàm / chức vị"
+            value={position}
+            onChange={setPosition}
+            {...registerInput('position')}
+          />
+
+          {/* 7. Chuyên khoa */}
+          <CInput
+            label="Chuyên khoa"
+            placeHolder="Nhập chuyên khoa"
+            value={specialization}
+            onChange={setSpecialization}
+            {...registerInput('specialization')}
+          />
+
+          {/* 8. Chứng chỉ Hành Nghề * */}
+          <View style={styles.formGroup}>
+            <View style={styles.labelRow}>
+              <CText style={styles.label}>Chứng chỉ Hành Nghề</CText>
+              <CText style={styles.requiredMark}>*</CText>
+            </View>
+            {certificateFile ? (
+              <View style={styles.attachmentCard}>
+                <View style={styles.attachmentLeft}>
+                  <IconX
+                    type="ionicons"
+                    name="document-text-outline"
+                    size={18}
+                    color="#667085"
+                  />
+                  <CText style={styles.attachmentName} numberOfLines={1}>
+                    {certificateFile.name} ({certificateFile.size})
+                  </CText>
+                </View>
+                <TouchableOpacity
+                  style={styles.removeAttachmentBtn}
+                  activeOpacity={0.7}
+                  onPress={() => setCertificateFile(null)}
+                >
+                  <IconX
+                    type="ionicons"
+                    name="close-outline"
+                    size={20}
+                    color="#667085"
+                  />
+                </TouchableOpacity>
               </View>
+            ) : (
               <TouchableOpacity
-                style={styles.removeAttachmentBtn}
+                style={[
+                  styles.uploadEmptyCard,
+                  errors.certificateFile ? styles.borderError : null,
+                ]}
                 activeOpacity={0.7}
-                onPress={() => setCertificateFile(null)}
+                onPress={handlePickCertificate}
               >
                 <IconX
                   type="ionicons"
-                  name="close-outline"
-                  size={20}
-                  color="#667085"
+                  name="cloud-upload-outline"
+                  size={19}
+                  color={errors.certificateFile ? '#F04438' : '#19A2A7'}
                 />
+                <CText
+                  style={[
+                    styles.uploadEmptyText,
+                    errors.certificateFile && { color: '#F04438' },
+                  ]}
+                >
+                  Tải lên chứng chỉ hành nghề (PNG, JPG, PDF)
+                </CText>
               </TouchableOpacity>
+            )}
+            {errors.certificateFile ? (
+              <CText style={styles.errorHelperText}>
+                {errors.certificateFile}
+              </CText>
+            ) : null}
+          </View>
+
+          {/* 9. Số chứng chỉ Hành Nghề * */}
+          <CInput
+            label="Số chứng chỉ Hành Nghề"
+            placeHolder="Bổ sung số CCHN"
+            value={certificateNumber}
+            onChange={val => {
+              setCertificateNumber(val);
+              if (errors.certificateNumber) {
+                setErrors(prev => ({ ...prev, certificateNumber: undefined }));
+              }
+            }}
+            errorText={errors.certificateNumber}
+            isRequire
+            {...registerInput('certificateNumber')}
+          />
+
+          {/* 10. Kinh nghiệm làm việc */}
+          <CInput
+            label="Kinh nghiệm làm việc"
+            placeHolder="Nhập kinh nghiệm làm việc (ví dụ: 2 năm)"
+            value={experience}
+            onChange={setExperience}
+            {...registerInput('experience')}
+          />
+
+          {/* 11. Nơi công tác */}
+          <CInput
+            label="Nơi công tác"
+            placeHolder="Nhập nơi công tác"
+            value={workplace}
+            onChange={setWorkplace}
+            {...registerInput('workplace')}
+          />
+
+          {/* 12. Khu vực làm việc * */}
+          <View style={styles.formGroup}>
+            <View style={styles.labelRow}>
+              <CText style={styles.label}>Khu vực làm việc</CText>
+              <CText style={styles.requiredMark}>*</CText>
             </View>
-          ) : (
             <TouchableOpacity
-              style={styles.uploadEmptyCard}
+              style={[
+                styles.selectBox,
+                errors.workingArea ? styles.borderError : null,
+              ]}
               activeOpacity={0.7}
-              onPress={handlePickCertificate}
+              onPress={() => setShowAreaModal(true)}
             >
+              <CText
+                style={workingArea ? styles.selectText : styles.placeholderText}
+              >
+                {workingArea || 'Chọn khu vực làm việc'}
+              </CText>
               <IconX
                 type="ionicons"
-                name="cloud-upload-outline"
-                size={19}
-                color="#19A2A7"
+                name="chevron-down"
+                size={18}
+                color="#667085"
               />
-              <CText style={styles.uploadEmptyText}>
-                Tải lên chứng chỉ hành nghề (PNG, JPG, PDF)
-              </CText>
             </TouchableOpacity>
-          )}
-        </View>
-
-        {/* 9. Số chứng chỉ Hành Nghề * */}
-        <CInput
-          label="Số chứng chỉ Hành Nghề"
-          placeHolder="Bổ sung số CCHN"
-          value={certificateNumber}
-          onChange={setCertificateNumber}
-          isRequire
-        />
-
-        {/* 10. Kinh nghiệm làm việc */}
-        <CInput
-          label="Kinh nghiệm làm việc"
-          placeHolder="Nhập kinh nghiệm làm việc (ví dụ: 2 năm)"
-          value={experience}
-          onChange={setExperience}
-        />
-
-        {/* 11. Nơi công tác */}
-        <CInput
-          label="Nơi công tác"
-          placeHolder="Nhập nơi công tác"
-          value={workplace}
-          onChange={setWorkplace}
-        />
-
-        {/* 12. Khu vực làm việc * */}
-        <View style={styles.formGroup}>
-          <View style={styles.labelRow}>
-            <CText style={styles.label}>Khu vực làm việc</CText>
-            <CText style={styles.requiredMark}>*</CText>
+            {errors.workingArea ? (
+              <CText style={styles.errorHelperText}>
+                {errors.workingArea}
+              </CText>
+            ) : null}
           </View>
+
+          {/* 13. Bán kính sẵn sàng di chuyển (phục vụ) */}
+          <CInput
+            label="Bán kính sẵn sàng di chuyển (phục vụ)"
+            placeHolder="Nhập bán kính (ví dụ: 8 Km)"
+            value={movingRadius}
+            onChange={setMovingRadius}
+            {...registerInput('movingRadius')}
+          />
+        </ScrollView>
+
+        {/* Fixed Bottom Action Bar */}
+        <View
+          style={[
+            styles.bottomBar,
+            {
+              paddingBottom: isKeyboardVisible
+                ? 10
+                : insets.bottom > 0
+                  ? insets.bottom
+                  : 16,
+            },
+          ]}
+        >
           <TouchableOpacity
-            style={styles.selectBox}
-            activeOpacity={0.7}
-            onPress={() => setShowAreaModal(true)}
+            style={[
+              styles.submitButton,
+              (!isFormValid || isSubmitting) && { opacity: 0.65 },
+            ]}
+            activeOpacity={0.8}
+            onPress={handleUpdateProfile}
+            disabled={isSubmitting}
           >
-            <CText
-              style={workingArea ? styles.selectText : styles.placeholderText}
-            >
-              {workingArea || 'Chọn khu vực làm việc'}
-            </CText>
-            <IconX
-              type="ionicons"
-              name="chevron-down"
-              size={18}
-              color="#667085"
-            />
+            {isSubmitting ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <CText style={styles.submitButtonText}>Cập nhật</CText>
+            )}
           </TouchableOpacity>
         </View>
-
-        {/* 13. Bán kính sẵn sàng di chuyển (phục vụ) */}
-        <CInput
-          label="Bán kính sẵn sàng di chuyển (phục vụ)"
-          placeHolder="Nhập bán kính (ví dụ: 8 Km)"
-          value={movingRadius}
-          onChange={setMovingRadius}
-        />
-      </ScrollView>
-
-      {/* Fixed Bottom Action Bar */}
-      <View
-        style={[
-          styles.bottomBar,
-          {
-            paddingBottom: insets.bottom > 0 ? insets.bottom : 16,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          style={[styles.submitButton, isSubmitting && { opacity: 0.7 }]}
-          activeOpacity={0.8}
-          onPress={handleUpdateProfile}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <CText style={styles.submitButtonText}>Cập nhật</CText>
-          )}
-        </TouchableOpacity>
-      </View>
+      </CKeyboardAvoidingView>
 
       {/* Gender Selection Modal*/}
       {showGenderModal && (
@@ -1017,6 +1164,7 @@ export const EditProfileScreen: React.FC = () => {
                       activeOpacity={0.7}
                       onPress={() => {
                         setWorkingArea(name);
+                        setErrors(prev => ({ ...prev, workingArea: undefined }));
                         setShowAreaModal(false);
                         setSearchArea('');
                       }}
