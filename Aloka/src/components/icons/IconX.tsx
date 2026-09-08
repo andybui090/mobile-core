@@ -20,6 +20,21 @@ const ICON_MAP = {
 
 export type IconType = keyof typeof ICON_MAP;
 
+export const ICON_TYPE = {
+  IONICONS: 'ionicons' as const,
+  FONTISTO: 'fontisto' as const,
+  ANTDESIGN: 'antdesign' as const,
+  OCTICONS: 'octicons' as const,
+  MATERIAL_ICONS: 'materialicons' as const,
+  MATERIAL_COMMUNITY: 'materialicons' as const,
+  ENTYPO: 'entypo' as const,
+  ANT_ICON: 'antdesign' as const,
+  FOUNDATION: 'ionicons' as const,
+  FONT_AWESOME: 'fontisto' as const,
+  FONT_AWESOME5: 'fontisto' as const,
+};
+
+
 // 👉 base props
 type BaseProps = {
   size?: number; // 🔥 dùng global sizes

@@ -376,13 +376,7 @@ export const PartnerProfileScreen: React.FC = () => {
             style={styles.headerIconButton}
             activeOpacity={0.7}
             onPress={() => {
-              Alert.alert('Cài đặt', 'Tuỳ chọn tài khoản đối tác', [
-                {
-                  text: 'Chuyển về trang khách hàng',
-                  onPress: handleBackToHome,
-                },
-                { text: 'Đóng', style: 'cancel' },
-              ]);
+              navigation.navigate('SettingScreen');
             }}
           >
             <IconX

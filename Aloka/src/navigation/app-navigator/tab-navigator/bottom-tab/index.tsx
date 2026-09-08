@@ -30,7 +30,7 @@ export const TabBar = ({ state, descriptors, navigation }: any) => {
         target: route.key,
       });
       if (route.name === 'AccountTab') {
-        navigation.navigate('PartnerTabNavigator');
+        navigation.navigate('PartnerAppNavigator');
         return;
       }
       if (!isFocused && !event.defaultPrevented) {

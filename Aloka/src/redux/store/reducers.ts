@@ -5,6 +5,7 @@ import profileReducer from '@/redux/slices/profileSlice';
 import authReducer from '@/redux/slices/authSlice';
 import homeReducer from '@/redux/slices/homeSlice';
 import carelyReducer from '@/redux/slices/carelySlice';
+import notifyReducer from '@/redux/slices/notificationSlice';
 
 const appReducer = combineReducers({
   globalReducer,
@@ -13,6 +14,7 @@ const appReducer = combineReducers({
   authReducer,
   homeReducer,
   carelyReducer,
+  notifyReducer,
 });
 
 export const clearReducer = () => ({ type: 'CLEAR_REDUCER' });

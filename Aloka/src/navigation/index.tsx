@@ -322,10 +322,10 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       //   });
       // },
       // register: () => {},
-      // logout: async () => {
-      //   GALogEvent(GAEvents.LOGOUT, {method: 'App Logout'});
-      //   logoutApp();
-      // },
+      logout: async () => {
+        logoutApp();
+      },
+
       // showModalAuth: async () => {
       //   setShowModalAuth(true);
       // },

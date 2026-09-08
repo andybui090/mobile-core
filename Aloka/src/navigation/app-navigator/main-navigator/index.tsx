@@ -22,14 +22,16 @@ const MainNavigator = () => {
     <Stack.Navigator initialRouteName={rootRoute} screenOptions={screenOptions}>
       <Stack.Screen name={rootRoute} component={AppTab} />
       <Stack.Screen name="PartnerAppNavigator" component={PartnerAppNavigator} />
-      <Stack.Screen name="PartnerTabNavigator" component={PartnerTabNavigator} />
+      <Stack.Screen name="PartnerTabNavigator" component={PartnerAppNavigator} />
 
       {Object.values(mainRoute).map(item => {
+        const ScreenComponent = mainStack[item as keyof typeof mainStack];
+        if (!ScreenComponent) return null;
         return (
           <Stack.Screen
             key={item}
-            name={item as keyof typeof mainStack}
-            component={mainStack[item as keyof typeof mainStack]}
+            name={item as any}
+            component={ScreenComponent}
           />
         );
       })}

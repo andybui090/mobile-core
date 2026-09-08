@@ -2,7 +2,7 @@ import { create } from 'apisauce';
 
 import Config from 'react-native-config';
 import apiMonitor from './monitor';
-import { GLOBAL, HOME, SETTINGS, PROFILE, CARELY } from './uris';
+import { GLOBAL, HOME, SETTINGS, PROFILE, CARELY, NOTIFICATION } from './uris';
 import i18n from 'i18next';
 
 const createApiClient = (baseURL = Config.BASE_API_URL) => {
@@ -87,6 +87,42 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     return api.put(PROFILE.UPDATE_PROFILE, payload);
   };
 
+  const logoutApp = (payload?: object) => {
+    return api.post(PROFILE.LOGOUT_APP, payload || {});
+  };
+
+  const deleteAccount = () => {
+    return api.delete(PROFILE.GET_PROFILE);
+  };
+
+  /*
+    NOTIFICATION
+  */
+  const getSettingNotify = (payload: any) => {
+    return api.get(NOTIFICATION.SETTING, payload);
+  };
+
+  const updateSettingNotify = (payload: any) => {
+    return api.post(NOTIFICATION.SETTING, payload);
+  };
+
+  const updateNotifyToken = (payload: any) => {
+    return api.post(NOTIFICATION.UPDATE_FIREBASE_TOKEN, payload);
+  };
+
+  const getListNotify = (payload: any) => {
+    return api.get(NOTIFICATION.GET_LIST, payload);
+  };
+
+  const markReadNotify = (payload: any) => {
+    const id = payload?.idNotify ?? payload?.id;
+    return api.put(`${NOTIFICATION.READ_NOTI}${id}`, {});
+  };
+
+  const getTotalUnreadNotify = (payload: any) => {
+    return api.get(NOTIFICATION.TOTAL_UNREAD, payload);
+  };
+
   /*
     CARELY
   */
@@ -136,6 +172,19 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     */
     getProfile,
     updateProfile,
+    logoutApp,
+    deleteAccount,
+
+    /*
+      NOTIFICATION
+    */
+    getSettingNotify,
+    updateSettingNotify,
+    updateNotifyToken,
+    getListNotify,
+    markReadNotify,
+    getTotalUnreadNotify,
+
     /*
       CARELY
     */
@@ -151,3 +200,4 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
 const ApiService = createApiClient();
 
 export default ApiService;
+

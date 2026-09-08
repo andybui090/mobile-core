@@ -239,3 +239,11 @@ export const parsePricePackage = (
     discountPrice: parseValueToNumber(stateDiscount),
   };
 };
+
+export const parseIntToBoolean = (value: any) => {
+  if (value && value == 1) {
+    return true;
+  }
+  return false;
+};
+

@@ -19,4 +19,7 @@ export { CDatePicker } from './CDatePicker';
 export { Toast };
 export { ActionSheet } from './action-sheet/ActionSheet';
 export { CKeyboardAvoidingView } from './wrapper/CKeyboardAvoidingView';
+export { ToggleSwitch } from './toggle-switch';
+export { APILoading } from './alerts/APILoading';
+
 

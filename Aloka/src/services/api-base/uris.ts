@@ -19,7 +19,17 @@ export const SETTINGS = {
 export const PROFILE = {
   GET_PROFILE: '/me',
   UPDATE_PROFILE: '/me',
+  LOGOUT_APP: '/logout',
 };
+
+export const NOTIFICATION = {
+  SETTING: '/notifications/settings',
+  UPDATE_FIREBASE_TOKEN: '/notifications/tokens',
+  GET_LIST: '/notifications',
+  READ_NOTI: '/notifications/',
+  TOTAL_UNREAD: '/notifications/unreads',
+};
+
 
 export const CARELY = {
   SERVICES: '/packages',

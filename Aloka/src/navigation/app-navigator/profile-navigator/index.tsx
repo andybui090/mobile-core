@@ -27,6 +27,9 @@ export type ProfileStackParamList = {
   EditProfileScreen: undefined;
   PartnerChatScreen: { customerName?: string; customerAvatar?: any } | undefined;
   NotificationScreen: undefined;
+  SettingScreen: undefined;
+  AboutUsScreen: undefined;
+  FeedbackScreen: undefined;
 };
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -87,6 +90,18 @@ export const ProfileNavigator: React.FC = () => {
       <Stack.Screen
         name="NotificationScreen"
         component={mainStack.NotificationScreen}
+      />
+      <Stack.Screen
+        name="SettingScreen"
+        component={mainStack.SettingScreen}
+      />
+      <Stack.Screen
+        name="AboutUsScreen"
+        component={mainStack.AboutUsScreen}
+      />
+      <Stack.Screen
+        name="FeedbackScreen"
+        component={mainStack.FeedbackScreen}
       />
     </Stack.Navigator>
   );

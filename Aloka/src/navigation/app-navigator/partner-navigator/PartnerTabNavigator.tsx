@@ -5,9 +5,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { IconX } from '@/components';
 import { fonts } from '@/configs';
 import { CText } from '@/utils';
-import { WorkNavigator } from '../work-navigator';
-import { ProfileNavigator } from '../profile-navigator';
-import { WalletNavigator } from '../wallet-navigator';
+import {
+  PartnerWorkScreen,
+  PartnerProfileScreen,
+  TotalIncomeWalletScreen,
+} from '@/screens/layout/partner-profile';
 
 const Tab = createBottomTabNavigator();
 
@@ -99,18 +101,6 @@ const PartnerTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
   );
 };
 
-const PartnerBottomTabWrapper = (props: any) => {
-  const { state } = props;
-  const tabIndex = state.index || 0;
-  const currentRoute = state.routes[tabIndex];
-  let isHide = false;
-  if (currentRoute && currentRoute.state) {
-    isHide = currentRoute.state.index > 0;
-  }
-  if (isHide) return null;
-  return <PartnerTabBar {...props} />;
-};
-
 export const PartnerTabNavigator: React.FC = () => {
   return (
     <Tab.Navigator
@@ -120,21 +110,21 @@ export const PartnerTabNavigator: React.FC = () => {
         headerShown: false,
         lazy: true,
       }}
-      tabBar={props => <PartnerBottomTabWrapper {...props} />}
+      tabBar={props => <PartnerTabBar {...props} />}
     >
       <Tab.Screen
         name="PartnerWorkTab"
-        component={WorkNavigator}
+        component={PartnerWorkScreen}
         options={{ headerShown: false }}
       />
       <Tab.Screen
         name="PartnerProfileTab"
-        component={ProfileNavigator}
+        component={PartnerProfileScreen}
         options={{ headerShown: false }}
       />
       <Tab.Screen
         name="PartnerWalletTab"
-        component={WalletNavigator}
+        component={TotalIncomeWalletScreen}
         options={{ headerShown: false }}
       />
     </Tab.Navigator>

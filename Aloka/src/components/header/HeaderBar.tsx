@@ -6,6 +6,7 @@ import { makeStyles, useTheme } from '@rneui/themed';
 import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, Pressable, View } from 'react-native';
+import { useAppSelector } from '@/redux/store/customReduxHook';
 import CHeader from './CHeader';
 
 const useStyles = makeStyles(({ colors }) => ({
@@ -53,24 +54,28 @@ const HeaderBarCarely: React.FC<HeaderProps> = props => {
   const [totalUnread, setTotalUnread] = useState(0);
 
   //PROPS
-  // const { totalNotifyUnRead } = useAppSelector(state => state.notifyReducer);
+  const { totalNotifyUnRead } = useAppSelector(state => state.notifyReducer);
   const [txtHeader, setTxtHeader] = useState<string>(t('common.welcome', 'Hi'));
 
-  // useEffect(() => {
-  //   const processAPITotalNotify = () => {
-  //     const { loading, data, error } = totalNotifyUnRead;
-  //     if (!loading) {
-  //       if (data) {
-  //         let dataP: any = data;
-  //         if (dataP.result) {
-  //           setTotalUnread(dataP.result.total || 0);
-  //         }
-  //       } else if (error) {
-  //       }
-  //     }
-  //   };
-  //   processAPITotalNotify();
-  // }, [totalNotifyUnRead]);
+  useEffect(() => {
+    const processAPITotalNotify = () => {
+      const { loading, data, error } = totalNotifyUnRead;
+      if (!loading) {
+        if (data) {
+          let dataP: any = data;
+          if (dataP?.result?.total !== undefined) {
+            setTotalUnread(dataP.result.total || 0);
+          } else if (typeof dataP?.total === 'number') {
+            setTotalUnread(dataP.total);
+          } else if (typeof dataP === 'number') {
+            setTotalUnread(dataP);
+          }
+        } else if (error) {
+        }
+      }
+    };
+    processAPITotalNotify();
+  }, [totalNotifyUnRead]);
 
   useEffect(() => {
     const initWelcome = () => {
