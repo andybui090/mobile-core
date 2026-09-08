@@ -2,7 +2,6 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PartnerTabNavigator } from './PartnerTabNavigator';
 import {
-  PartnerChatScreen,
   EditProfileScreen,
   IncomeManageScreen,
   TotalIncomeWalletScreen,
@@ -10,6 +9,7 @@ import {
   WithdrawScreen,
   TransactionSuccessScreen,
 } from '@/screens/layout/partner-profile';
+import { ChatScreen } from '@/screens/layout/chat';
 import WorkScheduleManageScreen from '@/screens/layout/work-schedule';
 import WorkingHoursScreen from '@/screens/layout/work-schedule/WorkingHoursScreen';
 import WorkScheduleScreen from '@/screens/layout/work-schedule/WorkScheduleScreen';
@@ -50,7 +50,7 @@ export const PartnerAppNavigator: React.FC = () => {
       />
       <Stack.Screen
         name="PartnerChatScreen"
-        component={PartnerChatScreen}
+        component={ChatScreen}
       />
       <Stack.Screen
         name="NotificationScreen"

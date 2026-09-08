@@ -28,7 +28,7 @@ import { clearReducer } from '@/redux/store/reducers';
 import ApiService from '@/services/api-base';
 // import APIECommerceService from '@/services/api-ecommerce';
 // import ApiSSO from '@/services/api-sso';
-// import socketService from '@/socketio';
+import socketService from '@/socketio';
 import { getStringData, removeValue, storeStringData } from '@/storages';
 // import notifee from '@notifee/react-native';
 // import Geolocation from '@react-native-community/geolocation';
@@ -191,18 +191,24 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
     // }
   };
 
-  // const initSocketIO = async () => {
-  //   if (!socketService.isConnected()) {
-  //     await socketService.connect();
-  //     if (
-  //       navigationRef.current?.getCurrentRoute()?.name == 'CommunityScreen' ||
-  //       navigationRef.current?.getCurrentRoute()?.name == 'CommunityChat'
-  //     ) {
-  //       socketService.emitListRoom(PAGINATION.ITEMS_100, 0);
-  //     }
-  //     deeplinkService.redirectScreen();
-  //   }
-  // };
+  const initSocketIO = async () => {
+    if (!socketService.isConnected()) {
+      await socketService.connect();
+    }
+  };
+
+  // Vừa vào app hoặc app quay lại active là kết nối socket ngay (giống DoctorNetwork)
+  useEffect(() => {
+    initSocketIO();
+    const sub = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') {
+        initSocketIO();
+      }
+    });
+    return () => {
+      sub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const processAPIProfileUser = () => {
@@ -220,7 +226,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
               payload: dataRes.result,
             });
             // initFirebaseToken();
-            // initSocketIO();
+            initSocketIO();
           } else {
             logoutApp();
           }
@@ -256,6 +262,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
   // }, [firebaseTokenUpdate]);
 
   const logoutApp = async () => {
+    socketService.disconnect();
     removeValue(STORAGEKEY.JWT_TOKEN);
     ApiService.deleteAuthorizationHeader();
     ApiSSO.deleteAuthorizationHeader();
@@ -267,6 +274,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
   };
 
   const logoutAppWhenLostNetwork = async () => {
+    socketService.disconnect();
     // ApiSSO.deleteAuthorizationHeader();
     ApiService.deleteAuthorizationHeader();
     // APIUpload.deleteAuthorizationHeader();
@@ -288,12 +296,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       // },
       login: async (userInfo: any) => {
         console.log('🚀 ~ RootNavigator ~ userInfo SSO:', userInfo);
-        // await initConfigDefault();
-        // rootDispatch({
-        //   type: TYPES.SET_USER,
-        //   payload: userInfo,
-        // });
-        // setFirstStart(true);
+        initSocketIO();
         appDispatch(getProfile(null));
       },
       // registerComplete: async (userInfo: any, loginType: any) => {

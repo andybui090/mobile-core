@@ -258,12 +258,6 @@ const SettingScreen: React.FC<any> = ({ navigation }: any) => {
     await storeStringData(STORAGEKEY.CHECKLOCAL_FIRST, 'false');
     setTimeout(() => {
       logout?.();
-      if (!firebaseConfig?.isRequireLogin) {
-        if (navigation.canGoBack()) {
-          navigation.pop();
-        }
-        navigation.navigate('HomeTab');
-      }
     }, 300);
   };
 
@@ -304,12 +298,6 @@ const SettingScreen: React.FC<any> = ({ navigation }: any) => {
 
   const handleDone = () => {
     logout?.();
-    if (!firebaseConfig?.isRequireLogin) {
-      if (navigation.canGoBack()) {
-        navigation.pop();
-      }
-      navigation.navigate('HomeTab');
-    }
   };
 
   const handleTerm = () => {

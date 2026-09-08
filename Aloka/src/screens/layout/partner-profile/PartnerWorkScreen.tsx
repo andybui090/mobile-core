@@ -22,11 +22,66 @@ import { IconX, Wrapper } from '@/components';
 import { images } from '@/configs/image';
 import { CText } from '@/utils';
 import { rootRoute } from '@/constants';
+import socketService from '@/socketio';
 
 const { width } = Dimensions.get('window');
 
 type MainTab = 'INFO' | 'CHAT';
 type SubStatus = 'REQUEST' | 'SCHEDULE' | 'COMPLETED' | 'CANCELLED';
+
+export interface ConversationItem {
+  id: string;
+  roomId: string;
+  customerName: string;
+  customerAvatar?: any;
+  lastMessage: string;
+  time: string;
+  unreadCount?: number;
+  isOnline?: boolean;
+}
+
+const INITIAL_CONVERSATIONS: ConversationItem[] = [
+  {
+    id: 'conv-1',
+    roomId: 'room_thien_an',
+    customerName: 'Thiên Ân',
+    customerAvatar: images.common.avatar_thien_an,
+    lastMessage: 'Dạ vâng, mình gửi bạn lịch dự sinh để tiện sắp xếp điều dưỡng...',
+    time: '09:28',
+    unreadCount: 1,
+    isOnline: true,
+  },
+  {
+    id: 'conv-2',
+    roomId: 'room_thanh_thuy',
+    customerName: 'Thanh Thúy',
+    customerAvatar: images.common.img_default,
+    lastMessage: 'Chị ơi, mai khoảng mấy giờ mình có mặt ở phòng bệnh vậy ạ?',
+    time: '08:15',
+    unreadCount: 0,
+    isOnline: true,
+  },
+  {
+    id: 'conv-3',
+    roomId: 'room_minh_hieu',
+    customerName: 'BS. Minh Hiếu',
+    customerAvatar: images.common.nurse_minh_hieu,
+    lastMessage: 'Hồ sơ sức khỏe của bé đã được cập nhật trên hệ thống rồi nhé.',
+    time: 'Hôm qua',
+    unreadCount: 0,
+    isOnline: false,
+  },
+  {
+    id: 'conv-4',
+    roomId: 'room_thao_vy',
+    customerName: 'Chị Thảo Vy',
+    customerAvatar: images.common.avatar_support,
+    lastMessage: 'Dạ em cảm ơn chị nhiều ạ, dịch vụ rất chu đáo!',
+    time: '23/01',
+    unreadCount: 0,
+    isOnline: false,
+  },
+];
 
 interface ChatMessage {
   id: string;
@@ -593,140 +648,110 @@ const useStyles = makeStyles(({ colors }) =>
     marginTop: 10,
   },
 
-  // Chat Area Styles (from BookingChat)
-  chatContainer: {
+  // 1-1 Chat Conversations List Styles
+  chatListContainer: {
     flex: 1,
     backgroundColor: colors.white,
   },
-  chatCustomerHeader: {
+  chatSearchWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#FAFAFA',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.cEAECF0 || '#EAECF0',
-  },
-  chatAvatarWrapper: {
-    position: 'relative',
-    marginRight: 10,
-  },
-  chatHeaderAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
     backgroundColor: '#F2F4F7',
-  },
-  chatOnlineBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#12B76A',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
-  },
-  chatHeaderTextContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  chatHeaderName: {
-    fontSize: 14.5,
-    fontWeight: '700',
-    color: colors.c101828 || '#101828',
-  },
-  chatHeaderStatus: {
-    fontSize: 11.5,
-    color: '#12B76A',
-    marginTop: 2,
-  },
-  chatListContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  timeHeader: {
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  timeText: {
-    fontSize: 12,
-    color: colors.c98A2B3 || '#98A2B3',
-    fontWeight: '400',
-  },
-  messageRow: {
-    flexDirection: 'row',
-    marginBottom: 12,
-    alignItems: 'flex-end',
-  },
-  partnerRow: {
-    justifyContent: 'flex-end',
-  },
-  customerRowMsg: {
-    justifyContent: 'flex-start',
-  },
-  customerAvatarMsg: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F2F4F7',
-    marginRight: 8,
-    marginBottom: 2,
-  },
-  bubble: {
-    maxWidth: '78%',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
-  },
-  partnerBubble: {
-    backgroundColor: '#D1F0EA',
-  },
-  customerBubble: {
-    backgroundColor: '#F2F4F7',
-  },
-  messageText: {
-    fontSize: 13.5,
-    lineHeight: 19,
-    color: colors.c1D2939 || '#1D2939',
-  },
-  inputBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: colors.white,
-    borderTopWidth: 1,
-    borderTopColor: '#F2F4F7',
-  },
-  inputPill: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.cD0D5DD || '#D0D5DD',
-    borderRadius: 24,
+    borderRadius: 10,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
     paddingHorizontal: 12,
     height: 42,
   },
-  textInput: {
+  chatSearchInput: {
     flex: 1,
-    fontSize: 13.5,
+    fontSize: 14,
     color: colors.c101828 || '#101828',
     paddingVertical: 0,
-    marginRight: 4,
+    marginLeft: 8,
   },
-  innerActionBtn: {
-    padding: 4,
-    marginLeft: 2,
+  convListContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
   },
-  sendBtn: {
-    marginLeft: 10,
-    padding: 4,
+  conversationItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.cF2F4F7 || '#F2F4F7',
+  },
+  convAvatarWrapper: {
+    position: 'relative',
+    marginRight: 12,
+  },
+  convAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F2F4F7',
+  },
+  convOnlineDot: {
+    position: 'absolute',
+    bottom: 1,
+    right: 1,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#12B76A',
+    borderWidth: 2,
+    borderColor: colors.white,
+  },
+  convInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  convNameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  convName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.c101828 || '#101828',
+    flex: 1,
+    marginRight: 8,
+  },
+  convTime: {
+    fontSize: 12,
+    color: colors.c98A2B3 || '#98A2B3',
+  },
+  convMessageRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  convSnippet: {
+    fontSize: 13.5,
+    color: colors.c667085 || '#667085',
+    flex: 1,
+    marginRight: 10,
+  },
+  convSnippetUnread: {
+    fontWeight: '600',
+    color: colors.c101828 || '#101828',
+  },
+  convUnreadBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.primary || '#19A2A7',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 5,
+  },
+  convUnreadText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.white,
   },
   })
 );
@@ -768,27 +793,41 @@ export const PartnerWorkScreen: React.FC = () => {
     });
   };
 
-  // Chat state (from BookingChat)
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(DEFAULT_CHAT_MESSAGES);
-  const [chatInputText, setChatInputText] = useState('');
-  const [activeChatCustomer, setActiveChatCustomer] = useState('Thiên Ân');
+  const [conversations, setConversations] = useState<ConversationItem[]>(INITIAL_CONVERSATIONS);
+  const [chatSearchKeyword, setChatSearchKeyword] = useState('');
 
-  const handleSendChat = () => {
-    if (!chatInputText.trim()) return;
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
-      sender: 'partner',
-      text: chatInputText.trim(),
-    };
-    setChatMessages(prev => [newMessage, ...prev]);
-    setChatInputText('');
-  };
+  const filteredConversations = conversations.filter(
+    c =>
+      c.customerName.toLowerCase().includes(chatSearchKeyword.toLowerCase()) ||
+      c.lastMessage.toLowerCase().includes(chatSearchKeyword.toLowerCase()),
+  );
 
-  const handleChat = (name: string, avatar?: any) => {
-    navigation.navigate('PartnerChatScreen', {
-      customerName: name,
-      customerAvatar: avatar,
-    });
+  const handleChat = async (
+    name: string,
+    avatar?: any,
+    customerId?: string,
+    isNewChat?: boolean,
+  ) => {
+    try {
+      showToast(`Đang mở đoạn chat với ${name}...`, 'success');
+      const room = await socketService.createRoom1vs1(
+        name,
+        customerId || `cust_${Date.now()}`,
+        avatar,
+      );
+      navigation.navigate('PartnerChatScreen', {
+        roomId: room.id,
+        customerName: name,
+        customerAvatar: avatar,
+        isNewChat: !!isNewChat,
+      });
+    } catch (e) {
+      navigation.navigate('PartnerChatScreen', {
+        customerName: name,
+        customerAvatar: avatar,
+        isNewChat: !!isNewChat,
+      });
+    }
   };
 
   const handleAcceptJob = (jobId: string) => {
@@ -905,27 +944,36 @@ export const PartnerWorkScreen: React.FC = () => {
           activeOpacity={0.7}
           onPress={() => setMainTab('INFO')}
         >
-          <CText style={[styles.mainTabText, styles.mainTabTextActive]}>
+          <CText
+            style={[
+              styles.mainTabText,
+              mainTab === 'INFO' && styles.mainTabTextActive,
+            ]}
+          >
             Thông tin công việc
           </CText>
-          <View style={styles.mainTabIndicator} />
+          {mainTab === 'INFO' && <View style={styles.mainTabIndicator} />}
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.mainTabItem}
           activeOpacity={0.7}
-          onPress={() => {
-            navigation.navigate('PartnerChatScreen', {
-              customerName: 'Thiên Ân',
-              customerAvatar: images.common.avatar_thien_an,
-            });
-          }}
+          onPress={() => setMainTab('CHAT')}
         >
-          <CText style={styles.mainTabText}>
+          <CText
+            style={[
+              styles.mainTabText,
+              mainTab === 'CHAT' && styles.mainTabTextActive,
+            ]}
+          >
             Trò chuyện
           </CText>
+          {mainTab === 'CHAT' && <View style={styles.mainTabIndicator} />}
         </TouchableOpacity>
       </View>
+
+      {mainTab === 'INFO' ? (
+        <>
 
       {/* Sub Status Pills: Yêu cầu | Lịch hẹn | Hoàn thành | Huỷ */}
       <View style={styles.subPillsRow}>
@@ -1071,7 +1119,7 @@ export const PartnerWorkScreen: React.FC = () => {
                           style={styles.circleIconBtn}
                           activeOpacity={0.7}
                           onPress={() =>
-                            handleChat(job.customerName, job.customerAvatar)
+                            handleChat(job.customerName, job.customerAvatar, job.id, true)
                           }
                         >
                           <IconX
@@ -1240,6 +1288,111 @@ export const PartnerWorkScreen: React.FC = () => {
               ))
             )}
           </ScrollView>
+        </>
+      ) : (
+        /* Tab 2: Danh sách cuộc trò chuyện 1-1 */
+        <View style={styles.chatListContainer}>
+          {/* Search bar */}
+          <View style={styles.chatSearchWrapper}>
+            <IconX
+              type="ionicons"
+              name="search-outline"
+              size={18}
+              color={colors.c98A2B3 || '#98A2B3'}
+            />
+            <TextInput
+              style={styles.chatSearchInput}
+              placeholder="Tìm kiếm cuộc trò chuyện..."
+              placeholderTextColor={colors.c98A2B3 || '#98A2B3'}
+              value={chatSearchKeyword}
+              onChangeText={setChatSearchKeyword}
+            />
+            {chatSearchKeyword.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setChatSearchKeyword('')}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <IconX
+                  type="ionicons"
+                  name="close-circle"
+                  size={18}
+                  color={colors.c98A2B3 || '#98A2B3'}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Conversations FlatList */}
+          <FlatList
+            data={filteredConversations}
+            keyExtractor={item => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.convListContent}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.conversationItem}
+                activeOpacity={0.7}
+                onPress={() =>
+                  handleChat(
+                    item.customerName,
+                    item.customerAvatar,
+                    item.roomId || item.id,
+                  )
+                }
+              >
+                <View style={styles.convAvatarWrapper}>
+                  <Image
+                    source={item.customerAvatar || images.common.avatar_thien_an}
+                    style={styles.convAvatar}
+                  />
+                  {item.isOnline && <View style={styles.convOnlineDot} />}
+                </View>
+
+                <View style={styles.convInfo}>
+                  <View style={styles.convNameRow}>
+                    <CText style={styles.convName} numberOfLines={1}>
+                      {item.customerName}
+                    </CText>
+                    <CText style={styles.convTime}>{item.time}</CText>
+                  </View>
+
+                  <View style={styles.convMessageRow}>
+                    <CText
+                      style={[
+                        styles.convSnippet,
+                        item.unreadCount && item.unreadCount > 0
+                          ? styles.convSnippetUnread
+                          : undefined,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {item.lastMessage}
+                    </CText>
+                    {item.unreadCount && item.unreadCount > 0 ? (
+                      <View style={styles.convUnreadBadge}>
+                        <CText style={styles.convUnreadText}>
+                          {item.unreadCount}
+                        </CText>
+                      </View>
+                    ) : null}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <IconX
+                  type="ionicons"
+                  name="chatbubbles-outline"
+                  size={48}
+                  color={colors.c98A2B3 || '#98A2B3'}
+                />
+                <CText style={styles.emptyText}>Chưa có cuộc trò chuyện nào</CText>
+              </View>
+            }
+          />
+        </View>
+      )}
 
       {/* Toast Banner Feedback */}
       {!!toastMessage && (

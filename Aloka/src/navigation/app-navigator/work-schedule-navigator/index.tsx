@@ -6,7 +6,6 @@ import PartnerProfileScreen, {
   WithdrawScreen,
   TransactionSuccessScreen,
   WorkHistoryScreen,
-  PartnerChatScreen,
 } from '@/screens/layout/partner-profile';
 import WorkScheduleManageScreen from '@/screens/layout/work-schedule';
 import WorkingHoursScreen from '@/screens/layout/work-schedule/WorkingHoursScreen';

@@ -6,8 +6,8 @@ import {
   WithdrawScreen,
   TransactionSuccessScreen,
   WorkHistoryScreen,
-  PartnerChatScreen,
 } from '@/screens/layout/partner-profile';
+import { ChatScreen } from '@/screens/layout/chat';
 
 export type WalletStackParamList = {
   TotalIncomeWalletScreen: undefined;
@@ -51,7 +51,7 @@ export const WalletNavigator: React.FC = () => {
       />
       <Stack.Screen
         name="PartnerChatScreen"
-        component={PartnerChatScreen}
+        component={ChatScreen}
       />
     </Stack.Navigator>
   );

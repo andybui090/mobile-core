@@ -1,9 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import {
-  PartnerWorkScreen,
-  PartnerChatScreen,
-} from '@/screens/layout/partner-profile';
+import { PartnerWorkScreen } from '@/screens/layout/partner-profile';
+import { ChatScreen } from '@/screens/layout/chat';
 
 export type WorkStackParamList = {
   PartnerWorkScreen: undefined;
@@ -27,7 +25,7 @@ export const WorkNavigator: React.FC = () => {
       />
       <Stack.Screen
         name="PartnerChatScreen"
-        component={PartnerChatScreen}
+        component={ChatScreen}
       />
     </Stack.Navigator>
   );
