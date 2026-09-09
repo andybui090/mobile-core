@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { makeStyles, useTheme } from '@rneui/themed';
 import { IconX, Wrapper } from '@/components';
 import { CText } from '@/utils';
@@ -296,6 +297,7 @@ export const WorkHistoryScreen: React.FC = () => {
   const styles = useStyles();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const {
     theme: { colors },
   } = useTheme();
@@ -309,7 +311,10 @@ export const WorkHistoryScreen: React.FC = () => {
     setIsRefreshing(true);
     setTimeout(() => {
       setIsRefreshing(false);
-      Alert.alert('Thành công', 'Lịch sử công việc đã được cập nhật');
+      Alert.alert(
+        t('profile.editProfileScreen.updateSuccessTitle', 'Thành công'),
+        t('partnerHistory.refreshSuccess', 'Lịch sử công việc đã được cập nhật'),
+      );
     }, 500);
   };
 
@@ -345,7 +350,7 @@ export const WorkHistoryScreen: React.FC = () => {
             />
           </TouchableOpacity>
 
-          <CText style={styles.headerTitle}>Lịch sử công việc</CText>
+          <CText style={styles.headerTitle}>{t('partnerHistory.title', 'Lịch sử công việc')}</CText>
 
           <TouchableOpacity
             style={styles.headerRightBtn}
@@ -373,17 +378,22 @@ export const WorkHistoryScreen: React.FC = () => {
         {/* Main Balance Box */}
         <View style={styles.totalIncomeCard}>
           <CText style={styles.totalAmountText}>890.000đ</CText>
-          <CText style={styles.totalAmountLabel}>Tổng thu nhập (Net)</CText>
+          <CText style={styles.totalAmountLabel}>{t('partnerIncome.totalIncomeNet', 'Tổng thu nhập (Net)')}</CText>
         </View>
 
         {/* Date Filter Section */}
         <View style={styles.dateFilterSection}>
-          <CText style={styles.dateFilterLabel}>Chọn thời gian</CText>
+          <CText style={styles.dateFilterLabel}>{t('partnerHistory.selectTime', 'Chọn thời gian')}</CText>
           <View style={styles.dateFilterRow}>
             <TouchableOpacity
               style={styles.datePickerBox}
               activeOpacity={0.7}
-              onPress={() => Alert.alert('Chọn ngày', 'Chọn thời gian bắt đầu')}
+              onPress={() =>
+                Alert.alert(
+                  t('partnerHistory.selectDatePrompt', 'Chọn ngày'),
+                  t('partnerHistory.selectStartDatePrompt', 'Chọn thời gian bắt đầu'),
+                )
+              }
             >
               <CText style={styles.dateText}>{fromDate}</CText>
               <IconX
@@ -399,7 +409,12 @@ export const WorkHistoryScreen: React.FC = () => {
             <TouchableOpacity
               style={styles.datePickerBox}
               activeOpacity={0.7}
-              onPress={() => Alert.alert('Chọn ngày', 'Chọn thời gian kết thúc')}
+              onPress={() =>
+                Alert.alert(
+                  t('partnerHistory.selectDatePrompt', 'Chọn ngày'),
+                  t('partnerHistory.selectEndDatePrompt', 'Chọn thời gian kết thúc'),
+                )
+              }
             >
               <CText style={styles.dateText}>{toDate}</CText>
               <IconX
@@ -425,7 +440,7 @@ export const WorkHistoryScreen: React.FC = () => {
                 filterStatus === 'ALL' && styles.tabTextActive,
               ]}
             >
-              Tất cả
+              {t('partnerHistory.all', 'Tất cả')}
             </CText>
           </TouchableOpacity>
 
@@ -440,7 +455,7 @@ export const WorkHistoryScreen: React.FC = () => {
                 filterStatus === 'COMPLETED' && styles.tabTextActive,
               ]}
             >
-              Đã hoàn thành
+              {t('partnerHistory.completed', 'Đã hoàn thành')}
             </CText>
           </TouchableOpacity>
 
@@ -455,7 +470,7 @@ export const WorkHistoryScreen: React.FC = () => {
                 filterStatus === 'CANCELLED' && styles.tabTextActive,
               ]}
             >
-              Đã huỷ
+              {t('partnerHistory.cancelled', 'Đã huỷ')}
             </CText>
           </TouchableOpacity>
         </View>
@@ -519,16 +534,23 @@ export const WorkHistoryScreen: React.FC = () => {
 
               {isCompleted ? (
                 <CText style={styles.statusCompletedText}>
-                  Trạng thái: {job.statusText}
+                  {t('partnerHistory.statusLabel', 'Trạng thái: ')}
+                  {job.status === 'COMPLETED'
+                    ? t('partnerHistory.statusCompleted', 'Đã hoàn thành')
+                    : job.statusText}
                 </CText>
               ) : (
                 <>
                   <CText style={styles.statusCancelledText}>
-                    Trạng thái: {job.statusText}
+                    {t('partnerHistory.statusLabel', 'Trạng thái: ')}
+                    {job.status === 'CANCELLED'
+                      ? t('partnerHistory.statusCancelled', 'Đã huỷ')
+                      : job.statusText}
                   </CText>
                   {!!job.cancelReason && (
                     <CText style={styles.cancelReasonText}>
-                      Lý do huỷ: {job.cancelReason}
+                      {t('partnerHistory.cancelReasonLabel', 'Lý do huỷ: ')}
+                      {job.cancelReason}
                     </CText>
                   )}
                 </>
@@ -537,7 +559,7 @@ export const WorkHistoryScreen: React.FC = () => {
               <View style={styles.cardDivider} />
 
               <View style={styles.amountRow}>
-                <CText style={styles.amountLabel}>Tổng tiền nhận được</CText>
+                <CText style={styles.amountLabel}>{t('partnerWork.totalAmountReceived', 'Tổng tiền nhận được')}</CText>
                 <CText
                   style={
                     isCompleted
@@ -565,7 +587,7 @@ export const WorkHistoryScreen: React.FC = () => {
           activeOpacity={0.8}
           onPress={handleWithdraw}
         >
-          <CText style={styles.withdrawBtnText}>Rút tiền</CText>
+          <CText style={styles.withdrawBtnText}>{t('partnerWithdraw.withdrawBtn', 'Rút tiền')}</CText>
         </TouchableOpacity>
       </View>
     </Wrapper>

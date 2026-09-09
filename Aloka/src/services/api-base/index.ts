@@ -2,7 +2,7 @@ import { create } from 'apisauce';
 
 import Config from 'react-native-config';
 import apiMonitor from './monitor';
-import { GLOBAL, HOME, SETTINGS, PROFILE, CARELY, NOTIFICATION } from './uris';
+import { GLOBAL, HOME, SETTINGS, PROFILE, CARELY, NOTIFICATION, COMMUNITY } from './uris';
 import i18n from 'i18next';
 
 const createApiClient = (baseURL = Config.BASE_API_URL) => {
@@ -142,6 +142,20 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     return api.put(`/channels/${id}`, data);
   };
 
+  /*
+    COMMUNITY
+  */
+  const getListRoom = (payload: any) => {
+    return api.get(COMMUNITY.GET_LISTROOM, payload);
+  };
+
+  const getListHistoryChat = (payload: { id: string; data?: any }) => {
+    return api.get(
+      `${COMMUNITY.GET_LISTHISTORYCHAT}/${payload.id}/messages`,
+      payload.data,
+    );
+  };
+
   return {
     api,
     setXAppLanguage,
@@ -194,6 +208,12 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     */
     getChannelDetail,
     updateChannel,
+
+    /*
+      COMMUNITY
+    */
+    getListRoom,
+    getListHistoryChat,
   };
 };
 

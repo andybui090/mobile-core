@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { makeStyles, useTheme } from '@rneui/themed';
 import { IconX, ImageHelper, Wrapper } from '@/components';
 import { images } from '@/configs/image';
@@ -194,6 +195,7 @@ export const IncomeManageScreen: React.FC = () => {
   const styles = useStyles();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const {
     theme: { colors },
   } = useTheme();
@@ -236,20 +238,30 @@ export const IncomeManageScreen: React.FC = () => {
 
   const handleCall = (phoneNumber: string) => {
     Linking.openURL(`tel:${phoneNumber}`).catch(() => {
-      Alert.alert('Thông báo', `Không thể gọi tới số ${phoneNumber}`);
+      Alert.alert(
+        t('partnerProfile.notice', 'Thông báo'),
+        t('partnerProfile.cannotCall', `Không thể gọi tới số ${phoneNumber}`, {
+          phone: phoneNumber,
+        }),
+      );
     });
   };
 
   const handleEmail = (emailStr: string) => {
     Linking.openURL(`mailto:${emailStr}`).catch(() => {
-      Alert.alert('Thông báo', `Không thể mở email tới ${emailStr}`);
+      Alert.alert(
+        t('partnerProfile.notice', 'Thông báo'),
+        t('partnerProfile.cannotEmail', `Không thể mở email tới ${emailStr}`, {
+          email: emailStr,
+        }),
+      );
     });
   };
 
   const walletCards: WalletCardItem[] = [
     {
       id: 'total-income-wallet',
-      title: 'Ví tổng thu nhập',
+      title: t('partnerIncome.totalIncomeWallet', 'Ví tổng thu nhập'),
       amountText: '890.000đ',
       iconName: 'wallet-outline',
       iconType: 'ionicons',
@@ -259,14 +271,20 @@ export const IncomeManageScreen: React.FC = () => {
     },
     {
       id: 'withdrawn-income-wallet',
-      title: 'Quản lý ví thu nhập đã rút',
-      amountText: 'Còn lại: 200.000đ',
+      title: t('partnerIncome.withdrawnWallet', 'Quản lý ví thu nhập đã rút'),
+      amountText: t('partnerIncome.remainingAmount', 'Còn lại: {{amount}}', {
+        amount: '200.000đ',
+      }),
       iconName: 'savings',
       iconType: 'materialicons',
       onPress: () => {
         Alert.alert(
-          'Quản lý ví thu nhập đã rút',
-          'Số dư còn lại: 200.000đ\nXem lịch sử giao dịch và các lệnh rút tiền.',
+          t('partnerIncome.withdrawnWallet', 'Quản lý ví thu nhập đã rút'),
+          t(
+            'partnerIncome.withdrawnWalletDesc',
+            'Số dư còn lại: {{amount}}\nXem lịch sử giao dịch và các lệnh rút tiền.',
+            { amount: '200.000đ' },
+          ),
         );
       },
     },
@@ -296,7 +314,7 @@ export const IncomeManageScreen: React.FC = () => {
             />
           </TouchableOpacity>
 
-          <CText style={styles.headerTitle}>Quản lý thu nhập</CText>
+          <CText style={styles.headerTitle}>{t('partnerIncome.manageTitle', 'Quản lý thu nhập')}</CText>
 
           <View style={styles.headerRightPlaceholder} />
         </View>
@@ -365,7 +383,10 @@ export const IncomeManageScreen: React.FC = () => {
               style={styles.editProfileBtn}
               activeOpacity={0.7}
               onPress={() => {
-                Alert.alert('Chỉnh sửa', 'Chức năng chỉnh sửa thông tin hồ sơ đối tác');
+                Alert.alert(
+                  t('partnerIncome.editTitle', 'Chỉnh sửa'),
+                  t('partnerIncome.editPartnerProfilePrompt', 'Chức năng chỉnh sửa thông tin hồ sơ đối tác'),
+                );
               }}
             >
               <IconX
@@ -374,7 +395,7 @@ export const IncomeManageScreen: React.FC = () => {
                 size={17}
                 color={colors.primary || '#19A2A7'}
               />
-              <CText style={styles.editProfileText}>Sửa hồ sơ</CText>
+              <CText style={styles.editProfileText}>{t('partnerProfile.editProfile', 'Sửa hồ sơ')}</CText>
             </TouchableOpacity>
           </View>
         </View>

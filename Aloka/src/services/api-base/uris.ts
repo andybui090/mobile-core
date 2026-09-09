@@ -43,3 +43,9 @@ export const CHANNEL = {
   UPDATE: (id: string) => `/channels/${id}`,
 };
 
+export const COMMUNITY = {
+  GET_LISTROOM: '/rooms',
+  GET_LISTHISTORYCHAT: '/rooms',
+  POST_MESSAGE_SEEN: '/messages/seen',
+};
+

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { makeStyles, useTheme } from '@rneui/themed';
 import { IconX, Wrapper } from '@/components';
 import { CText } from '@/utils';
@@ -154,6 +155,7 @@ export const TotalIncomeWalletScreen: React.FC = () => {
   const styles = useStyles();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const {
     theme: { colors },
   } = useTheme();
@@ -164,7 +166,10 @@ export const TotalIncomeWalletScreen: React.FC = () => {
     setIsRefreshing(true);
     setTimeout(() => {
       setIsRefreshing(false);
-      Alert.alert('Thành công', 'Dữ liệu thu nhập đã được làm mới');
+      Alert.alert(
+        t('profile.editProfileScreen.updateSuccessTitle', 'Thành công'),
+        t('partnerIncome.refreshSuccess', 'Dữ liệu thu nhập đã được làm mới'),
+      );
     }, 500);
   };
 
@@ -204,7 +209,7 @@ export const TotalIncomeWalletScreen: React.FC = () => {
             />
           </TouchableOpacity>
 
-          <CText style={styles.headerTitle}>Ví tổng thu nhập</CText>
+          <CText style={styles.headerTitle}>{t('partnerIncome.totalIncomeWallet', 'Ví tổng thu nhập')}</CText>
 
           <TouchableOpacity
             style={styles.headerRightBtn}
@@ -234,7 +239,7 @@ export const TotalIncomeWalletScreen: React.FC = () => {
           {/* Main Balance Box */}
           <View style={styles.totalIncomeCard}>
             <CText style={styles.totalAmountText}>890.000đ</CText>
-            <CText style={styles.totalAmountLabel}>Tổng thu nhập (Net)</CText>
+            <CText style={styles.totalAmountLabel}>{t('partnerIncome.totalIncomeNet', 'Tổng thu nhập (Net)')}</CText>
           </View>
 
           {/* Row: Completed Jobs & Cancelled Jobs */}
@@ -245,7 +250,7 @@ export const TotalIncomeWalletScreen: React.FC = () => {
               onPress={() => navigation.navigate('WorkHistoryScreen')}
             >
               <CText style={styles.statNumber}>18</CText>
-              <CText style={styles.statLabel}>Công việc hoàn thành</CText>
+              <CText style={styles.statLabel}>{t('partnerIncome.completedJobs', 'Công việc hoàn thành')}</CText>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -254,7 +259,7 @@ export const TotalIncomeWalletScreen: React.FC = () => {
               onPress={() => navigation.navigate('WorkHistoryScreen')}
             >
               <CText style={styles.statNumber}>1</CText>
-              <CText style={styles.statLabel}>Công việc đã hủy</CText>
+              <CText style={styles.statLabel}>{t('partnerIncome.cancelledJobs', 'Công việc đã hủy')}</CText>
             </TouchableOpacity>
           </View>
 
@@ -265,7 +270,7 @@ export const TotalIncomeWalletScreen: React.FC = () => {
             onPress={() => navigation.navigate('WorkHistoryScreen')}
           >
             <CText style={styles.statNumber}>25</CText>
-            <CText style={styles.statLabel}>Số lượng (giờ) hoàn thành</CText>
+            <CText style={styles.statLabel}>{t('partnerIncome.completedHours', 'Số lượng (giờ) hoàn thành')}</CText>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -282,7 +287,7 @@ export const TotalIncomeWalletScreen: React.FC = () => {
           activeOpacity={0.8}
           onPress={handleWithdraw}
         >
-          <CText style={styles.withdrawBtnText}>Rút tiền</CText>
+          <CText style={styles.withdrawBtnText}>{t('partnerWithdraw.withdrawBtn', 'Rút tiền')}</CText>
         </TouchableOpacity>
       </View>
     </Wrapper>

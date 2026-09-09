@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useContext } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -18,11 +19,15 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '@rneui/themed';
+import { useSelector } from 'react-redux';
+import moment from 'moment';
 import ImagePicker from 'react-native-image-crop-picker';
 import { IconX, ToggleSwitch } from '@/components';
 import { images } from '@/configs/image';
 import { CText } from '@/utils';
 import socketService from '@/socketio';
+import ApiService from '@/services/api-base';
+import { AppContext } from '@/contexts';
 
 export interface ChatMessage {
   id: string;
@@ -40,7 +45,42 @@ export interface ChatMessage {
   };
 }
 
+export const isImageUriValid = (uri?: any): boolean => {
+  if (!uri || typeof uri !== 'string') return false;
+  const trimmed = uri.trim();
+  return (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('file://') ||
+    trimmed.startsWith('data:image')
+  );
+};
+
+export const safeImageSource = (source: any, fallback: any = images.common.img_default): any => {
+  if (!source) return fallback;
+  if (typeof source === 'number') return source;
+  if (typeof source === 'string') {
+    const trimmed = source.trim();
+    if (isImageUriValid(trimmed)) {
+      return { uri: trimmed };
+    }
+    return fallback;
+  }
+  if (typeof source === 'object') {
+    if (source.uri && typeof source.uri === 'string') {
+      const trimmed = source.uri.trim();
+      if (isImageUriValid(trimmed)) {
+        return { ...source, uri: trimmed };
+      }
+    }
+    return fallback;
+  }
+  return fallback;
+};
+
 const SUGGESTED_GREETINGS = ['👋 Xin chào, rất vui được hỗ trợ bạn!'];
+
+const roomMessagesCache = new Map<string, ChatMessage[]>();
 
 export const ChatScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -50,25 +90,59 @@ export const ChatScreen: React.FC = () => {
     theme: { colors },
   } = useTheme();
 
-  // Unified params supporting customer / partner / nurse naming
-  const targetName =
-    route.params?.customerName ||
-    route.params?.partnerName ||
-    route.params?.name ||
-    'Thiên Ân';
+  // Unified params supporting name / customerName / partnerName
+  const targetName = route.params?.customerName;
 
-  const targetAvatar =
-    route.params?.customerAvatar ||
-    route.params?.partnerAvatar ||
-    route.params?.avatar ||
-    images.common.avatar_thien_an;
+  const rawAvatar = route.params?.customerAvatar;
 
-  const roomId =
-    route.params?.roomId || `room_1v1_${route.params?.id || 'default'}`;
+  const targetAvatar = useMemo(() => {
+    return safeImageSource(
+      rawAvatar,
+      images.common.img_default,
+    );
+  }, [rawAvatar]);
 
-  const [messages, setMessages] = useState<ChatMessage[]>(
-    route.params?.initialMessages || [],
+  const targetAvatarRef = useRef(targetAvatar);
+  useEffect(() => {
+    targetAvatarRef.current = targetAvatar;
+  }, [targetAvatar]);
+
+  const roomId = route.params?.roomId;
+
+  const { user } = useContext<any>(AppContext) || {};
+  const currentUserId = useSelector(
+    (state: any) =>
+      state.profileReducer?.profileData?.data?.result?.id ||
+      state.profileReducer?.profileData?.data?.id,
   );
+  const myUserId = user?.id || user?.user_id || currentUserId;
+  const toUserId = route.params?.toUserId;
+
+  // Phân biệt tin nhắn của mình (me) hay của đối phương (other)
+  const isMeMessage = (item: any): boolean => {
+    if (item.sender === 'me' || item.from === 'me') return true;
+    if (item.sender === 'other' || item.from === 'other') return false;
+
+    if (myUserId && item.user_id) {
+      return String(item.user_id) === String(myUserId);
+    }
+    if (toUserId && item.user_id) {
+      return String(item.user_id) !== String(toUserId);
+    }
+    return false;
+  };
+
+  const cachedMessages = roomId ? roomMessagesCache.get(roomId) : undefined;
+  const [messages, setMessages] = useState<ChatMessage[]>(
+    cachedMessages || route.params?.initialMessages || [],
+  );
+  const [loadingHistory, setLoadingHistory] = useState(
+    !cachedMessages && (!route.params?.initialMessages || route.params.initialMessages.length === 0),
+  );
+  const isFetchingHistoryRef = useRef(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const isLoadingMoreRef = useRef(false);
   const [inputText, setInputText] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [replyingMessage, setReplyingMessage] = useState<ChatMessage | null>(null);
@@ -85,30 +159,262 @@ export const ChatScreen: React.FC = () => {
 
   const flatListRef = useRef<FlatList>(null);
 
-  // Socket setup: auto connect, seen message & listen to incoming messages
+  // Format message từ API DoctorNetwork (tối ưu parse Date cực nhanh)
+  const formatApiMessage = (item: any): ChatMessage => {
+    const isMe = isMeMessage(item);
+
+    let textContent: string | undefined = undefined;
+    let imageUri: string | undefined = undefined;
+
+    // Trích xuất nội dung theo type
+    if (item.type === 'image') {
+      try {
+        let contentObj = item.content;
+        if (typeof contentObj === 'string') {
+          const trimmed = contentObj.trim();
+          if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+            contentObj = JSON.parse(trimmed);
+          } else if (isImageUriValid(trimmed)) {
+            imageUri = trimmed;
+          }
+        }
+        if (Array.isArray(contentObj) && contentObj.length > 0) {
+          imageUri = contentObj[0]?.data;
+        } else if (contentObj && typeof contentObj === 'object') {
+          imageUri = contentObj.data;
+        }
+      } catch (err) {
+        console.log('Error parsing image message content:', err);
+      }
+
+      // Fallback nếu item.image có sẵn URL
+      if (!imageUri && item.image && typeof item.image === 'string') {
+        const trimmed = item.image.trim();
+        if (isImageUriValid(trimmed)) {
+          imageUri = trimmed;
+        }
+      }
+    } else {
+      if (typeof item.content === 'string') {
+        textContent = item.content;
+      } else if (typeof item.text === 'string') {
+        textContent = item.text;
+      }
+
+      if (item.image && typeof item.image === 'string') {
+        const trimmed = item.image.trim();
+        if (isImageUriValid(trimmed)) {
+          imageUri = trimmed;
+        }
+      }
+    }
+
+    let timeString = '';
+    if (item.created_at) {
+      const ts =
+        typeof item.created_at === 'number'
+          ? item.created_at < 10000000000 ? item.created_at * 1000 : item.created_at
+          : Date.parse(item.created_at);
+      if (!isNaN(ts)) {
+        const d = new Date(ts);
+        const hh = d.getHours().toString().padStart(2, '0');
+        const mm = d.getMinutes().toString().padStart(2, '0');
+        timeString = `${hh}:${mm}`;
+      }
+    }
+    if (!timeString) {
+      const now = new Date();
+      timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    }
+
+    let avatarSource = safeImageSource(
+      item.avatar,
+      isMe ? images.common.img_default : targetAvatarRef.current,
+    );
+
+    return {
+      id: String(item.id || item._id || Date.now() + Math.random()),
+      sender: isMe ? 'me' : 'other',
+      text: textContent || undefined,
+      image: imageUri,
+      time: timeString,
+      status: 'seen',
+      avatar: avatarSource,
+    };
+  };
+
+  const fetchHistory = async () => {
+    if (!roomId || isFetchingHistoryRef.current) {
+      if (!roomId) setLoadingHistory(false);
+      return;
+    }
+    isFetchingHistoryRef.current = true;
+    if (messages.length === 0) {
+      setLoadingHistory(true);
+    }
+    try {
+      const res: any = await ApiService.getListHistoryChat({
+        id: roomId,
+        data: {
+          offset: 0,
+          limit: 20,
+        },
+      });
+
+      // Kiểm tra nếu API báo lỗi (400 hoặc không tìm thấy phòng chat do đã bị xóa)
+      if (
+        res?.status === 400 ||
+        res?.status === 404 ||
+        res?.data?.status === 'error' ||
+        !res?.ok
+      ) {
+        const errorMsg =
+          res?.data?.errors?.[0]?.msg ||
+          res?.data?.message ||
+          res?.problem ||
+          '';
+        const isNotFound =
+          errorMsg.includes('Không tìm thấy') ||
+          errorMsg.includes('not found') ||
+          res?.status === 400 ||
+          res?.status === 404;
+
+        if (isNotFound) {
+          console.log('[ChatScreen] Room not found or deleted on server:', roomId, errorMsg);
+          roomMessagesCache.delete(roomId);
+          socketService.emitDeleteRoom(roomId);
+          Alert.alert(
+            'Thông báo',
+            'Cuộc trò chuyện này đã bị xóa hoặc không tồn tại.',
+            [
+              {
+                text: 'Đồng ý',
+                onPress: () => {
+                  if (navigation.canGoBack()) {
+                    navigation.goBack();
+                  }
+                },
+              },
+            ],
+          );
+          return;
+        }
+      }
+
+      const rawItems: any[] =
+        (Array.isArray(res?.data?.items) && res.data.items) ||
+        (Array.isArray(res?.data) && res.data) ||
+        (Array.isArray(res?.items) && res.items) ||
+        [];
+
+      if (rawItems && rawItems.length > 0) {
+        const validItems = rawItems.filter(item => !item.is_deleted);
+        const parsed = validItems.map(formatApiMessage);
+        setMessages(parsed);
+        if (roomId) {
+          roomMessagesCache.set(roomId, parsed);
+        }
+        setHasMore(rawItems.length >= 20);
+      } else {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.log('==== [ChatScreen] getListHistoryChat error:', error);
+    } finally {
+      setLoadingHistory(false);
+      isFetchingHistoryRef.current = false;
+    }
+  };
+
+  // Action: Tải thêm tin nhắn cũ hơn khi cuộn lên đỉnh (inverted FlatList onEndReached)
+  const handleLoadMore = async () => {
+    if (
+      !roomId ||
+      isLoadingMoreRef.current ||
+      isFetchingHistoryRef.current ||
+      loadingHistory ||
+      loadingMore ||
+      !hasMore ||
+      messages.length === 0
+    ) {
+      return;
+    }
+
+    isLoadingMoreRef.current = true;
+    setLoadingMore(true);
+
+    try {
+      const currentOffset = messages.length;
+      console.log('==== [ChatScreen] handleLoadMore offset:', currentOffset);
+      const res: any = await ApiService.getListHistoryChat({
+        id: roomId,
+        data: {
+          offset: currentOffset,
+          limit: 20,
+        },
+      });
+
+      const rawItems: any[] =
+        (Array.isArray(res?.data?.items) && res.data.items) ||
+        (Array.isArray(res?.data) && res.data) ||
+        (Array.isArray(res?.items) && res.items) ||
+        [];
+
+      if (rawItems.length === 0) {
+        setHasMore(false);
+      } else {
+        const validItems = rawItems.filter(item => !item.is_deleted);
+        const parsedOlder = validItems.map(formatApiMessage);
+
+        setMessages(prev => {
+          const existingIds = new Set(prev.map(m => m.id));
+          const uniqueNewOlder = parsedOlder.filter(m => !existingIds.has(m.id));
+          if (uniqueNewOlder.length === 0) {
+            setHasMore(false);
+            return prev;
+          }
+          const updated = [...prev, ...uniqueNewOlder];
+          if (roomId) {
+            roomMessagesCache.set(roomId, updated);
+          }
+          return updated;
+        });
+
+        if (rawItems.length < 20) {
+          setHasMore(false);
+        }
+      }
+    } catch (error) {
+      console.log('==== [ChatScreen] handleLoadMore error:', error);
+    } finally {
+      setLoadingMore(false);
+      isLoadingMoreRef.current = false;
+    }
+  };
+
+  // Socket setup: auto connect, seen message, fetch history & listen to incoming messages
   useEffect(() => {
     socketService.connect();
     socketService.emitSeenMessage(roomId);
+    fetchHistory();
 
     const handleIncomingMessage = (data: any) => {
       if (data && (data.room === roomId || !data.room)) {
-        const textContent =
-          typeof data.content === 'string'
-            ? data.content
-            : data.text || '';
-        const incoming: ChatMessage = {
-          id: data.id || Date.now().toString(),
-          sender: data.from === 'me' ? 'me' : 'other',
-          text: textContent || undefined,
-          image: data.image || undefined,
-          time: new Date().toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
-          status: 'seen',
-          avatar: targetAvatar,
-        };
-        setMessages(prev => [incoming, ...prev]);
+        const incoming = formatApiMessage(data);
+
+        setMessages(prev => {
+          const clientMsgId = data.clientMsgId || data.client_msg_id;
+          if (clientMsgId) {
+            const idx = prev.findIndex(m => m.id === String(clientMsgId));
+            if (idx !== -1) {
+              const copy = [...prev];
+              copy[idx] = incoming;
+              return copy;
+            }
+          }
+          if (prev.some(m => m.id === incoming.id)) return prev;
+          return [incoming, ...prev];
+        });
       }
     };
 
@@ -125,7 +431,7 @@ export const ChatScreen: React.FC = () => {
       socketService.off('message', handleIncomingMessage);
       socketService.off('typing', handleTyping);
     };
-  }, [roomId, targetAvatar]);
+  }, [roomId]);
 
   // Action: Send message
   const handleSend = () => {
@@ -219,8 +525,15 @@ export const ChatScreen: React.FC = () => {
         {
           text: 'Xóa',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
+            // 1. Clear local state and cache
             setMessages([]);
+
+
+            // 4. Navigate back to conversation list
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            }
           },
         },
       ],
@@ -239,7 +552,7 @@ export const ChatScreen: React.FC = () => {
       >
         {!isMe && (
           <Image
-            source={item.avatar || targetAvatar || images.common.avatar_support}
+            source={safeImageSource(item.avatar, targetAvatar)}
             style={styles.senderAvatar}
           />
         )}
@@ -267,7 +580,7 @@ export const ChatScreen: React.FC = () => {
           )}
 
           {/* Attached image if any */}
-          {item.image && (
+          {item.image && isImageUriValid(item.image) ? (
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={() => setPreviewImage(item.image!)}
@@ -275,7 +588,7 @@ export const ChatScreen: React.FC = () => {
             >
               <Image source={{ uri: item.image }} style={styles.imageMessage} resizeMode="cover" />
             </TouchableOpacity>
-          )}
+          ) : null}
 
           {/* Text content */}
           {item.text ? (
@@ -343,7 +656,7 @@ export const ChatScreen: React.FC = () => {
           {/* Avatar Ring with Online Status */}
           <View style={styles.emptyAvatarRing}>
             <Image
-              source={targetAvatar || images.common.avatar_thien_an}
+              source={targetAvatar}
               style={styles.emptyAvatar}
             />
             <View style={styles.emptyOnlineBadge} />
@@ -423,7 +736,7 @@ export const ChatScreen: React.FC = () => {
         >
           <View style={styles.avatarWrapper}>
             <Image
-              source={targetAvatar || images.common.avatar_thien_an}
+              source={targetAvatar}
               style={styles.headerAvatar}
             />
             <View style={styles.onlineBadge} />
@@ -455,7 +768,14 @@ export const ChatScreen: React.FC = () => {
         style={styles.chatContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {messages.length === 0 ? (
+        {loadingHistory && messages.length === 0 ? (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <ActivityIndicator size="large" color={colors.primary || '#19A2A7'} />
+            <CText style={{ marginTop: 12, color: colors.c667085 || '#667085', fontSize: 13.5 }}>
+              Đang tải tin nhắn...
+            </CText>
+          </View>
+        ) : messages.length === 0 ? (
           renderEmptyChatState()
         ) : (
           <FlatList
@@ -466,8 +786,21 @@ export const ChatScreen: React.FC = () => {
             renderItem={renderMessageItem}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            initialNumToRender={15}
+            maxToRenderPerBatch={10}
+            windowSize={5}
+            removeClippedSubviews={Platform.OS === 'android'}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.2}
             ListFooterComponent={
-              messages.length > 0 ? (
+              loadingMore ? (
+                <View style={{ paddingVertical: 14, alignItems: 'center', justifyContent: 'center' }}>
+                  <ActivityIndicator size="small" color={colors.primary || '#19A2A7'} />
+                  <CText style={{ marginTop: 6, fontSize: 12, color: colors.c667085 || '#667085' }}>
+                    Đang tải tin nhắn cũ hơn...
+                  </CText>
+                </View>
+              ) : messages.length > 0 ? (
                 <View style={styles.timeHeader}>
                   <View style={styles.timeHeaderPill}>
                     <CText style={styles.timeText}>
@@ -483,7 +816,7 @@ export const ChatScreen: React.FC = () => {
               isTyping ? (
                 <View style={styles.typingContainer}>
                   <Image
-                    source={targetAvatar || images.common.avatar_support}
+                    source={targetAvatar}
                     style={styles.typingAvatar}
                   />
                   <View style={styles.typingBubble}>
@@ -518,7 +851,7 @@ export const ChatScreen: React.FC = () => {
         )}
 
         {/* Selected Image Preview Strip */}
-        {selectedImage && (
+        {selectedImage && isImageUriValid(selectedImage) ? (
           <View style={styles.imagePreviewStrip}>
             <View style={styles.imageThumbnailWrapper}>
               <Image source={{ uri: selectedImage }} style={styles.imageThumbnail} />
@@ -531,7 +864,7 @@ export const ChatScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
           </View>
-        )}
+        ) : null}
 
         {/* Input Bar */}
         <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
@@ -598,7 +931,7 @@ export const ChatScreen: React.FC = () => {
                 {/* Profile Header in Modal */}
                 <View style={styles.modalProfileHeader}>
                   <Image
-                    source={targetAvatar || images.common.avatar_thien_an}
+                    source={targetAvatar}
                     style={styles.modalAvatar}
                   />
                   <CText style={styles.modalProfileName}>{targetName}</CText>
@@ -758,7 +1091,7 @@ export const ChatScreen: React.FC = () => {
           >
             <IconX type="ionicons" name="close" size={28} color="#FFFFFF" />
           </TouchableOpacity>
-          {previewImage ? (
+          {previewImage && isImageUriValid(previewImage) ? (
             <Image
               source={{ uri: previewImage }}
               style={styles.fullscreenImage}

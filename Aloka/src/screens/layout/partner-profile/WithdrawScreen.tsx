@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { makeStyles, useTheme } from '@rneui/themed';
 import { IconX, Wrapper } from '@/components';
 import { CText } from '@/utils';
@@ -404,6 +405,7 @@ export const WithdrawScreen: React.FC = () => {
   const styles = useStyles();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const {
     theme: { colors },
   } = useTheme();
@@ -441,15 +443,25 @@ export const WithdrawScreen: React.FC = () => {
   const handleOpenPinModal = () => {
     const num = parseInt(amountInput, 10) || 0;
     if (num <= 0) {
-      Alert.alert('Lỗi', 'Vui lòng nhập số tiền muốn rút');
+      Alert.alert(
+        t('error.hasOccured', 'Lỗi'),
+        t('partnerWithdraw.errorEmptyAmount', 'Vui lòng nhập số tiền muốn rút'),
+      );
       return;
     }
     if (num > totalBalance) {
       Alert.alert(
-        'Lỗi',
-        `Số tiền rút (${formatNumber(num)}đ) vượt quá số dư hiện tại (${formatNumber(
-          totalBalance,
-        )}đ)`,
+        t('error.hasOccured', 'Lỗi'),
+        t(
+          'partnerWithdraw.errorExceedBalance',
+          `Số tiền rút (${formatNumber(num)}đ) vượt quá số dư hiện tại (${formatNumber(
+            totalBalance,
+          )}đ)`,
+          {
+            amount: formatNumber(num),
+            balance: formatNumber(totalBalance),
+          },
+        ),
       );
       return;
     }
@@ -502,7 +514,7 @@ export const WithdrawScreen: React.FC = () => {
             />
           </TouchableOpacity>
 
-          <CText style={styles.headerTitle}>Rút tiền</CText>
+          <CText style={styles.headerTitle}>{t('partnerWithdraw.title', 'Rút tiền')}</CText>
 
           <View style={styles.headerRightPlaceholder} />
         </View>
@@ -516,7 +528,7 @@ export const WithdrawScreen: React.FC = () => {
         <View style={styles.topSection}>
           <View style={styles.balanceRow}>
             <View style={styles.balanceTextWrap}>
-              <CText style={styles.balanceLabel}>Số dư Carely </CText>
+              <CText style={styles.balanceLabel}>{t('partnerWithdraw.carelyBalance', 'Số dư Carely ')}</CText>
               <CText style={styles.balanceAmount}>{formatNumber(totalBalance)}đ</CText>
             </View>
 
@@ -526,7 +538,7 @@ export const WithdrawScreen: React.FC = () => {
                 navigation.navigate('TotalIncomeWalletScreen');
               }}
             >
-              <CText style={styles.myWalletLink}>Ví của tôi</CText>
+              <CText style={styles.myWalletLink}>{t('partnerWithdraw.myWallet', 'Ví của tôi')}</CText>
             </TouchableOpacity>
           </View>
 
@@ -563,12 +575,12 @@ export const WithdrawScreen: React.FC = () => {
             activeOpacity={0.8}
             onPress={handleWithdrawAll}
           >
-            <CText style={styles.withdrawAllText}>Rút tất cả</CText>
+            <CText style={styles.withdrawAllText}>{t('partnerWithdraw.withdrawAll', 'Rút tất cả')}</CText>
           </TouchableOpacity>
 
           {/* Amount Input Box */}
           <View style={styles.amountInputBox}>
-            <CText style={styles.amountInputLabel}>Nhập số tiền</CText>
+            <CText style={styles.amountInputLabel}>{t('partnerWithdraw.enterAmount', 'Nhập số tiền')}</CText>
             <View style={styles.amountInputRow}>
               <TextInput
                 style={styles.amountTextInput}
@@ -600,9 +612,9 @@ export const WithdrawScreen: React.FC = () => {
 
         {/* Section 2: Bank Selection */}
         <View style={styles.bankSection}>
-          <CText style={styles.bankSectionTitle}>Rút về ngân hàng</CText>
+          <CText style={styles.bankSectionTitle}>{t('partnerWithdraw.withdrawToBank', 'Rút về ngân hàng')}</CText>
           <CText style={styles.bankSectionSubtitle}>
-            Miễn phí 03 giao dịch thành công đầu tiên
+            {t('partnerWithdraw.freeTxDesc', 'Miễn phí 03 giao dịch thành công đầu tiên')}
           </CText>
 
           {/* Bank Option 1: ACB */}
@@ -615,7 +627,7 @@ export const WithdrawScreen: React.FC = () => {
               <CText style={styles.bankLogoText}>ACB</CText>
             </View>
 
-            <CText style={styles.bankNameText}>Ngân hàng Á Châu (ACB)</CText>
+            <CText style={styles.bankNameText}>{t('partnerWithdraw.bankAcb', 'Ngân hàng Á Châu (ACB)')}</CText>
 
             {selectedBank === 'acb' && (
               <IconX
@@ -632,7 +644,10 @@ export const WithdrawScreen: React.FC = () => {
             style={styles.addBankRow}
             activeOpacity={0.7}
             onPress={() => {
-              Alert.alert('Thêm liên kết', 'Chức năng thêm tài khoản ngân hàng mới');
+              Alert.alert(
+                t('partnerWithdraw.addBankLink', 'Thêm liên kết'),
+                t('partnerWithdraw.addBankPrompt', 'Chức năng thêm tài khoản ngân hàng mới'),
+              );
             }}
           >
             <IconX
@@ -641,7 +656,7 @@ export const WithdrawScreen: React.FC = () => {
               size={20}
               color={colors.c475467 || '#475467'}
             />
-            <CText style={styles.addBankText}>Thêm liên kết</CText>
+            <CText style={styles.addBankText}>{t('partnerWithdraw.addBankLink', 'Thêm liên kết')}</CText>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -658,7 +673,7 @@ export const WithdrawScreen: React.FC = () => {
           activeOpacity={0.8}
           onPress={handleOpenPinModal}
         >
-          <CText style={styles.confirmBtnText}>Xác nhận</CText>
+          <CText style={styles.confirmBtnText}>{t('partnerWithdraw.btnConfirm', 'Xác nhận')}</CText>
         </TouchableOpacity>
       </View>
 
@@ -675,7 +690,7 @@ export const WithdrawScreen: React.FC = () => {
               <View style={styles.bottomSheet}>
                 {/* Modal Header */}
                 <View style={styles.modalHeader}>
-                  <CText style={styles.modalTitle}>Nhập mật khẩu</CText>
+                  <CText style={styles.modalTitle}>{t('partnerWithdraw.enterPin', 'Nhập mật khẩu')}</CText>
                   <TouchableOpacity
                     style={styles.modalCloseBtn}
                     activeOpacity={0.7}

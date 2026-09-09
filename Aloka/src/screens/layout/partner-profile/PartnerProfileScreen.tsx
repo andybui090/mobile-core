@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { makeStyles, useTheme } from '@rneui/themed';
 import { IconX, ImageHelper, Wrapper } from '@/components';
 import { images } from '@/configs/image';
@@ -216,6 +217,7 @@ const useStyles = makeStyles(({ colors }) =>
 export const PartnerProfileScreen: React.FC = () => {
   const styles = useStyles();
   const navigation = useNavigation<any>();
+  const { t } = useTranslation();
   const {
     theme: { colors },
   } = useTheme();
@@ -264,20 +266,30 @@ export const PartnerProfileScreen: React.FC = () => {
 
   const handleCall = (phoneNumber: string) => {
     Linking.openURL(`tel:${phoneNumber}`).catch(() => {
-      Alert.alert('Thông báo', `Không thể gọi tới số ${phoneNumber}`);
+      Alert.alert(
+        t('partnerProfile.notice', 'Thông báo'),
+        t('partnerProfile.cannotCall', `Không thể gọi tới số ${phoneNumber}`, {
+          phone: phoneNumber,
+        }),
+      );
     });
   };
 
   const handleEmail = (emailStr: string) => {
     Linking.openURL(`mailto:${emailStr}`).catch(() => {
-      Alert.alert('Thông báo', `Không thể mở ứng dụng gửi thư tới ${emailStr}`);
+      Alert.alert(
+        t('partnerProfile.notice', 'Thông báo'),
+        t('partnerProfile.cannotEmail', `Không thể mở ứng dụng gửi thư tới ${emailStr}`, {
+          email: emailStr,
+        }),
+      );
     });
   };
 
   const menuItems: MenuItem[] = [
     {
       id: 'work-schedule',
-      title: 'Quản lý lịch làm việc',
+      title: t('partnerProfile.menuSchedule', 'Quản lý lịch làm việc'),
       iconName: 'calendar',
       iconType: 'ionicons',
       iconBgColor: colors.primary || '#19A2A7',
@@ -287,17 +299,20 @@ export const PartnerProfileScreen: React.FC = () => {
     },
     {
       id: 'packages-promotions',
-      title: 'Gói dịch vụ & khuyến mãi',
+      title: t('partnerProfile.menuPackages', 'Gói dịch vụ & khuyến mãi'),
       iconName: 'bookmark',
       iconType: 'ionicons',
       iconBgColor: '#2E90FA',
       onPress: () => {
-        Alert.alert('Thông báo', 'Tính năng Gói dịch vụ & khuyến mãi đang được cập nhật');
+        Alert.alert(
+          t('partnerProfile.notice', 'Thông báo'),
+          t('partnerProfile.packageUpdating', 'Tính năng Gói dịch vụ & khuyến mãi đang được cập nhật'),
+        );
       },
     },
     {
       id: 'income-manage',
-      title: 'Quản lý thu nhập',
+      title: t('partnerProfile.menuIncome', 'Quản lý thu nhập'),
       iconName: 'settings',
       iconType: 'ionicons',
       iconBgColor: '#F79009',
@@ -307,12 +322,15 @@ export const PartnerProfileScreen: React.FC = () => {
     },
     {
       id: 'support',
-      title: 'Hỗ trợ',
+      title: t('partnerProfile.menuSupport', 'Hỗ trợ'),
       iconName: 'headset',
       iconType: 'ionicons',
       iconBgColor: '#9E77ED',
       onPress: () => {
-        Alert.alert('Thông báo', 'Tổng đài hỗ trợ đối tác: 1900 xxxx');
+        Alert.alert(
+          t('partnerProfile.notice', 'Thông báo'),
+          t('partnerProfile.supportHotline', 'Tổng đài hỗ trợ đối tác: 1900 xxxx'),
+        );
       },
     },
   ];
@@ -355,7 +373,7 @@ export const PartnerProfileScreen: React.FC = () => {
               color={colors.c101828 || '#101828'}
             />
           </TouchableOpacity>
-          <CText style={styles.headerTitle}>Hồ sơ</CText>
+          <CText style={styles.headerTitle}>{t('partnerProfile.title', 'Hồ sơ')}</CText>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
@@ -459,7 +477,7 @@ export const PartnerProfileScreen: React.FC = () => {
                 size={17}
                 color={colors.primary || '#19A2A7'}
               />
-              <CText style={styles.editProfileText}>Sửa hồ sơ</CText>
+              <CText style={styles.editProfileText}>{t('partnerProfile.editProfile', 'Sửa hồ sơ')}</CText>
             </TouchableOpacity>
           </View>
         </View>
@@ -467,7 +485,7 @@ export const PartnerProfileScreen: React.FC = () => {
         {/* Section: Giới thiệu */}
         {!!displayIntro && (
           <View style={styles.sectionContainer}>
-            <CText style={styles.sectionTitle}>Giới thiệu</CText>
+            <CText style={styles.sectionTitle}>{t('partnerProfile.about', 'Giới thiệu')}</CText>
             <View style={styles.introBox}>
               <CText style={styles.introText}>{displayIntro}</CText>
             </View>

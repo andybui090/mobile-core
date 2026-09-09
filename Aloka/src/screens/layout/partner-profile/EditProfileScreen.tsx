@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { makeStyles, useTheme } from '@rneui/themed';
 import {
   CDatePicker,
@@ -341,6 +342,7 @@ export const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
+  const { t } = useTranslation();
   const { user } = useContext<any>(AppContext) || {};
 
   // Form State initialized from user context (no hardcoded fallback values)
@@ -352,12 +354,24 @@ export const EditProfileScreen: React.FC = () => {
     if (typeof raw === 'object' && raw?.value) return raw;
     const lower = typeof raw === 'string' ? raw.toLowerCase() : '';
     if (lower === 'female' || lower === 'nữ') {
-      return { value: 'Female', name: 'Nữ', label: 'Nữ' };
+      return {
+        value: 'Female',
+        name: t('gender.female', 'Nữ'),
+        label: t('gender.female', 'Nữ'),
+      };
     }
     if (lower === 'male' || lower === 'nam') {
-      return { value: 'Male', name: 'Nam', label: 'Nam' };
+      return {
+        value: 'Male',
+        name: t('gender.male', 'Nam'),
+        label: t('gender.male', 'Nam'),
+      };
     }
-    return { value: 'Undisclosed', name: 'Khác', label: 'Khác' };
+    return {
+      value: 'Undisclosed',
+      name: t('gender.other', 'Khác'),
+      label: t('gender.other', 'Khác'),
+    };
   };
   const [gender, setGender] = useState<any>(getInitialGender());
   const [showGenderModal, setShowGenderModal] = useState<boolean>(false);
@@ -601,7 +615,10 @@ export const EditProfileScreen: React.FC = () => {
       if (document.size) {
         const mbSize = document.size / (1024 * 1024);
         if (mbSize > MAX_MB) {
-          Alert.alert('Thông báo', 'Tệp không được vượt quá 10MB');
+          Alert.alert(
+            t('partnerProfile.notice', 'Thông báo'),
+            t('partnerEditProfile.fileSizeExceed', 'Tệp không được vượt quá 10MB'),
+          );
           return;
         }
       }
@@ -631,20 +648,16 @@ export const EditProfileScreen: React.FC = () => {
     const newErrors: typeof errors = {};
 
     if (!fullName.trim()) {
-      newErrors.fullName = 'Vui lòng nhập họ và tên';
+      newErrors.fullName = t('partnerEditProfile.errorFullName', 'Vui lòng nhập họ và tên');
     }
 
     if (!certificateFile) {
-      newErrors.certificateFile = 'Vui lòng tải lên chứng chỉ hành nghề';
+      newErrors.certificateFile = t('partnerEditProfile.errorCertificateFile', 'Vui lòng tải lên chứng chỉ hành nghề');
     }
 
     if (!certificateNumber.trim()) {
-      newErrors.certificateNumber = 'Vui lòng bổ sung số CCHN';
+      newErrors.certificateNumber = t('partnerEditProfile.errorCertificateNumber', 'Vui lòng bổ sung số CCHN');
     }
-
-    // if (!workingArea || !workingArea.trim()) {
-    //   newErrors.workingArea = 'Vui lòng chọn khu vực làm việc';
-    // }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -656,8 +669,8 @@ export const EditProfileScreen: React.FC = () => {
         newErrors.workingArea;
 
       Alert.alert(
-        'Thông báo',
-        firstError || 'Vui lòng điền đầy đủ các trường bắt buộc (*)',
+        t('partnerProfile.notice', 'Thông báo'),
+        firstError || t('partnerEditProfile.errorRequiredFields', 'Vui lòng điền đầy đủ các trường bắt buộc (*)'),
       );
 
       if (newErrors.fullName) {
@@ -729,17 +742,24 @@ export const EditProfileScreen: React.FC = () => {
         // Refresh user context in background
         dispatch(getProfile(null));
 
-        Alert.alert('Thành công', 'Cập nhật hồ sơ cá nhân thành công!', [
-          {
-            text: 'Đồng ý',
-            onPress: () => {
-              navigation.goBack();
+        Alert.alert(
+          t('profile.editProfileScreen.updateSuccessTitle', 'Thành công'),
+          t('partnerEditProfile.updateSuccess', 'Cập nhật hồ sơ cá nhân thành công!'),
+          [
+            {
+              text: t('partnerEditProfile.btnAgree', 'Đồng ý'),
+              onPress: () => {
+                navigation.goBack();
+              },
             },
-          },
-        ]);
+          ],
+        );
       } else {
         // Parse backend errors (e.g. status 400 with errors: [{key, msg}])
-        let errorMsg = 'Cập nhật hồ sơ cá nhân thất bại. Vui lòng thử lại!';
+        let errorMsg = t(
+          'partnerEditProfile.updateFailed',
+          'Cập nhật hồ sơ cá nhân thất bại. Vui lòng thử lại!',
+        );
         if (Array.isArray(res?.data?.errors) && res.data.errors.length > 0) {
           errorMsg = res.data.errors
             .map((e: any) => `${e.key ? e.key + ': ' : ''}${e.msg || e.message || 'Lỗi không xác định'}`)
@@ -749,16 +769,19 @@ export const EditProfileScreen: React.FC = () => {
         } else if (res?.data?.error) {
           errorMsg = res.data.error;
         } else if (res?.problem) {
-          errorMsg = `Lỗi kết nối máy chủ (${res.problem})`;
+          errorMsg = t('partnerEditProfile.serverError', `Lỗi kết nối máy chủ (${res.problem})`, {
+            problem: res.problem,
+          });
         }
 
-        Alert.alert('Thất bại', errorMsg);
+        Alert.alert(t('error.hasOccured', 'Thất bại'), errorMsg);
       }
     } catch (error: any) {
       console.log('🚀 ~ handleUpdateProfile ~ error:', error);
       Alert.alert(
-        'Thất bại',
-        error?.message || 'Có lỗi xảy ra khi cập nhật hồ sơ cá nhân. Vui lòng thử lại!'
+        t('error.hasOccured', 'Thất bại'),
+        error?.message ||
+          t('partnerEditProfile.unknownError', 'Có lỗi xảy ra khi cập nhật hồ sơ cá nhân. Vui lòng thử lại!'),
       );
     } finally {
       setIsSubmitting(false);
@@ -782,7 +805,7 @@ export const EditProfileScreen: React.FC = () => {
           />
         </TouchableOpacity>
 
-        <CText style={styles.headerTitle}>Sửa hồ sơ cá nhân</CText>
+        <CText style={styles.headerTitle}>{t('partnerEditProfile.title', 'Sửa hồ sơ cá nhân')}</CText>
 
         <View style={styles.headerRightPlaceholder} />
       </View>
@@ -814,14 +837,14 @@ export const EditProfileScreen: React.FC = () => {
               />
             </TouchableOpacity>
             <TouchableOpacity activeOpacity={0.7} onPress={handlePickAvatar}>
-              <CText style={styles.editAvatarText}>Chỉnh sửa đại diện</CText>
+              <CText style={styles.editAvatarText}>{t('partnerEditProfile.editAvatar', 'Chỉnh sửa đại diện')}</CText>
             </TouchableOpacity>
           </View>
 
           {/* 1. Họ và tên */}
           <CInput
-            label="Họ và tên"
-            placeHolder="Nhập họ và tên"
+            label={t('partnerEditProfile.fullName', 'Họ và tên')}
+            placeHolder={t('partnerEditProfile.fullNamePlaceholder', 'Nhập họ và tên')}
             value={fullName}
             onChange={val => {
               setFullName(val);
@@ -838,7 +861,7 @@ export const EditProfileScreen: React.FC = () => {
           {/* 2. Giới tính */}
           <View style={styles.formGroup}>
             <View style={styles.labelRow}>
-              <CText style={styles.label}>Giới tính</CText>
+              <CText style={styles.label}>{t('partnerEditProfile.gender', 'Giới tính')}</CText>
             </View>
             <TouchableOpacity
               style={styles.selectBox}
@@ -852,7 +875,7 @@ export const EditProfileScreen: React.FC = () => {
                     : styles.placeholderText
                 }
               >
-                {gender?.name || (typeof gender === 'string' ? gender : '') || 'Chọn giới tính'}
+                {gender?.name || (typeof gender === 'string' ? gender : '') || t('partnerEditProfile.genderPlaceholder', 'Chọn giới tính')}
               </CText>
               <IconX
                 type="ionicons"
@@ -866,7 +889,7 @@ export const EditProfileScreen: React.FC = () => {
           {/* 3. Ngày sinh */}
           <View style={styles.formGroup}>
             <View style={styles.labelRow}>
-              <CText style={styles.label}>Ngày sinh</CText>
+              <CText style={styles.label}>{t('partnerEditProfile.dob', 'Ngày sinh')}</CText>
             </View>
             <TouchableOpacity
               style={styles.selectBox}
@@ -874,7 +897,7 @@ export const EditProfileScreen: React.FC = () => {
               onPress={() => setShowDobModal(true)}
             >
               <CText style={dob ? styles.selectText : styles.placeholderText}>
-                {dob || 'Chọn ngày sinh'}
+                {dob || t('partnerEditProfile.dobPlaceholder', 'Chọn ngày sinh')}
               </CText>
               <IconX
                 type="ionicons"
@@ -887,8 +910,8 @@ export const EditProfileScreen: React.FC = () => {
 
           {/* 4. Số điện thoại */}
           <CInput
-            label="Số điện thoại"
-            placeHolder="Nhập số điện thoại"
+            label={t('partnerEditProfile.phone', 'Số điện thoại')}
+            placeHolder={t('partnerEditProfile.phonePlaceholder', 'Nhập số điện thoại')}
             value={phone}
             onChange={setPhone}
             keyboardType="phone-pad"
@@ -898,8 +921,8 @@ export const EditProfileScreen: React.FC = () => {
 
           {/* 5. Email */}
           <CInput
-            label="Email"
-            placeHolder="Nhập email"
+            label={t('partnerEditProfile.email', 'Email')}
+            placeHolder={t('partnerEditProfile.emailPlaceholder', 'Nhập email')}
             value={email}
             onChange={setEmail}
             keyboardType="email-address"
@@ -909,8 +932,8 @@ export const EditProfileScreen: React.FC = () => {
 
           {/* 6. Học hàm / Chức vị */}
           <CInput
-            label="Học hàm / Chức vị"
-            placeHolder="Nhập học hàm / chức vị"
+            label={t('partnerEditProfile.position', 'Học hàm / Chức vị')}
+            placeHolder={t('partnerEditProfile.positionPlaceholder', 'Nhập học hàm / chức vị')}
             value={position}
             onChange={setPosition}
             {...registerInput('position')}
@@ -918,8 +941,8 @@ export const EditProfileScreen: React.FC = () => {
 
           {/* 7. Chuyên khoa */}
           <CInput
-            label="Chuyên khoa"
-            placeHolder="Nhập chuyên khoa"
+            label={t('partnerEditProfile.specialization', 'Chuyên khoa')}
+            placeHolder={t('partnerEditProfile.specializationPlaceholder', 'Nhập chuyên khoa')}
             value={specialization}
             onChange={setSpecialization}
             {...registerInput('specialization')}
@@ -928,7 +951,7 @@ export const EditProfileScreen: React.FC = () => {
           {/* 8. Chứng chỉ Hành Nghề * */}
           <View style={styles.formGroup}>
             <View style={styles.labelRow}>
-              <CText style={styles.label}>Chứng chỉ Hành Nghề</CText>
+              <CText style={styles.label}>{t('partnerEditProfile.practiceCertificate', 'Chứng chỉ Hành Nghề')}</CText>
               <CText style={styles.requiredMark}>*</CText>
             </View>
             {certificateFile ? (
@@ -978,7 +1001,7 @@ export const EditProfileScreen: React.FC = () => {
                     errors.certificateFile && { color: '#F04438' },
                   ]}
                 >
-                  Tải lên chứng chỉ hành nghề (PNG, JPG, PDF)
+                  {t('partnerEditProfile.uploadCertificatePrompt', 'Tải lên chứng chỉ hành nghề (PNG, JPG, PDF)')}
                 </CText>
               </TouchableOpacity>
             )}
@@ -991,8 +1014,8 @@ export const EditProfileScreen: React.FC = () => {
 
           {/* 9. Số chứng chỉ Hành Nghề * */}
           <CInput
-            label="Số chứng chỉ Hành Nghề"
-            placeHolder="Bổ sung số CCHN"
+            label={t('partnerEditProfile.certificateNumber', 'Số chứng chỉ Hành Nghề')}
+            placeHolder={t('partnerEditProfile.certificateNumberPlaceholder', 'Bổ sung số CCHN')}
             value={certificateNumber}
             onChange={val => {
               setCertificateNumber(val);
@@ -1007,8 +1030,8 @@ export const EditProfileScreen: React.FC = () => {
 
           {/* 10. Kinh nghiệm làm việc */}
           <CInput
-            label="Kinh nghiệm làm việc"
-            placeHolder="Nhập kinh nghiệm làm việc (ví dụ: 2 năm)"
+            label={t('partnerEditProfile.experience', 'Kinh nghiệm làm việc')}
+            placeHolder={t('partnerEditProfile.experiencePlaceholder', 'Nhập kinh nghiệm làm việc (ví dụ: 2 năm)')}
             value={experience}
             onChange={setExperience}
             {...registerInput('experience')}
@@ -1016,8 +1039,8 @@ export const EditProfileScreen: React.FC = () => {
 
           {/* 11. Nơi công tác */}
           <CInput
-            label="Nơi công tác"
-            placeHolder="Nhập nơi công tác"
+            label={t('partnerEditProfile.workplace', 'Nơi công tác')}
+            placeHolder={t('partnerEditProfile.workplacePlaceholder', 'Nhập nơi công tác')}
             value={workplace}
             onChange={setWorkplace}
             {...registerInput('workplace')}
@@ -1026,7 +1049,7 @@ export const EditProfileScreen: React.FC = () => {
           {/* 12. Khu vực làm việc * */}
           <View style={styles.formGroup}>
             <View style={styles.labelRow}>
-              <CText style={styles.label}>Khu vực làm việc</CText>
+              <CText style={styles.label}>{t('partnerEditProfile.workingArea', 'Khu vực làm việc')}</CText>
               <CText style={styles.requiredMark}>*</CText>
             </View>
             <TouchableOpacity
@@ -1040,7 +1063,7 @@ export const EditProfileScreen: React.FC = () => {
               <CText
                 style={workingArea ? styles.selectText : styles.placeholderText}
               >
-                {workingArea || 'Chọn khu vực làm việc'}
+                {workingArea || t('partnerEditProfile.workingAreaPlaceholder', 'Chọn khu vực làm việc')}
               </CText>
               <IconX
                 type="ionicons"
@@ -1058,8 +1081,8 @@ export const EditProfileScreen: React.FC = () => {
 
           {/* 13. Bán kính sẵn sàng di chuyển (phục vụ) */}
           <CInput
-            label="Bán kính sẵn sàng di chuyển (phục vụ)"
-            placeHolder="Nhập bán kính (ví dụ: 8 Km)"
+            label={t('partnerEditProfile.movingRadius', 'Bán kính sẵn sàng di chuyển (phục vụ)')}
+            placeHolder={t('partnerEditProfile.movingRadiusPlaceholder', 'Nhập bán kính (ví dụ: 8 Km)')}
             value={movingRadius}
             onChange={setMovingRadius}
             {...registerInput('movingRadius')}
@@ -1091,7 +1114,7 @@ export const EditProfileScreen: React.FC = () => {
             {isSubmitting ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <CText style={styles.submitButtonText}>Cập nhật</CText>
+              <CText style={styles.submitButtonText}>{t('partnerEditProfile.btnUpdate', 'Cập nhật')}</CText>
             )}
           </TouchableOpacity>
         </View>
@@ -1128,13 +1151,13 @@ export const EditProfileScreen: React.FC = () => {
         >
           <Pressable style={styles.modalContent} onPress={e => e.stopPropagation()}>
             <View style={styles.modalHandle} />
-            <CText style={styles.modalTitle}>Chọn khu vực làm việc</CText>
+            <CText style={styles.modalTitle}>{t('partnerEditProfile.workingAreaPlaceholder', 'Chọn khu vực làm việc')}</CText>
 
             <View style={styles.searchContainer}>
               <IconX type="ionicons" name="search" size={18} color="#94A3B8" />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Tìm kiếm tỉnh, thành phố..."
+                placeholder={t('partnerEditProfile.searchAreaPlaceholder', 'Tìm kiếm tỉnh, thành phố...')}
                 placeholderTextColor="#94A3B8"
                 value={searchArea}
                 onChangeText={setSearchArea}
@@ -1214,7 +1237,7 @@ export const EditProfileScreen: React.FC = () => {
           >
             <Pressable style={styles.modalContent} onPress={e => e.stopPropagation()}>
               <View style={styles.modalHandle} />
-              <CText style={styles.modalTitle}>Ảnh đại diện</CText>
+              <CText style={styles.modalTitle}>{t('partnerEditProfile.avatarModalTitle', 'Ảnh đại diện')}</CText>
 
               <TouchableOpacity
                 style={styles.modalOptionRow}
@@ -1229,7 +1252,7 @@ export const EditProfileScreen: React.FC = () => {
                     color="#19A2A7"
                   />
                 </View>
-                <CText style={styles.modalOptionText}>Chụp ảnh mới</CText>
+                <CText style={styles.modalOptionText}>{t('partnerEditProfile.takePhoto', 'Chụp ảnh mới')}</CText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -1245,7 +1268,7 @@ export const EditProfileScreen: React.FC = () => {
                     color="#19A2A7"
                   />
                 </View>
-                <CText style={styles.modalOptionText}>Chọn từ thư viện</CText>
+                <CText style={styles.modalOptionText}>{t('partnerEditProfile.chooseFromLibrary', 'Chọn từ thư viện')}</CText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -1253,7 +1276,7 @@ export const EditProfileScreen: React.FC = () => {
                 activeOpacity={0.7}
                 onPress={() => setShowAvatarModal(false)}
               >
-                <CText style={styles.modalOptionCancelText}>Huỷ</CText>
+                <CText style={styles.modalOptionCancelText}>{t('partnerEditProfile.cancel', 'Huỷ')}</CText>
               </TouchableOpacity>
             </Pressable>
           </Pressable>

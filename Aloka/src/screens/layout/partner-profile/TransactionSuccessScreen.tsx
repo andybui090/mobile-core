@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { makeStyles, useTheme } from '@rneui/themed';
 import { IconX, Wrapper } from '@/components';
 import { CText } from '@/utils';
@@ -122,6 +123,7 @@ export const TransactionSuccessScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const {
     theme: { colors },
   } = useTheme();
@@ -138,7 +140,7 @@ export const TransactionSuccessScreen: React.FC = () => {
       {/* Header */}
       <View style={[styles.headerWrapper, { paddingTop: insets.top }]}>
         <View style={styles.headerBar}>
-          <CText style={styles.headerTitle}>Thông tin giao dịch</CText>
+          <CText style={styles.headerTitle}>{t('partnerWithdraw.transactionInfo', 'Thông tin giao dịch')}</CText>
         </View>
       </View>
 
@@ -162,7 +164,7 @@ export const TransactionSuccessScreen: React.FC = () => {
         <CText style={styles.amountText}>{formatNumber(amount)}đ</CText>
 
         {/* Status */}
-        <CText style={styles.statusText}>Rút tiền thành công</CText>
+        <CText style={styles.statusText}>{t('partnerWithdraw.withdrawSuccess', 'Rút tiền thành công')}</CText>
       </View>
 
       {/* Bottom Button */}
@@ -177,7 +179,7 @@ export const TransactionSuccessScreen: React.FC = () => {
           activeOpacity={0.8}
           onPress={handleClose}
         >
-          <CText style={styles.closeBtnText}>Đóng</CText>
+          <CText style={styles.closeBtnText}>{t('partnerWithdraw.btnClose', 'Đóng')}</CText>
         </TouchableOpacity>
       </View>
     </Wrapper>
