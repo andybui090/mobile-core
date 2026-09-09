@@ -374,8 +374,6 @@ class SocketService {
     try {
       if (socket?.connected) {
         socket.emit('room:delete', { roomId, room: roomId, id: roomId });
-        socket.emit('deleteRoom', { roomId, room: roomId, id: roomId });
-        socket.emit('room:leave', { roomId, room: roomId, id: roomId });
       }
     } catch (e) {
       console.warn('emitDeleteRoom error:', e);
