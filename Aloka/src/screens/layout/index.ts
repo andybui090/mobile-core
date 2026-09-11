@@ -4,6 +4,7 @@ export * from './service-detail';
 export * from './nurse-profile';
 export * from './booking-schedule';
 export * from './booking-confirm';
+export * from './booking-success';
 export * from './appointment-list';
 export * from './review-service';
 export * from './work-schedule';

@@ -20,6 +20,9 @@ export interface RoomDetail {
   is_online?: boolean;
 }
 
+// Định nghĩa URL gốc (Base URL), KHÔNG kèm theo /socket.io/ hay query params
+const SOCKET_BASE_URL = "https://staging.rf.api.doctornetwork.us";
+
 let socket: Socket | undefined;
 
 class SocketService {
@@ -38,64 +41,87 @@ class SocketService {
       return true;
     }
 
-    return new Promise(async resolve => {
-      try {
-        const deviceId = await getDeviceId();
-        let jwtToken = ApiService.getAuthorizationHeader();
-        if (!jwtToken) {
-          const storedToken = await getObjectData(STORAGEKEY.JWT_TOKEN);
-          if (storedToken?.access_token) {
-            jwtToken = `Bearer ${storedToken.access_token}`;
-            ApiService.setAuthorizationHeader(storedToken.access_token);
-          }
-        }
-
-        const socketUrl = Config.SOCKET_LINK;
-
-        if (!socket) {
-          socket = io(socketUrl, {
-            transports: ['websocket'],
-            auth: {
-              token: jwtToken || '',
-              authorization: jwtToken || '',
-            },
-            extraHeaders: {
-              ...(jwtToken ? { Authorization: jwtToken } : {}),
-              ...(deviceId ? { deviceId } : {}),
-            },
-            reconnection: true,
-            reconnectionAttempts: 3,
-            reconnectionDelay: 3000,
-            timeout: 10000,
-          });
-
-          this.bindInternalEvents();
-        }
-
-        if (socket.connected) {
-          resolve(true);
-          return;
-        }
-
-        const timeout = setTimeout(() => {
-          resolve(socket?.connected || false);
-        }, 5000);
-
-        socket.once('connect', () => {
-          clearTimeout(timeout);
-          resolve(true);
-        });
-
-        socket.once('connect_error', () => {
-          clearTimeout(timeout);
-          resolve(false);
-        });
-
-        socket.connect();
-      } catch (error) {
-        console.log('Socket connect error:', error);
-        resolve(false);
+    // 1. Chuẩn bị Token và DeviceId trước khi vào Promise
+    let jwtToken = ApiService.getAuthorizationHeader();
+    if (!jwtToken) {
+      const storedToken = await getObjectData(STORAGEKEY.JWT_TOKEN);
+      if (storedToken?.access_token) {
+        jwtToken = `Bearer ${storedToken.access_token}`;
+        ApiService.setAuthorizationHeader(storedToken.access_token);
       }
+    }
+
+    const deviceId = await getDeviceId().catch(() => undefined);
+
+    // 2. Khởi tạo Socket instance nếu chưa có
+    if (!socket) {
+      socket = io(SOCKET_BASE_URL, {
+        path: '/socket.io/', // Mặc định là /socket.io/, socket.io-client sẽ tự lo EIO=4
+        transports: ['websocket'],
+        autoConnect: false, // Để chủ động gọi socket.connect() có kiểm soát bên dưới
+        auth: {
+          token: jwtToken || '',
+          authorization: jwtToken || '',
+          deviceId: deviceId || '',
+        },
+        // extraHeaders chỉ có tác dụng trên React Native / NodeJS
+        extraHeaders: {
+          ...(jwtToken ? { Authorization: jwtToken } : {}),
+          ...(deviceId ? { deviceId } : {}),
+        },
+        reconnection: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 3000,
+        timeout: 10000,
+      });
+
+      this.bindInternalEvents();
+    } else {
+      // Cập nhật lại token mới nhất nếu socket đã tồn tại từ trước
+      socket.auth = {
+        token: jwtToken || '',
+        authorization: jwtToken || '',
+        deviceId: deviceId || '',
+      };
+    }
+
+    if (socket.connected) {
+      return true;
+    }
+
+    // 3. Thực hiện kết nối với Cleanup an toàn tránh Memory Leak
+    return new Promise<boolean>((resolve) => {
+      let timer: ReturnType<typeof setTimeout> | null = null;
+
+      const cleanup = () => {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        socket?.off('connect', onConnect);
+        socket?.off('connect_error', onConnectError);
+      };
+
+      const onConnect = () => {
+        cleanup();
+        resolve(true);
+      };
+
+      const onConnectError = (error: Error) => {
+        cleanup();
+        console.warn('Socket connection error:', error.message);
+        resolve(false);
+      };
+
+      timer = setTimeout(() => {
+        cleanup();
+        resolve(socket?.connected || false);
+      }, 5000);
+
+      socket?.once('connect', onConnect);
+      socket?.once('connect_error', onConnectError);
+
+      socket?.connect();
     });
   }
 
@@ -328,7 +354,6 @@ class SocketService {
           {
             limit,
             offset,
-            premium: 0,
             fq: 'type:1-1',
           },
           (res: any) => {

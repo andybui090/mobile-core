@@ -13,7 +13,13 @@ import { IconX, ImageHelper } from '@/components';
 import { images } from '@/configs/image';
 import { CText } from '@/utils';
 
-export const ReviewService: React.FC = () => {
+interface ReviewServiceProps {
+  navigation?: any;
+  route?: any;
+}
+
+export const ReviewService: React.FC<ReviewServiceProps> = ({ navigation, route }) => {
+  const appointment = route?.params?.appointment;
   const [rating, setRating] = useState(4); // 4 filled stars matching Figma default
   const [reviewText, setReviewText] = useState('');
   const [mediaText, setMediaText] = useState('');
@@ -29,7 +35,11 @@ export const ReviewService: React.FC = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          activeOpacity={0.7}
+          onPress={() => navigation?.goBack?.()}
+        >
           <IconX type="ionicons" name="chevron-back" size={24} color="#1D2939" />
         </TouchableOpacity>
         <CText style={styles.headerTitle}>Đánh giá dịch vụ</CText>
@@ -43,15 +53,17 @@ export const ReviewService: React.FC = () => {
         {/* Service Header Info Card */}
         <View style={styles.serviceCard}>
           <ImageHelper
-            source={(images.common as any).service_mom_baby || images.common.img_default}
+            source={appointment?.image || (images.common as any).service_mom_baby || images.common.img_default}
             style={styles.serviceImage}
             resizeMode="cover"
           />
           <View style={styles.serviceInfo}>
             <CText style={styles.serviceTitle} numberOfLines={2}>
-              Dịch vụ Nuôi sinh & Chăm sóc mẹ{'\n'}bé tại bệnh viện
+              {appointment?.title || 'Dịch vụ Nuôi sinh & Chăm sóc mẹ\nbé tại bệnh viện'}
             </CText>
-            <CText style={styles.nurseName}>Điều dưỡng Thúy Ngọc</CText>
+            <CText style={styles.nurseName}>
+              {appointment?.nurseName || appointment?.hospitalName || 'Điều dưỡng Thúy Ngọc'}
+            </CText>
           </View>
         </View>
 

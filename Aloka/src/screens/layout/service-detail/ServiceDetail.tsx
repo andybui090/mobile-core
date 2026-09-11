@@ -45,8 +45,28 @@ const DESCRIPTIONS = [
   'Chăm sóc bé sơ sinh trọn gói tại phòng.',
 ];
 
-export const ServiceDetail: React.FC = () => {
+interface ServiceDetailProps {
+  navigation?: any;
+  route?: any;
+}
+
+export const ServiceDetail: React.FC<ServiceDetailProps> = ({ navigation, route }) => {
+  const service = route?.params?.service;
   const [selectedPackage, setSelectedPackage] = useState('1');
+
+  const title =
+    service?.title ||
+    service?.name ||
+    'Dịch vụ Nuôi sinh & Chăm\nsóc mẹ bé tại bệnh viện';
+  const nurseName =
+    service?.nurseName || service?.nurse_name || 'Điều dưỡng Thúy Ngọc';
+  const image =
+    service?.image ||
+    (images.common as any).service_mom_baby ||
+    images.common.img_default;
+  const rating = service?.rating ?? 4.7;
+  const reviewsCount = service?.reviewsCount ?? 42;
+  const price = service?.discountPrice || service?.price || '199.000đ';
 
   return (
     <View style={styles.container}>
@@ -59,13 +79,17 @@ export const ServiceDetail: React.FC = () => {
         {/* Banner Hero Photo with Top Controls */}
         <View style={styles.bannerContainer}>
           <ImageHelper
-            source={(images.common as any).service_mom_baby || images.common.img_default}
+            source={image}
             style={styles.bannerImage}
             resizeMode="cover"
           />
 
           <SafeAreaView style={styles.topBar}>
-            <TouchableOpacity style={styles.circleBtn} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.circleBtn}
+              activeOpacity={0.7}
+              onPress={() => navigation?.goBack?.()}
+            >
               <IconX type="ionicons" name="chevron-back" size={22} color="#FFFFFF" />
             </TouchableOpacity>
             <TouchableOpacity
@@ -73,8 +97,8 @@ export const ServiceDetail: React.FC = () => {
               activeOpacity={0.7}
               onPress={() =>
                 onShare({
-                  title: 'Dịch vụ Nuôi sinh & Chăm sóc mẹ bé',
-                  message: 'Dịch vụ Nuôi sinh & Chăm sóc mẹ bé tại bệnh viện - Điều dưỡng Thúy Ngọc',
+                  title: title,
+                  message: `${title} - ${nurseName}`,
                 })
               }
             >
@@ -85,11 +109,9 @@ export const ServiceDetail: React.FC = () => {
 
         {/* Header Information Section */}
         <View style={styles.mainInfoSection}>
-          <CText style={styles.serviceTitle}>
-            Dịch vụ Nuôi sinh & Chăm{'\n'}sóc mẹ bé tại bệnh viện
-          </CText>
+          <CText style={styles.serviceTitle}>{title}</CText>
 
-          <CText style={styles.nurseName}>Điều dưỡng Thúy Ngọc</CText>
+          <CText style={styles.nurseName}>{nurseName}</CText>
 
           <View style={styles.locationRow}>
             <IconX type="ionicons" name="location-outline" size={15} color="#667085" />
@@ -99,8 +121,8 @@ export const ServiceDetail: React.FC = () => {
           <View style={styles.ratingStatsRow}>
             <View style={styles.ratingLeft}>
               <IconX type="ionicons" name="star" size={15} color="#F59E0B" />
-              <CText style={styles.starScore}>4.7</CText>
-              <CText style={styles.reviewCount}>42 Đánh giá</CText>
+              <CText style={styles.starScore}>{rating}</CText>
+              <CText style={styles.reviewCount}>{reviewsCount} Đánh giá</CText>
             </View>
             <CText style={styles.jobsRight}>
               Tổng công việc đã nhận <CText style={styles.jobCountBold}>100</CText>
@@ -175,7 +197,11 @@ export const ServiceDetail: React.FC = () => {
           <CText style={styles.priceLabel}>Giá trị gói</CText>
           <CText style={styles.priceValue}>199.000đ</CText>
         </View>
-        <TouchableOpacity style={styles.bookButton} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.bookButton}
+          activeOpacity={0.8}
+          onPress={() => navigation?.navigate?.('BookingSchedule', { service })}
+        >
           <CText style={styles.bookButtonText}>Đặt lịch ngay</CText>
         </TouchableOpacity>
       </View>

@@ -70,7 +70,7 @@ function AppointmentStack() {
   return (
     <StackAppointment.Navigator
       screenOptions={screenOptions}
-      initialRouteName={appointmentTabRoute.appointmentScreen}
+      initialRouteName={appointmentTabRoute.appointmentList}
     >
       {Object.values(appointmentTabRoute).map(item => {
         return (

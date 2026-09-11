@@ -35,7 +35,13 @@ const TIME_SLOTS = [
   { id: '6', time: '20:00', available: true },
 ];
 
-export const BookingSchedule: React.FC = () => {
+interface BookingScheduleProps {
+  navigation?: any;
+  route?: any;
+}
+
+export const BookingSchedule: React.FC<BookingScheduleProps> = ({ navigation, route }) => {
+  const service = route?.params?.service;
   const [selectedDay, setSelectedDay] = useState('4'); // T4 25/01
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('1'); // 10:30
 
@@ -45,7 +51,11 @@ export const BookingSchedule: React.FC = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.headerBtn}
+          activeOpacity={0.7}
+          onPress={() => navigation?.goBack?.()}
+        >
           <IconX type="ionicons" name="chevron-back" size={24} color="#1D2939" />
         </TouchableOpacity>
         <CText style={styles.headerTitle}>Địa chỉ</CText>
@@ -163,7 +173,17 @@ export const BookingSchedule: React.FC = () => {
 
       {/* Footer Confirm */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.confirmBtn} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.confirmBtn}
+          activeOpacity={0.8}
+          onPress={() =>
+            navigation?.navigate?.('BookingConfirm', {
+              service,
+              selectedDay,
+              selectedTimeSlot,
+            })
+          }
+        >
           <CText style={styles.confirmBtnText}>Xác nhận</CText>
         </TouchableOpacity>
       </View>

@@ -23,7 +23,13 @@ const PAYMENT_METHODS: PaymentMethod[] = [
   { id: 'cash', name: 'Thanh toán trực tiếp' },
 ];
 
-export const BookingConfirm: React.FC = () => {
+interface BookingConfirmProps {
+  navigation?: any;
+  route?: any;
+}
+
+export const BookingConfirm: React.FC<BookingConfirmProps> = ({ navigation, route }) => {
+  const service = route?.params?.service;
   const [selectedPayment, setSelectedPayment] = useState<'momo' | 'vnpay' | 'cash'>('momo');
   const [showPolicyModal, setShowPolicyModal] = useState(false);
 
@@ -56,7 +62,11 @@ export const BookingConfirm: React.FC = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.headerBtn}
+          activeOpacity={0.7}
+          onPress={() => navigation?.goBack?.()}
+        >
           <IconX type="ionicons" name="chevron-back" size={24} color="#1D2939" />
         </TouchableOpacity>
         <CText style={styles.headerTitle}>Xem lại và xác nhận</CText>
@@ -74,15 +84,15 @@ export const BookingConfirm: React.FC = () => {
         <View style={styles.card}>
           <View style={styles.serviceRow}>
             <ImageHelper
-              source={images.common.img_default}
+              source={service?.image || images.common.img_default}
               style={styles.serviceThumbnail}
               resizeMode="cover"
             />
             <View style={styles.serviceDetails}>
               <CText style={styles.serviceTitle} numberOfLines={2}>
-                Dịch vụ Nuôi sinh & Chăm sóc mẹ bé tại bệnh viện
+                {service?.title || 'Dịch vụ Nuôi sinh & Chăm sóc mẹ bé tại bệnh viện'}
               </CText>
-              <CText style={styles.nurseName}>Điều dưỡng Thúy Ngọc</CText>
+              <CText style={styles.nurseName}>{service?.subtitle || 'Điều dưỡng Thúy Ngọc'}</CText>
             </View>
           </View>
 
@@ -103,13 +113,22 @@ export const BookingConfirm: React.FC = () => {
             </View>
           </View>
 
-          <TouchableOpacity
-            style={styles.viewDetailsBtn}
-            onPress={() => setShowPolicyModal(true)}
-            activeOpacity={0.7}
-          >
-            <CText style={styles.viewDetailsBtnText}>Xem chi tiết công việc</CText>
-          </TouchableOpacity>
+          <View style={styles.actionButtonsRow}>
+            <TouchableOpacity
+              style={styles.viewDetailsBtn}
+              onPress={() => setShowPolicyModal(true)}
+              activeOpacity={0.7}
+            >
+              <CText style={styles.viewDetailsBtnText}>Xem chi tiết</CText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.cancelBookingBtn}
+              onPress={() => setShowPolicyModal(true)}
+              activeOpacity={0.7}
+            >
+              <CText style={styles.cancelBookingBtnText}>Hủy lịch hẹn</CText>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Section 2: Phương thức thanh toán */}
@@ -190,7 +209,11 @@ export const BookingConfirm: React.FC = () => {
 
       {/* Bottom Button */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.payNowBtn} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.payNowBtn}
+          activeOpacity={0.8}
+          onPress={() => navigation?.navigate?.('BookingSuccess', { service })}
+        >
           <CText style={styles.payNowBtnText}>Thanh toán ngay</CText>
         </TouchableOpacity>
       </View>
@@ -293,19 +316,40 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 14,
+  },
   viewDetailsBtn: {
+    flex: 1,
     borderWidth: 1.2,
     borderColor: '#14B8A6',
     borderRadius: 8,
     paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 14,
     backgroundColor: '#FFFFFF',
   },
   viewDetailsBtnText: {
     fontSize: 13.5,
     color: '#14B8A6',
+    fontWeight: '600',
+  },
+  cancelBookingBtn: {
+    flex: 1,
+    borderWidth: 1.2,
+    borderColor: '#F04438',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FEF3F2',
+  },
+  cancelBookingBtnText: {
+    fontSize: 13.5,
+    color: '#D92D20',
     fontWeight: '600',
   },
   paymentRow: {

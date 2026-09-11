@@ -2,6 +2,14 @@ export const rootRoute = 'rootRoute';
 
 export const homeTabRoute = {
   homeScreen: 'HomeScreen',
+  searchService: 'SearchService',
+  searchFilter: 'SearchFilter',
+  serviceDetail: 'ServiceDetail',
+  bookingSchedule: 'BookingSchedule',
+  bookingConfirm: 'BookingConfirm',
+  bookingSuccess: 'BookingSuccess',
+  appointmentList: 'AppointmentList',
+  reviewService: 'ReviewService',
 };
 
 export const drnetworkTabRoute = {
@@ -9,7 +17,12 @@ export const drnetworkTabRoute = {
 };
 
 export const appointmentTabRoute = {
+  appointmentList: 'AppointmentList',
   appointmentScreen: 'AppointmentScreen',
+  bookingSchedule: 'BookingSchedule',
+  bookingConfirm: 'BookingConfirm',
+  bookingSuccess: 'BookingSuccess',
+  reviewService: 'ReviewService',
 };
 
 export const accountTabRoute = {
@@ -22,6 +35,12 @@ export const mainRoute = {
   settingScreen: 'SettingScreen',
   aboutUsScreen: 'AboutUsScreen',
   feedbackScreen: 'FeedbackScreen',
+  serviceDetail: 'ServiceDetail',
+  bookingSchedule: 'BookingSchedule',
+  bookingConfirm: 'BookingConfirm',
+  bookingSuccess: 'BookingSuccess',
+  appointmentList: 'AppointmentList',
+  reviewService: 'ReviewService',
 };
 
 

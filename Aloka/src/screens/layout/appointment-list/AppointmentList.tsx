@@ -11,7 +11,9 @@ import {
 } from 'react-native';
 import { IconX, ImageHelper } from '@/components';
 import { images } from '@/configs/image';
+import { rootRoute } from '@/constants';
 import { CText } from '@/utils';
+import { BookingCancelPolicyModal } from '@/screens/layout/booking-confirm';
 
 interface UpcomingItem {
   id: string;
@@ -84,13 +86,51 @@ const COMPLETED_APPOINTMENTS: CompletedItem[] = [
 
 type AppointmentItem = UpcomingItem | CompletedItem;
 
-export const AppointmentList: React.FC = () => {
+interface AppointmentListProps {
+  navigation?: any;
+}
+
+export const AppointmentList: React.FC<AppointmentListProps> = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState('Sắp diễn ra');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showCskhModal, setShowCskhModal] = useState(false);
+  const [showCancelPolicyModal, setShowCancelPolicyModal] = useState(false);
+  const [showConfirmDoneModal, setShowConfirmDoneModal] = useState(false);
+  const [selectedDoneItem, setSelectedDoneItem] = useState<CompletedItem | null>(null);
 
-  const handleReviewPress = () => {
-    setShowSuccessModal(true);
+  const handleReviewPress = (item?: CompletedItem) => {
+    navigation?.navigate?.('ReviewService', { appointment: item });
+  };
+
+  const handleBackToHome = () => {
+    // 1. If we can go back in the current stack, pop to top or go back
+    if (navigation?.canGoBack?.()) {
+      if (navigation?.popToTop) {
+        navigation.popToTop();
+        return;
+      }
+      navigation.goBack();
+      return;
+    }
+
+    // 2. If at root of tab (e.g. came from bottom AppointmentTab), switch to HomeTab via parent Tab navigator
+    const parentNav = navigation?.getParent?.();
+    if (parentNav?.navigate) {
+      parentNav.navigate('HomeTab');
+      return;
+    }
+
+    // 3. Fallback via rootRoute
+    if (navigation?.navigate) {
+      try {
+        navigation.navigate(rootRoute, { screen: 'HomeTab' });
+        return;
+      } catch {}
+      try {
+        navigation.navigate('HomeScreen');
+        return;
+      } catch {}
+    }
   };
 
   const handleCallHotline = () => {
@@ -150,8 +190,12 @@ export const AppointmentList: React.FC = () => {
         >
           <CText style={styles.cskhBtnText}>Liên hệ CSKH</CText>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.cancelBtn} activeOpacity={0.7}>
-          <CText style={styles.cancelBtnText}>Hủy lịch/Hoàn tiền</CText>
+        <TouchableOpacity
+          style={styles.cancelBtn}
+          activeOpacity={0.7}
+          onPress={() => setShowCancelPolicyModal(true)}
+        >
+          <CText style={styles.cancelBtnText}>Hủy lịch hẹn</CText>
         </TouchableOpacity>
       </View>
     </View>
@@ -204,16 +248,27 @@ export const AppointmentList: React.FC = () => {
             <TouchableOpacity
               style={styles.reviewBtn}
               activeOpacity={0.7}
-              onPress={handleReviewPress}
+              onPress={() => handleReviewPress(item)}
             >
               <CText style={styles.reviewBtnText}>Đánh giá</CText>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.confirmDoneBtn} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={styles.confirmDoneBtn}
+              activeOpacity={0.8}
+              onPress={() => {
+                setSelectedDoneItem(item);
+                setShowConfirmDoneModal(true);
+              }}
+            >
               <CText style={styles.confirmDoneBtnText}>Xác nhận hoàn thành</CText>
             </TouchableOpacity>
           </>
         ) : (
-          <TouchableOpacity style={styles.rebookBtn} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.rebookBtn}
+            activeOpacity={0.7}
+            onPress={() => navigation?.navigate?.('BookingSchedule', { service: item })}
+          >
             <CText style={styles.rebookBtnText}>Đặt lịch lại</CText>
           </TouchableOpacity>
         )}
@@ -230,9 +285,17 @@ export const AppointmentList: React.FC = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} activeOpacity={0.7}>
-          <IconX type="ionicons" name="chevron-back" size={24} color="#1D2939" />
-        </TouchableOpacity>
+        {navigation?.canGoBack?.() ? (
+          <TouchableOpacity
+            style={styles.backBtn}
+            activeOpacity={0.7}
+            onPress={handleBackToHome}
+          >
+            <IconX type="ionicons" name="chevron-back" size={24} color="#1D2939" />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.placeholder} />
+        )}
         <CText style={styles.headerTitle}>Lịch hẹn</CText>
         <View style={styles.placeholder} />
       </View>
@@ -375,6 +438,75 @@ export const AppointmentList: React.FC = () => {
             >
               <CText style={styles.cskhConfirmBtnText}>Đã hiểu</CText>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Booking Cancel Policy Modal */}
+      <BookingCancelPolicyModal
+        visible={showCancelPolicyModal}
+        onClose={() => setShowCancelPolicyModal(false)}
+        onConfirm={() => setShowCancelPolicyModal(false)}
+      />
+
+      {/* Confirm Done / Review Prompt Bottom Sheet Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showConfirmDoneModal}
+        onRequestClose={() => setShowConfirmDoneModal(false)}
+      >
+        <View style={styles.sheetOverlay}>
+          <TouchableOpacity
+            style={styles.sheetBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowConfirmDoneModal(false)}
+          />
+          <View style={styles.confirmSheetContent}>
+            {/* Drag handle */}
+            <View style={styles.sheetHandle} />
+
+            {/* Back Button Header */}
+            <View style={styles.confirmSheetHeader}>
+              <TouchableOpacity
+                onPress={() => setShowConfirmDoneModal(false)}
+                activeOpacity={0.7}
+                style={styles.confirmSheetBackBtn}
+              >
+                <IconX type="ionicons" name="chevron-back" size={22} color="#1D2939" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Body prompt */}
+            <CText style={styles.confirmSheetMessage}>
+              Dịch vụ đã hoàn tất, bạn có muốn dành ít phút đánh giá cho{' '}
+              {selectedDoneItem?.nurseName || selectedDoneItem?.hospitalName || 'Điều dưỡng Thuý Ngọc'}{' '}
+              không?
+            </CText>
+
+            {/* Actions */}
+            <View style={styles.confirmSheetActions}>
+              <TouchableOpacity
+                style={styles.confirmSheetSkipBtn}
+                activeOpacity={0.7}
+                onPress={() => setShowConfirmDoneModal(false)}
+              >
+                <CText style={styles.confirmSheetSkipText}>Bỏ qua</CText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.confirmSheetRateBtn}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setShowConfirmDoneModal(false);
+                  navigation?.navigate?.('ReviewService', {
+                    appointment: selectedDoneItem,
+                  });
+                }}
+              >
+                <CText style={styles.confirmSheetRateText}>Đánh giá</CText>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -745,5 +877,83 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+  },
+  /* Confirm Done Modal Styles */
+  sheetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  sheetBackdrop: {
+    ...StyleSheet.absoluteFill,
+  },
+  confirmSheetContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 32,
+  },
+  sheetHandle: {
+    width: 44,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D0D5DD',
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  confirmSheetHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F4F7',
+  },
+  confirmSheetBackBtn: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+  },
+  confirmSheetMessage: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#1D2939',
+    fontWeight: '500',
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    paddingBottom: 24,
+  },
+  confirmSheetActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  confirmSheetSkipBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 8,
+    borderWidth: 1.2,
+    borderColor: '#14B8A6',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmSheetSkipText: {
+    fontSize: 15,
+    color: '#14B8A6',
+    fontWeight: '600',
+  },
+  confirmSheetRateBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 8,
+    backgroundColor: '#14B8A6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmSheetRateText: {
+    fontSize: 15,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });

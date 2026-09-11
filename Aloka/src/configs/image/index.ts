@@ -6,6 +6,7 @@ import { home } from './home';
 import { common } from './common';
 import { community } from './community';
 import { setting } from './setting';
+import { profile } from './profile';
 
 export const images = {
   intro,
@@ -16,6 +17,7 @@ export const images = {
   common,
   community,
   setting,
+  profile,
 };
 
 

@@ -132,23 +132,50 @@ const SERVICES_DATA: ServiceItem[] = [
 ];
 
 interface SearchServiceProps {
+  navigation?: any;
   onBack?: () => void;
   onFilterPress?: () => void;
 }
 
-export const SearchService: React.FC<SearchServiceProps> = ({ onBack, onFilterPress }) => {
+export const SearchService: React.FC<SearchServiceProps> = ({
+  navigation,
+  onBack,
+  onFilterPress,
+}) => {
   const [searchText, setSearchText] = useState('Tắm bé');
   const [selectedTab, setSelectedTab] = useState('hanoi');
   const [isFavoriteSelected, setIsFavoriteSelected] = useState(false);
   const [isSuggestedSelected, setIsSuggestedSelected] = useState(true);
   const [showFilterScreen, setShowFilterScreen] = useState(false);
 
-  if (showFilterScreen) {
-    return <SearchFilter onBack={() => setShowFilterScreen(false)} />;
-  }
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else if (navigation?.canGoBack?.()) {
+      navigation.goBack();
+    }
+  };
+
+  const handleFilter = () => {
+    if (onFilterPress) {
+      onFilterPress();
+    } else if (navigation) {
+      navigation.navigate('SearchFilter');
+    } else {
+      setShowFilterScreen(true);
+    }
+  };
+
+  const handlePressService = (item: ServiceItem) => {
+    navigation?.navigate?.('ServiceDetail', { service: item });
+  };
 
   const renderServiceCard = ({ item }: { item: ServiceItem }) => (
-    <TouchableOpacity style={styles.gridCard} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.gridCard}
+      activeOpacity={0.7}
+      onPress={() => handlePressService(item)}
+    >
       <View style={styles.cardImageWrapper}>
         <ImageHelper
           source={item.image}
@@ -193,7 +220,7 @@ export const SearchService: React.FC<SearchServiceProps> = ({ onBack, onFilterPr
         <TouchableOpacity
           style={styles.backButton}
           activeOpacity={0.7}
-          onPress={onBack}
+          onPress={handleBack}
         >
           <IconX type="ionicons" name="chevron-back" size={24} color="#1D2939" />
         </TouchableOpacity>
@@ -215,13 +242,7 @@ export const SearchService: React.FC<SearchServiceProps> = ({ onBack, onFilterPr
           <TouchableOpacity
             activeOpacity={0.7}
             style={styles.filterBtn}
-            onPress={() => {
-              if (onFilterPress) {
-                onFilterPress();
-              } else {
-                setShowFilterScreen(true);
-              }
-            }}
+            onPress={handleFilter}
           >
             <View style={styles.filterFunnelContainer}>
               <View style={[styles.filterFunnelLine, { width: 15 }]} />

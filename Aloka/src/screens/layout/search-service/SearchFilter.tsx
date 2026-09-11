@@ -28,10 +28,11 @@ const POPULAR_OPTIONS = [
 ];
 
 interface SearchFilterProps {
+  navigation?: any;
   onBack?: () => void;
 }
 
-export const SearchFilter: React.FC<SearchFilterProps> = ({ onBack }) => {
+export const SearchFilter: React.FC<SearchFilterProps> = ({ navigation, onBack }) => {
   const [selectedSidebar, setSelectedSidebar] = useState('time');
   const [searchText, setSearchText] = useState('Tắm bé');
 
@@ -45,13 +46,21 @@ export const SearchFilter: React.FC<SearchFilterProps> = ({ onBack }) => {
   const [selectedPopular, setSelectedPopular] = useState('Đánh giá cao nhất');
   const [selectedRating, setSelectedRating] = useState('4');
 
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else if (navigation?.canGoBack?.()) {
+      navigation.goBack();
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.backBtn} onPress={handleBack} activeOpacity={0.7}>
           <IconX type="ionicons" name="chevron-back" size={24} color="#1D2939" />
         </TouchableOpacity>
         <CText style={styles.headerTitle}>Tìm kiếm</CText>

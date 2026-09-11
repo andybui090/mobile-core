@@ -16,7 +16,7 @@ import {
 import { Row, CText, Container, CScrollView } from '@/utils';
 import { onLinkBanner } from './function';
 import { getBanner, getUpcomingBookingHome } from '@/redux/slices/homeSlice';
-import { PAGINATION } from '@/constants';
+import { homeTabRoute, PAGINATION } from '@/constants';
 import {
   getCarelySearchServices,
   getCarelyServices,
@@ -274,7 +274,11 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
   // -------------------------------
 
   const handlePressSearch = () => {
-    // navigation.navigate(carelyHomeTabRoute.carelySearchScreen);
+    navigation.navigate(homeTabRoute.searchService);
+  };
+
+  const handlePressFilter = () => {
+    navigation.navigate(homeTabRoute.searchFilter);
   };
 
   const handleChooseFilterService = (item: any) => {
@@ -292,7 +296,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
   };
 
   const handlePressDetailService = (item: any) => {
-    // navigation.navigate(mainRoute.carelyServiceDetailScreen, { service: item });
+    navigation.navigate(homeTabRoute.serviceDetail, { service: item });
   };
 
   const _handleLoadMoreSearch = () => {
@@ -308,9 +312,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
   };
 
   const handlePressItemService = (item: any) => {
-    // navigation.navigate(carelyHomeTabRoute.carelyServiceScreen, {
-    //   parentService: item,
-    // });
+    navigation.navigate(homeTabRoute.serviceDetail, { service: item });
   };
 
   const _handleLoadMore = () => {
@@ -342,6 +344,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
         <CSearchBarTrigger
           placeholder={t('search.searchPlaceholder', 'Search...')}
           onPress={handlePressSearch}
+          onPressFilter={handlePressFilter}
         />
       </View>
     );
