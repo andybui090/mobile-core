@@ -78,6 +78,8 @@ export const NotificationList: React.FC<NotificationListProps> = ({ onBack }) =>
   // Handle getListNotify response from Redux
   useEffect(() => {
     const { loading, data, error } = notifyList;
+    // Skip initial Redux state (loading=false, data=undefined, error=undefined)
+    if (!loading && data === undefined && error === undefined) return;
     if (!loading) {
       if (data) {
         const resData: any = data;
@@ -125,6 +127,7 @@ export const NotificationList: React.FC<NotificationListProps> = ({ onBack }) =>
       setIsLoadingMore(false);
     }
   }, [notifyList, offsetNoti, t]);
+
 
   // Handle readNotify response
   useEffect(() => {
@@ -184,11 +187,11 @@ export const NotificationList: React.FC<NotificationListProps> = ({ onBack }) =>
           parsed?.type === 'completed_booking' ||
           parsed?.type === 'cancel_booking'
         ) {
-          navigation.navigate('CarelyAppointmentTab' as never);
+          navigation.navigate('AppointmentTab' as never);
         } else if (parsed?.link) {
-          Linking.openURL(parsed.link).catch(() => {});
+          Linking.openURL(parsed.link).catch(() => { });
         }
-      } catch (e) {}
+      } catch (e) { }
     }
   };
 
@@ -240,7 +243,7 @@ export const NotificationList: React.FC<NotificationListProps> = ({ onBack }) =>
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.backBtn} onPress={onBack ?? (() => navigation.goBack())} activeOpacity={0.7}>
           <IconX type="ionicons" name="chevron-back" size={24} color="#1D2939" />
         </TouchableOpacity>
         <CText style={styles.headerTitle}>
@@ -256,7 +259,7 @@ export const NotificationList: React.FC<NotificationListProps> = ({ onBack }) =>
       </View>
 
       {/* Main Content */}
-      {isFirstLoading && notifyList.loading ? (
+      {isFirstLoading ? (
         <View style={styles.centerLoading}>
           <ActivityIndicator size="large" color="#0D9488" />
           <CText style={styles.loadingText}>Đang tải thông báo...</CText>

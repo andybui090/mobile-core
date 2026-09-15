@@ -8,8 +8,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { IconX, ImageHelper } from '@/components';
+import { formatMoneyVND } from '@/configs/common';
 import { images } from '@/configs/image';
+import { homeTabRoute } from '@/constants';
 import { CText, onShare } from '@/utils';
 
 const { width } = Dimensions.get('window');
@@ -46,7 +49,30 @@ const DESCRIPTIONS = [
 ];
 
 export const ServiceDetail: React.FC = () => {
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const service = route.params?.service || {};
+
   const [selectedPackage, setSelectedPackage] = useState('1');
+
+  const title = service?.name || 'Chi tiết dịch vụ';
+  const nurseName =
+    service?.channel?.name || service?.doctor?.full_name || 'Điều dưỡng Aloka';
+  const location =
+    service?.address || service?.doctor?.address || 'Phú Nhuận - Hồ Chí Minh';
+  const rating = service?.avg_value ? Number(service.avg_value).toFixed(1) : '5.0';
+  const reviewCount = service?.total_ratings || 0;
+  const totalJobs = service?.total_orders || service?.total_bookings || 100;
+  const price = service?.price ?? service?.package?.price ?? 0;
+  const priceFormatted = formatMoneyVND(price, '.');
+
+  const bannerSource = service?.thumbnail
+    ? { uri: service.thumbnail }
+    : (images.common as any)?.service_mom_baby || images.common.img_default;
+
+  const handleBookNow = () => {
+    navigation.navigate(homeTabRoute.bookingSchedule, { service });
+  };
 
   return (
     <View style={styles.container}>
@@ -59,13 +85,17 @@ export const ServiceDetail: React.FC = () => {
         {/* Banner Hero Photo with Top Controls */}
         <View style={styles.bannerContainer}>
           <ImageHelper
-            source={(images.common as any).service_mom_baby || images.common.img_default}
+            source={bannerSource}
             style={styles.bannerImage}
             resizeMode="cover"
           />
 
           <SafeAreaView style={styles.topBar}>
-            <TouchableOpacity style={styles.circleBtn} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.circleBtn}
+              activeOpacity={0.7}
+              onPress={() => navigation.goBack()}
+            >
               <IconX type="ionicons" name="chevron-back" size={22} color="#FFFFFF" />
             </TouchableOpacity>
             <TouchableOpacity
@@ -73,8 +103,8 @@ export const ServiceDetail: React.FC = () => {
               activeOpacity={0.7}
               onPress={() =>
                 onShare({
-                  title: 'Dịch vụ Nuôi sinh & Chăm sóc mẹ bé',
-                  message: 'Dịch vụ Nuôi sinh & Chăm sóc mẹ bé tại bệnh viện - Điều dưỡng Thúy Ngọc',
+                  title: title,
+                  message: `${title} - ${nurseName}`,
                 })
               }
             >
@@ -85,25 +115,23 @@ export const ServiceDetail: React.FC = () => {
 
         {/* Header Information Section */}
         <View style={styles.mainInfoSection}>
-          <CText style={styles.serviceTitle}>
-            Dịch vụ Nuôi sinh & Chăm{'\n'}sóc mẹ bé tại bệnh viện
-          </CText>
+          <CText style={styles.serviceTitle}>{title}</CText>
 
-          <CText style={styles.nurseName}>Điều dưỡng Thúy Ngọc</CText>
+          <CText style={styles.nurseName}>{nurseName}</CText>
 
           <View style={styles.locationRow}>
             <IconX type="ionicons" name="location-outline" size={15} color="#667085" />
-            <CText style={styles.locationText}>Phú Nhuận - Hồ Chí Minh</CText>
+            <CText style={styles.locationText}>{location}</CText>
           </View>
 
           <View style={styles.ratingStatsRow}>
             <View style={styles.ratingLeft}>
               <IconX type="ionicons" name="star" size={15} color="#F59E0B" />
-              <CText style={styles.starScore}>4.7</CText>
-              <CText style={styles.reviewCount}>42 Đánh giá</CText>
+              <CText style={styles.starScore}>{rating}</CText>
+              <CText style={styles.reviewCount}>{reviewCount} Đánh giá</CText>
             </View>
             <CText style={styles.jobsRight}>
-              Tổng công việc đã nhận <CText style={styles.jobCountBold}>100</CText>
+              Tổng công việc đã nhận <CText style={styles.jobCountBold}>{totalJobs}</CText>
             </CText>
           </View>
         </View>
@@ -114,7 +142,9 @@ export const ServiceDetail: React.FC = () => {
         <View style={styles.sectionBlock}>
           <CText style={styles.sectionTitle}>Mô tả dịch vụ</CText>
           <View style={styles.cardContainer}>
-            <CText style={styles.paragraphText}>{DESCRIPTIONS[0]}</CText>
+            <CText style={styles.paragraphText}>
+              {service?.description || DESCRIPTIONS[0]}
+            </CText>
             {DESCRIPTIONS.slice(1).map((item, index) => (
               <View key={index} style={styles.bulletRow}>
                 <IconX
@@ -173,9 +203,13 @@ export const ServiceDetail: React.FC = () => {
       <View style={styles.bottomBar}>
         <View style={styles.priceContainer}>
           <CText style={styles.priceLabel}>Giá trị gói</CText>
-          <CText style={styles.priceValue}>199.000đ</CText>
+          <CText style={styles.priceValue}>{priceFormatted}</CText>
         </View>
-        <TouchableOpacity style={styles.bookButton} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.bookButton}
+          activeOpacity={0.8}
+          onPress={handleBookNow}
+        >
           <CText style={styles.bookButtonText}>Đặt lịch ngay</CText>
         </TouchableOpacity>
       </View>

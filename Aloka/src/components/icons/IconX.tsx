@@ -32,6 +32,7 @@ export const ICON_TYPE = {
   FOUNDATION: 'ionicons' as const,
   FONT_AWESOME: 'fontisto' as const,
   FONT_AWESOME5: 'fontisto' as const,
+  FONTAWESOME6: 'octicons' as const,
 };
 
 
@@ -46,7 +47,7 @@ type BaseProps = {
 // 👉 type-safe name
 type IconProps = {
   type?: 'ionicons' | 'fontisto' | 'antdesign' | 'octicons' | 'materialicons' | 'entypo';
-  name: React.ComponentProps<typeof Ionicons>['name'];
+  name: string;
 } & BaseProps;
 
 export const IconX = ({

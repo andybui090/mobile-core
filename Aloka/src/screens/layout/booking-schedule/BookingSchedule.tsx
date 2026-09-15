@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { IconX } from '@/components';
+import { homeTabRoute } from '@/constants';
 import { CText } from '@/utils';
 
 interface DayItem {
@@ -16,28 +18,119 @@ interface DayItem {
   dateStr: string;
 }
 
-const DAYS: DayItem[] = [
-  { id: '1', dayName: 'CN', dateStr: '22/01' },
-  { id: '2', dayName: 'T2', dateStr: '23/01' },
-  { id: '3', dayName: 'T3', dateStr: '24/01' },
-  { id: '4', dayName: 'T4', dateStr: '25/01' },
-  { id: '5', dayName: 'T5', dateStr: '26/01' },
-  { id: '6', dayName: 'T6', dateStr: '27/01' },
-  { id: '7', dayName: 'T7', dateStr: '28/01' },
-];
+interface TimeSlotItem {
+  id: string;
+  time: string;
+  available: boolean;
+}
 
-const TIME_SLOTS = [
-  { id: '1', time: '10:30', available: true },
-  { id: '2', time: '13:00', available: false },
-  { id: '3', time: '15:30', available: true },
-  { id: '4', time: '18:30', available: true },
-  { id: '5', time: '19:00', available: false },
-  { id: '6', time: '20:00', available: true },
-];
+/** Tên thứ theo tiếng Việt, index 0 = Chủ nhật */
+const DAY_NAMES = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+
+/** Tạo 7 ngày liên tiếp bắt đầu từ hôm nay */
+const buildDaysFromToday = (): DayItem[] => {
+  const days: DayItem[] = [];
+  const today = new Date();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const dayName = DAY_NAMES[d.getDay()];
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    days.push({
+      id: String(i),
+      dayName,
+      dateStr: `${dd}/${mm}`,
+    });
+  }
+  return days;
+};
+
+/** Parse time_slots từ API response.
+ *  Hỗ trợ nhiều format: mảng string, mảng object { time, available }, string schedule
+ */
+const parseTimeSlots = (raw: any): TimeSlotItem[] => {
+  if (!raw || !Array.isArray(raw) || raw.length === 0) return [];
+
+  return raw.map((item: any, index: number) => {
+    if (typeof item === 'string') {
+      return { id: String(index), time: item, available: true };
+    }
+    if (typeof item === 'object') {
+      const time =
+        item.time || item.time_from || item.start_time || item.from || '';
+      const available =
+        item.available !== undefined
+          ? Boolean(item.available)
+          : item.status === 'available' || item.is_available !== false;
+      return { id: String(item.id ?? index), time, available };
+    }
+    return { id: String(index), time: String(item), available: true };
+  });
+};
+
+/** Format số giờ hiển thị */
+const formatDuration = (duration: any): string => {
+  if (!duration && duration !== 0) return '';
+  const num = Number(duration);
+  if (isNaN(num)) return String(duration);
+  if (num < 60) return `${num} phút`;
+  const h = Math.floor(num / 60);
+  const m = num % 60;
+  return m > 0 ? `${h} giờ ${m} phút` : `${h} giờ`;
+};
 
 export const BookingSchedule: React.FC = () => {
-  const [selectedDay, setSelectedDay] = useState('4'); // T4 25/01
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState('1'); // 10:30
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const service = route.params?.service;
+
+  // ── Địa chỉ từ service ──────────────────────────────────────────────
+  const address =
+    service?.address ||
+    service?.location?.address ||
+    service?.location_address ||
+    service?.provider?.address ||
+    '';
+
+  const addressDetail =
+    service?.address_detail ||
+    service?.location?.district ||
+    service?.district ||
+    service?.location?.detail ||
+    '';
+
+  // ── Số giờ phục vụ ──────────────────────────────────────────────────
+  // duration có thể là phút (60 = 1 giờ) hoặc giờ
+  const rawDuration =
+    service?.duration ||
+    service?.working_hours ||
+    service?.hours ||
+    service?.package?.duration ||
+    service?.package_info?.duration ||
+    null;
+
+  const durationLabel = rawDuration ? formatDuration(rawDuration) : '';
+
+  // ── Tạo 7 ngày từ hôm nay ──────────────────────────────────────────
+  const DAYS = useMemo(() => buildDaysFromToday(), []);
+
+  // ── Time slots từ API ───────────────────────────────────────────────
+  const apiTimeSlots = useMemo(() => {
+    const raw =
+      service?.time_slots ||
+      service?.schedules ||
+      service?.available_slots ||
+      service?.slots ||
+      null;
+    return parseTimeSlots(raw);
+  }, [service]);
+
+  // ── State ───────────────────────────────────────────────────────────
+  const [selectedDay, setSelectedDay] = useState(DAYS[0]?.id ?? '0');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(
+    apiTimeSlots.find(s => s.available)?.id ?? null,
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -45,10 +138,14 @@ export const BookingSchedule: React.FC = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.headerBtn}
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}
+        >
           <IconX type="ionicons" name="chevron-back" size={24} color="#1D2939" />
         </TouchableOpacity>
-        <CText style={styles.headerTitle}>Địa chỉ</CText>
+        <CText style={styles.headerTitle}>Đặt lịch</CText>
         <View style={styles.headerBtnPlaceholder} />
       </View>
 
@@ -62,9 +159,16 @@ export const BookingSchedule: React.FC = () => {
             <IconX type="ionicons" name="location" size={18} color="#FFFFFF" />
           </View>
           <View style={styles.addressInfo}>
-            <CText style={styles.addressTitle}>44/7 Đường N4</CText>
-            <CText style={styles.addressSubTitle}>P. Tân Hưng, Quận 7, TP. HCM</CText>
-            <CText style={styles.addressLink}>Thêm mô tả địa chỉ</CText>
+            {address ? (
+              <>
+                <CText style={styles.addressTitle}>{address}</CText>
+                {!!addressDetail && (
+                  <CText style={styles.addressSubTitle}>{addressDetail}</CText>
+                )}
+              </>
+            ) : (
+              <CText style={styles.addressLink}>Thêm địa chỉ</CText>
+            )}
           </View>
           <IconX type="ionicons" name="chevron-forward" size={20} color="#98A2B3" />
         </TouchableOpacity>
@@ -86,7 +190,13 @@ export const BookingSchedule: React.FC = () => {
               return (
                 <TouchableOpacity
                   key={day.id}
-                  onPress={() => setSelectedDay(day.id)}
+                  onPress={() => {
+                    setSelectedDay(day.id);
+                    // Reset slot khi đổi ngày (nếu có API lấy slot theo ngày)
+                    setSelectedTimeSlot(
+                      apiTimeSlots.find(s => s.available)?.id ?? null,
+                    );
+                  }}
                   style={[styles.dayCard, isSelected && styles.dayCardActive]}
                   activeOpacity={0.7}
                 >
@@ -102,38 +212,42 @@ export const BookingSchedule: React.FC = () => {
           </ScrollView>
 
           {/* Thời gian bắt đầu */}
-          <CText style={styles.subSectionTitle}>Thời gian bắt đầu</CText>
+          {apiTimeSlots.length > 0 && (
+            <>
+              <CText style={styles.subSectionTitle}>Thời gian bắt đầu</CText>
 
-          {/* Time Slot Chips Grid */}
-          <View style={styles.timeSlotsGrid}>
-            {TIME_SLOTS.map(slot => {
-              const isSelected = selectedTimeSlot === slot.id;
-              const isAvailable = slot.available;
-              return (
-                <TouchableOpacity
-                  key={slot.id}
-                  disabled={!isAvailable}
-                  onPress={() => setSelectedTimeSlot(slot.id)}
-                  style={[
-                    styles.timeSlotChip,
-                    isSelected && styles.timeSlotChipActive,
-                    !isAvailable && styles.timeSlotChipDisabled,
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  <CText
-                    style={[
-                      styles.timeSlotText,
-                      isSelected && styles.timeSlotTextActive,
-                      !isAvailable && styles.timeSlotTextDisabled,
-                    ]}
-                  >
-                    {slot.time}
-                  </CText>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+              {/* Time Slot Chips Grid */}
+              <View style={styles.timeSlotsGrid}>
+                {apiTimeSlots.map(slot => {
+                  const isSelected = selectedTimeSlot === slot.id;
+                  const isAvailable = slot.available;
+                  return (
+                    <TouchableOpacity
+                      key={slot.id}
+                      disabled={!isAvailable}
+                      onPress={() => setSelectedTimeSlot(slot.id)}
+                      style={[
+                        styles.timeSlotChip,
+                        isSelected && styles.timeSlotChipActive,
+                        !isAvailable && styles.timeSlotChipDisabled,
+                      ]}
+                      activeOpacity={0.7}
+                    >
+                      <CText
+                        style={[
+                          styles.timeSlotText,
+                          isSelected && styles.timeSlotTextActive,
+                          !isAvailable && styles.timeSlotTextDisabled,
+                        ]}
+                      >
+                        {slot.time}
+                      </CText>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </>
+          )}
         </View>
 
         <View style={styles.sectionDivider} />
@@ -150,20 +264,33 @@ export const BookingSchedule: React.FC = () => {
             <CText style={styles.optionText}>Chọn lặp lại theo tháng</CText>
           </TouchableOpacity>
 
-          <View style={styles.rowDivider} />
-
-          <View style={styles.optionRowBetween}>
-            <CText style={styles.optionText}>Số giờ phục vụ/buổi</CText>
-            <View style={styles.hoursBadge}>
-              <CText style={styles.hoursBadgeText}>2 giờ</CText>
-            </View>
-          </View>
+          {!!durationLabel && (
+            <>
+              <View style={styles.rowDivider} />
+              <View style={styles.optionRowBetween}>
+                <CText style={styles.optionText}>Số giờ phục vụ/buổi</CText>
+                <View style={styles.hoursBadge}>
+                  <CText style={styles.hoursBadgeText}>{durationLabel}</CText>
+                </View>
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
 
       {/* Footer Confirm */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.confirmBtn} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.confirmBtn}
+          activeOpacity={0.8}
+          onPress={() =>
+            navigation.navigate(homeTabRoute.bookingConfirm, {
+              service,
+              selectedDay: DAYS.find(d => d.id === selectedDay),
+              selectedTimeSlot: apiTimeSlots.find(s => s.id === selectedTimeSlot),
+            })
+          }
+        >
           <CText style={styles.confirmBtnText}>Xác nhận</CText>
         </TouchableOpacity>
       </View>
@@ -235,7 +362,6 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     color: '#0D9488',
     fontWeight: '500',
-    marginTop: 4,
   },
   sectionDivider: {
     height: 8,

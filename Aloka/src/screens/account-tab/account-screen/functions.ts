@@ -1,0 +1,68 @@
+import { ICON_TYPE } from '@/components';
+import { mainRoute } from '@/constants/route_key';
+
+export const ProfileMenu = [
+  {
+    id: 0,
+    title: 'profile.liked',
+    nameAlias: '',
+    icon: 'heart',
+    iconType: ICON_TYPE.ANT_ICON,
+    iconBg: '#F63D68',
+    screen: mainRoute.videosLiked,
+  },
+  {
+    id: 1,
+    title: 'profile.saved',
+    nameAlias: '',
+    icon: 'bookmark',
+    iconType: ICON_TYPE.FONT_AWESOME5,
+    iconBg: '#3478F6',
+    screen: mainRoute.videosSaved,
+  },
+  {
+    id: 2,
+    title: 'profile.qrCode',
+    nameAlias: '',
+    icon: 'qr-code',
+    iconType: ICON_TYPE.MATERIAL_ICONS,
+    iconBg: '#4AB95C',
+    screen: mainRoute.qrCodeScreen,
+  },
+  {
+    id: 3,
+    title: 'profile.myCourses',
+    nameAlias: '',
+    icon: 'book',
+    iconType: ICON_TYPE.FONTAWESOME6,
+    screen: mainRoute.myCourses,
+    iconBg: '#F79009',
+  },
+  {
+    id: 3,
+    title: 'profile.myPackage',
+    nameAlias: 'My Packages',
+    icon: 'package',
+    iconType: ICON_TYPE.OCTICONS,
+    screen: mainRoute.myPackages,
+    iconBg: '#F79009',
+  },
+  {
+    id: 4,
+    title: 'profile.appoints',
+    nameAlias: '',
+    icon: 'perm-contact-calendar',
+    iconType: ICON_TYPE.MATERIAL_ICONS,
+    iconBg: '#34C7D0',
+    screen: mainRoute.myAppointment,
+  },
+  {
+    title: 'profile.inviteFriends',
+    nameAlias: '',
+    id: 5,
+    icon: 'share',
+    iconType: ICON_TYPE.FONTISTO,
+    iconBg: '#A356D7',
+    sharing: true,
+  },
+];

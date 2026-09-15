@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +19,7 @@ import { changeAlias, keyExtractor } from '@/configs';
 import { images } from '@/configs/image';
 import { CEmptySearch, CText } from '@/utils';
 import { PAGINATION } from '@/constants';
+import { AppContext } from '@/contexts';
 import socketService from '@/socketio';
 import ApiService from '@/services/api-base';
 import { ConversationItem } from './types';
@@ -212,6 +213,8 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
   const {
     theme: { colors },
   } = useTheme();
+  const { user } = useContext<any>(AppContext) || {};
+  const currentUserId = String(user?.id || user?._id || user?.user_id || '');
 
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [offset, setOffset] = useState(0);
@@ -226,7 +229,6 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
   const finalLoadRef = useRef(false);
   const isLoadingMoreRef = useRef(false);
   const isRefreshingRef = useRef(false);
-  const chatTimeoutRef = useRef<any>(null);
 
   // Parse nội dung tin nhắn cuối tương tự DoctorNetwork
   const parseLastMessage = (last_message: any): string => {
@@ -270,7 +272,7 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
     );
   };
 
-  // Parse response danh sách phòng chat từ socket (tương tự DoctorNetwork)
+  // Parse response danh sách phòng chat từ API / Socket theo chuẩn chat 1-1
   const parseRoomListResponse = (rawList: any[]): ConversationItem[] => {
     if (!Array.isArray(rawList)) return [];
 
@@ -293,21 +295,73 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
 
     return validList.map((item: any, index: number) => {
       const roomId = item.room_id || item.id || item._id || `room_${index}`;
+
+      // Xác định đối phương trong phòng chat 1-1
+      let partnerUser: any = null;
+      if (item.users && Array.isArray(item.users) && item.users.length > 0) {
+        partnerUser = item.users.find(
+          (u: any) =>
+            u &&
+            String(u.id || u._id || u.user_id) !== String(currentUserId),
+        ) || item.users[0];
+      } else if (item.members && Array.isArray(item.members) && item.members.length > 0) {
+        partnerUser = item.members.find(
+          (m: any) =>
+            m &&
+            String(m.id || m._id || m.user_id) !== String(currentUserId),
+        ) || item.members[0];
+      }
+
+      const toUserObj = item.to_user || item.toUser;
+      const userObj = item.user || item.fromUser;
+
+      if (!partnerUser) {
+        if (toUserObj && String(toUserObj.id || toUserObj._id) !== String(currentUserId)) {
+          partnerUser = toUserObj;
+        } else if (userObj && String(userObj.id || userObj._id) !== String(currentUserId)) {
+          partnerUser = userObj;
+        } else if (toUserObj) {
+          partnerUser = toUserObj;
+        } else if (userObj) {
+          partnerUser = userObj;
+        }
+      }
+
+      const toUserId =
+        partnerUser?.id ||
+        partnerUser?._id ||
+        partnerUser?.user_id ||
+        (String(item.to) !== String(currentUserId) && item.to ? item.to : null) ||
+        (String(item.from) !== String(currentUserId) && item.from ? item.from : null) ||
+        (String(item.created_by) !== String(currentUserId) && item.created_by ? item.created_by : null) ||
+        item.toUserId ||
+        item.to ||
+        item.user_id;
+
       const customerName =
+        partnerUser?.name ||
+        partnerUser?.full_name ||
         item.title ||
         item.name ||
         item.customerName ||
-        item.user?.name ||
-        item.to_user?.name ||
+        toUserObj?.name ||
+        userObj?.name ||
         t('partnerWork.defaultCustomerName');
 
       let avatarSource: any = images.common.img_default;
+      const avatarUrl =
+        partnerUser?.avatar ||
+        partnerUser?.thumbnail ||
+        item.thumbnail ||
+        toUserObj?.avatar ||
+        userObj?.avatar;
+
       if (
-        item.thumbnail &&
-        typeof item.thumbnail === 'string' &&
-        (item.thumbnail.startsWith('http://') || item.thumbnail.startsWith('https://'))
+        avatarUrl &&
+        typeof avatarUrl === 'string' &&
+        (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://'))
       ) {
-        avatarSource = { uri: item.thumbnail };
+        avatarSource = { uri: avatarUrl };
       } else if (item.customerAvatar) {
         avatarSource = item.customerAvatar;
       }
@@ -332,22 +386,54 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
         lastMessage: lastMsg,
         time: timeStr,
         unreadCount: unread,
-        isOnline: Boolean(item.is_online || item.online),
-        toUserId: item.to || item.toUserId || item.user_id,
+        isOnline: Boolean(item.is_online || item.online || partnerUser?.is_online || partnerUser?.online),
+        toUserId: toUserId ? String(toUserId) : undefined,
       };
     });
   };
 
-  // Lấy danh sách phòng chat theo PAGINATION.ITEMS_10 từ DoctorNetwork
+  // Cập nhật state danh sách phòng chat
+  const processRoomList = (rawItems: any[], reqOffset: number) => {
+    const parsed = parseRoomListResponse(rawItems);
+    const sizeResponse = rawItems.length;
+
+    console.log(
+      `[WorkChatTab] processRoomList: size=${sizeResponse}, reqOffset=${reqOffset}`,
+    );
+
+    if (reqOffset === 0) {
+      setConversations(parsed);
+      offsetRef.current = 0;
+      setOffset(0);
+    } else {
+      setConversations(prev => {
+        const existingIds = new Set(prev.map(t => t.roomId || t.id));
+        const newItems = parsed.filter(t => !existingIds.has(t.roomId || t.id));
+        return [...prev, ...newItems];
+      });
+      offsetRef.current = reqOffset;
+      setOffset(reqOffset);
+    }
+
+    const isEnd = sizeResponse < PAGINATION.ITEMS_10;
+    setFinalLoad(isEnd);
+    finalLoadRef.current = isEnd;
+  };
+
+  // Lấy danh sách phòng chat qua API REST với fq/fp: 'type:1-1'
   const getListRoomApi = async (reqOffset: number) => {
     try {
-      if (!socketService.isConnected()) {
-        await socketService.connect();
-      }
       requestedOffsetRef.current = reqOffset;
-      await socketService.emitListRoom(PAGINATION.ITEMS_10, reqOffset);
+      const res: any = await ApiService.getListRoom({
+        limit: PAGINATION.ITEMS_10,
+        offset: reqOffset,
+        fq: 'type:1-1',
+      });
+      const rawItems: any[] = (Array.isArray(res?.data?.items) && res.data.items) || [];
+      processRoomList(rawItems, reqOffset);
     } catch (e) {
-      console.log('getListRoomApi error:', e);
+      console.log('[WorkChatTab] getListRoomApi REST error:', e);
+    } finally {
       setFirstRender(false);
       setRefreshing(false);
       setLoadingMore(false);
@@ -386,13 +472,14 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
   };
 
   useEffect(() => {
+    // Kết nối socket ngầm để hỗ trợ realtime messages & room events
+    if (!socketService.isConnected()) {
+      socketService.connect().catch(err => {
+        console.log('[WorkChatTab] socket connect error:', err);
+      });
+    }
+
     const handleRoomList = (res: any) => {
-      if (chatTimeoutRef.current) {
-        clearTimeout(chatTimeoutRef.current);
-      }
-
-      console.log('==== [WorkChatTab handleRoomList RAW] ====', res);
-
       try {
         const rawItems: any[] =
           (Array.isArray(res) && res) ||
@@ -401,49 +488,16 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
           (Array.isArray(res?.data) && res.data) ||
           (Array.isArray(res?.result?.items) && res.result.items) ||
           [];
-
-        const parsed = parseRoomListResponse(rawItems);
-        const sizeResponse = rawItems.length;
-        const currentReqOffset = requestedOffsetRef.current;
-
-        console.log(
-          `[Chat] handleRoomList: size=${sizeResponse}, reqOffset=${currentReqOffset}`,
-        );
-
-        if (currentReqOffset === 0) {
-          setConversations(parsed);
-          offsetRef.current = 0;
-          setOffset(0);
-        } else {
-          setConversations(prev => {
-            const existingIds = new Set(prev.map(t => t.roomId || t.id));
-            const newItems = parsed.filter(t => !existingIds.has(t.roomId || t.id));
-            return [...prev, ...newItems];
-          });
-          offsetRef.current = currentReqOffset;
-          setOffset(currentReqOffset);
+        if (rawItems.length > 0) {
+          processRoomList(rawItems, requestedOffsetRef.current);
         }
-
-        const isEnd = sizeResponse < PAGINATION.ITEMS_10;
-        setFinalLoad(isEnd);
-        finalLoadRef.current = isEnd;
       } catch (err) {
-        console.log('[Chat] handleRoomList error:', err);
-      } finally {
-        setTimeout(() => {
-          setFirstRender(false);
-          setRefreshing(false);
-          setLoadingMore(false);
-          isLoadingMoreRef.current = false;
-          isRefreshingRef.current = false;
-        }, 300);
+        console.log('[WorkChatTab] handleRoomList socket error:', err);
       }
     };
 
     const handleNewMessage = () => {
-      if (socketService.isConnected()) {
-        getListRoomApi(0);
-      }
+      getListRoomApi(0);
     };
 
     const handleRoomDeleted = (deletedData: any) => {
@@ -459,11 +513,10 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
 
     socketService.on('room:list', handleRoomList);
     socketService.on('message', handleNewMessage);
-    socketService.on('room:deleted', handleRoomDeleted);
+    socketService.on('createRoom', handleNewMessage);
     socketService.on('deleteRoom', handleRoomDeleted);
-    socketService.on('room:delete', handleRoomDeleted);
 
-    // Initial fetch
+    // Initial fetch qua REST API
     offsetRef.current = 0;
     requestedOffsetRef.current = 0;
     finalLoadRef.current = false;
@@ -474,35 +527,18 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
     setFirstRender(true);
     getListRoomApi(0);
 
-    if (chatTimeoutRef.current) {
-      clearTimeout(chatTimeoutRef.current);
-    }
-    chatTimeoutRef.current = setTimeout(() => {
-      setFirstRender(false);
-      setRefreshing(false);
-      setLoadingMore(false);
-      isLoadingMoreRef.current = false;
-      isRefreshingRef.current = false;
-    }, 7000);
-
     return () => {
-      if (chatTimeoutRef.current) {
-        clearTimeout(chatTimeoutRef.current);
-      }
       socketService.off('room:list', handleRoomList);
       socketService.off('message', handleNewMessage);
-      socketService.off('room:deleted', handleRoomDeleted);
+      socketService.off('createRoom', handleNewMessage);
       socketService.off('deleteRoom', handleRoomDeleted);
-      socketService.off('room:delete', handleRoomDeleted);
     };
   }, []);
 
   // Tự động làm mới danh sách khi màn hình được focus trở lại
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      if (socketService.isConnected()) {
-        getListRoomApi(0);
-      }
+      getListRoomApi(0);
     });
     return unsubscribe;
   }, [navigation]);
@@ -527,6 +563,16 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
       ),
       [
         { text: t('common.cancel', 'Hủy'), style: 'cancel' },
+        {
+          text: t('common.delete', 'Xóa'),
+          style: 'destructive',
+          onPress: () => {
+            socketService.emitDeleteRoom(roomId);
+            setConversations(prev =>
+              prev.filter(c => (c.roomId || c.id) !== roomId),
+            );
+          },
+        },
       ],
     );
   };

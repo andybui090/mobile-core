@@ -18,8 +18,18 @@ export const SETTINGS = {
 
 export const PROFILE = {
   GET_PROFILE: '/me',
+  PROFILE: '/me',
   UPDATE_PROFILE: '/me',
   LOGOUT_APP: '/logout',
+  LIST_VIDEO: '/videos',
+  LIST_VIDEO_SAVED: '/videos',
+  FOLLOWERS: '/interactions/followers',
+  FOLLOWINGS: '/interactions/followings',
+  FOLLOW: '/interactions/follows',
+  FEEDBACK: '/interactions/reports',
+  MY_COURSES: '/courses/list/my',
+  APPOINTMENTS: '/appointments',
+  ORDERS: '/packages/my',
 };
 
 export const NOTIFICATION = {
@@ -36,6 +46,17 @@ export const CARELY = {
   RATING: '/orders/rating',
   REFUND: '/orders/refund',
   REVIEW: '/rating',
+};
+
+export const ORDER = {
+  CREATE: '/orders',
+  DETAIL: (id: string) => `/orders/${id}`,
+};
+
+export const PAYMENT = {
+  MOMO: '/payments/momo',
+  VNPAY: '/payments/vnpay',
+  STATUS: (orderId: string) => `/payments/${orderId}/status`,
 };
 
 export const CHANNEL = {

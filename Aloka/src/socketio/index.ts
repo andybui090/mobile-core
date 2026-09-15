@@ -1,5 +1,4 @@
 import { io, Socket } from 'socket.io-client';
-import Config from 'react-native-config';
 import ApiService from '@/services/api-base';
 import { getDeviceId } from '@/configs/common';
 import { getObjectData } from '@/storages';
@@ -20,6 +19,9 @@ export interface RoomDetail {
   is_online?: boolean;
 }
 
+// Định nghĩa URL gốc (Base URL), KHÔNG kèm theo /socket.io/ hay query params
+const SOCKET_BASE_URL = 'https://staging.rf.api.doctornetwork.us';
+
 let socket: Socket | undefined;
 
 class SocketService {
@@ -38,64 +40,93 @@ class SocketService {
       return true;
     }
 
-    return new Promise(async resolve => {
-      try {
-        const deviceId = await getDeviceId();
-        let jwtToken = ApiService.getAuthorizationHeader();
-        if (!jwtToken) {
-          const storedToken = await getObjectData(STORAGEKEY.JWT_TOKEN);
-          if (storedToken?.access_token) {
-            jwtToken = `Bearer ${storedToken.access_token}`;
-            ApiService.setAuthorizationHeader(storedToken.access_token);
-          }
-        }
-
-        const socketUrl = Config.SOCKET_LINK;
-
-        if (!socket) {
-          socket = io(socketUrl, {
-            transports: ['websocket'],
-            auth: {
-              token: jwtToken || '',
-              authorization: jwtToken || '',
-            },
-            extraHeaders: {
-              ...(jwtToken ? { Authorization: jwtToken } : {}),
-              ...(deviceId ? { deviceId } : {}),
-            },
-            reconnection: true,
-            reconnectionAttempts: 3,
-            reconnectionDelay: 3000,
-            timeout: 10000,
-          });
-
-          this.bindInternalEvents();
-        }
-
-        if (socket.connected) {
-          resolve(true);
-          return;
-        }
-
-        const timeout = setTimeout(() => {
-          resolve(socket?.connected || false);
-        }, 5000);
-
-        socket.once('connect', () => {
-          clearTimeout(timeout);
-          resolve(true);
-        });
-
-        socket.once('connect_error', () => {
-          clearTimeout(timeout);
-          resolve(false);
-        });
-
-        socket.connect();
-      } catch (error) {
-        console.log('Socket connect error:', error);
-        resolve(false);
+    // 1. Chuẩn bị Token và DeviceId trước khi vào Promise
+    let jwtToken = ApiService.getAuthorizationHeader();
+    if (!jwtToken) {
+      const storedToken = await getObjectData(STORAGEKEY.JWT_TOKEN);
+      if (storedToken?.access_token) {
+        jwtToken = `Bearer ${storedToken.access_token}`;
+        ApiService.setAuthorizationHeader(storedToken.access_token);
       }
+    }
+
+    const deviceId = await getDeviceId().catch(() => undefined);
+
+    // 2. Khởi tạo Socket instance nếu chưa có
+    if (!socket) {
+      socket = io(SOCKET_BASE_URL, {
+        path: '/socket.io/', // Mặc định là /socket.io/, socket.io-client sẽ tự lo EIO=4
+        transports: ['websocket'],
+        autoConnect: false, // Để chủ động gọi socket.connect() có kiểm soát bên dưới
+        auth: {
+          token: jwtToken || '',
+          authorization: jwtToken || '',
+          deviceId: deviceId || '',
+        },
+        // extraHeaders chỉ có tác dụng trên React Native / NodeJS
+        extraHeaders: {
+          ...(jwtToken ? { Authorization: jwtToken } : {}),
+          ...(deviceId ? { deviceId } : {}),
+        },
+        reconnection: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 3000,
+        timeout: 10000,
+      });
+
+      this.bindInternalEvents();
+    } else {
+      // Cập nhật lại token mới nhất nếu socket đã tồn tại từ trước
+      socket.auth = {
+        token: jwtToken || '',
+        authorization: jwtToken || '',
+        deviceId: deviceId || '',
+      };
+    }
+
+    if (!socket) {
+      return false;
+    }
+
+    if (socket.connected) {
+      return true;
+    }
+
+    const currentSocket = socket;
+
+    // 3. Thực hiện kết nối với Cleanup an toàn tránh Memory Leak
+    return new Promise<boolean>(resolve => {
+      let timer: ReturnType<typeof setTimeout> | null = null;
+
+      const cleanup = () => {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        currentSocket.off('connect', onConnect);
+        currentSocket.off('connect_error', onConnectError);
+      };
+
+      const onConnect = () => {
+        cleanup();
+        resolve(true);
+      };
+
+      const onConnectError = (error: Error) => {
+        cleanup();
+        console.warn('Socket connection error:', error.message);
+        resolve(false);
+      };
+
+      timer = setTimeout(() => {
+        cleanup();
+        resolve(currentSocket.connected || false);
+      }, 5000);
+
+      currentSocket.once('connect', onConnect);
+      currentSocket.once('connect_error', onConnectError);
+
+      currentSocket.connect();
     });
   }
 
@@ -123,35 +154,23 @@ class SocketService {
     });
 
     socket.on('message', (data: any) => {
+      console.log('==== message ====', data);
       this.notifyListeners('message', data);
     });
 
-    socket.on('room:list', (data: any) => {
-      console.log('==== [socket.on room:list DATA] ====', data);
-      this.notifyListeners('room:list', data);
-    });
-
     socket.on('listRoom', (data: any) => {
-      console.log('==== [socket.on listRoom DATA] ====', data);
+      console.log('listRoom', data);
       this.notifyListeners('room:list', data);
     });
 
     socket.on('deleteRoom', (data: any) => {
       console.log('==== [socket.on deleteRoom DATA] ====', data);
-      const roomId = data?.roomId || data?.room || data?.id || (typeof data === 'string' ? data : '');
-      if (roomId) {
-        this.notifyListeners('room:deleted', roomId);
-      }
       this.notifyListeners('deleteRoom', data);
     });
 
-    socket.on('room:delete', (data: any) => {
-      console.log('==== [socket.on room:delete DATA] ====', data);
-      const roomId = data?.roomId || data?.room || data?.id || (typeof data === 'string' ? data : '');
-      if (roomId) {
-        this.notifyListeners('room:deleted', roomId);
-      }
-      this.notifyListeners('room:delete', data);
+    socket.on('deleteMessage', (data: any) => {
+      console.log('==== [socket.on deleteMessage] ====', data);
+      this.notifyListeners('deleteMessage', data);
     });
 
     socket.on('users', (data: any) => {
@@ -317,12 +336,9 @@ class SocketService {
     return new Promise(resolve => {
       const send = () => {
         if (!socket?.connected) {
-          console.warn('[SocketService] emitListRoom: socket not connected');
           resolve(null);
           return;
         }
-
-        console.log(`[SocketService] emitListRoom: limit=${limit}, offset=${offset}`);
         socket.emit(
           'room:list',
           {
@@ -332,21 +348,6 @@ class SocketService {
             fq: 'type:1-1',
           },
           (res: any) => {
-            console.log(
-              `[SocketService] room:list ack for offset=${offset}:`,
-              Array.isArray(res)
-                ? res.length
-                : (res?.data?.length || res?.items?.length || 0),
-            );
-            console.log('==== [room:list RESPONSE RAW] ====', res);
-            try {
-              console.log(
-                '==== [room:list RESPONSE JSON] ====',
-                JSON.stringify(res, null, 2),
-              );
-            } catch (err) {
-              console.log('==== [room:list stringify error] ====', err);
-            }
             if (callback) callback(res);
             if (res) {
               this.notifyListeners('room:list', res);
@@ -367,19 +368,45 @@ class SocketService {
   }
 
   /**
-   * Xóa / rời cuộc trò chuyện theo chuẩn DoctorNetwork
+   * Xóa / rời cuộc trò chuyện qua Socket
    */
   emitDeleteRoom(roomId: string) {
     if (!roomId) return;
     try {
       if (socket?.connected) {
-        socket.emit('room:delete', { roomId, room: roomId, id: roomId });
+        socket.emit('deleteRoom', { roomId, room: roomId, id: roomId });
       }
     } catch (e) {
       console.warn('emitDeleteRoom error:', e);
     }
     // Thông báo cho các listeners local cập nhật UI ngay lập tức
-    this.notifyListeners('room:deleted', roomId);
+    this.notifyListeners('deleteRoom', { roomId, room: roomId, id: roomId });
+  }
+
+  /**
+   * Xóa / thu hồi tin nhắn qua Socket
+   */
+  emitDeleteMessage(messageId: string, roomId?: string) {
+    if (!messageId) return;
+    try {
+      if (socket?.connected) {
+        socket.emit('deleteMessage', {
+          id: messageId,
+          messageId,
+          room: roomId,
+          roomId,
+        });
+      }
+    } catch (e) {
+      console.warn('emitDeleteMessage error:', e);
+    }
+    // Thông báo cho các listeners local cập nhật UI ngay lập tức
+    this.notifyListeners('deleteMessage', {
+      id: messageId,
+      messageId,
+      room: roomId,
+      roomId,
+    });
   }
 }
 

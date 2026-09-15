@@ -249,6 +249,7 @@ const SettingScreen: React.FC<any> = ({ navigation }: any) => {
   };
 
   const handleLogout = async () => {
+    setLogoutVisible(false);
     try {
       const deviceId = await DeviceInfo.getUniqueId();
       dispatch(postLogout({ deviceId }));
@@ -256,9 +257,7 @@ const SettingScreen: React.FC<any> = ({ navigation }: any) => {
       dispatch(postLogout({}));
     }
     await storeStringData(STORAGEKEY.CHECKLOCAL_FIRST, 'false');
-    setTimeout(() => {
-      logout?.();
-    }, 300);
+    logout?.();
   };
 
   const handleVerifySuccess = async () => {

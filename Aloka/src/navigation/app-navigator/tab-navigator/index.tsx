@@ -4,7 +4,12 @@ import {
   drnetworkTabRoute,
   homeTabRoute,
 } from '@/constants';
-import { accountStack, appointmentStack, homeStack } from '@/screens';
+import {
+  accountStack,
+  appointmentStack,
+  homeStack,
+  mainStack,
+} from '@/screens';
 import DrNetworkScreen from '@/screens/drnetwork-screen';
 import {
   BottomTabNavigationOptions,
@@ -14,7 +19,9 @@ import {
   StackNavigationOptions,
   createStackNavigator,
 } from '@react-navigation/stack';
-import React from 'react';
+import React, { useContext } from 'react';
+import { AppContext } from '@/contexts';
+import { EditProfileScreen } from '@/screens/layout/partner-profile/EditProfileScreen';
 import { TabBar } from './bottom-tab';
 
 const Tab = createBottomTabNavigator();
@@ -40,11 +47,13 @@ function HomeStack() {
       initialRouteName={homeTabRoute.homeScreen}
     >
       {Object.values(homeTabRoute).map(item => {
+        const ScreenComponent = homeStack[item as keyof typeof homeStack];
+        if (!ScreenComponent) return null;
         return (
           <StackHome.Screen
             key={item}
             name={item}
-            component={homeStack[item as keyof typeof homeStack]}
+            component={ScreenComponent}
           />
         );
       })}
@@ -94,6 +103,14 @@ function AccountStack() {
       <StackAccount.Screen
         name={accountTabRoute.accountScreen}
         component={accountStack.AccountScreen}
+      />
+      <StackAccount.Screen
+        name="SettingScreen"
+        component={mainStack.SettingScreen}
+      />
+      <StackAccount.Screen
+        name="EditProfileScreen"
+        component={EditProfileScreen}
       />
     </StackAccount.Navigator>
   );

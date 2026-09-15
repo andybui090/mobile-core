@@ -1,6 +1,4 @@
-// import deeplinkService from '@/DeeplinkService';
-// import {GAEvents, GALogEvent} from '@/configs';
-import { API_MESSAGE, PAGINATION, STORAGEKEY } from '@/constants';
+import { API_MESSAGE, PAGINATION, STORAGEKEY, rootRoute } from '@/constants';
 // import {mainRoute} from '@/constants/route_key';
 import { AppContext } from '@/contexts';
 // import customEventEmitter, {CUSTOM_EVENTS} from '@/notify-helper';
@@ -212,6 +210,9 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
 
   useEffect(() => {
     const processAPIProfileUser = () => {
+      if (stateRoot.isLogout) {
+        return;
+      }
       const { loading, data, error } = profileData;
       if (!loading) {
         if (data) {
@@ -246,7 +247,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       }
     };
     processAPIProfileUser();
-  }, [profileData]);
+  }, [profileData, stateRoot.isLogout]);
 
   // useEffect(() => {
   //   const checkFirebaseToken = () => {
@@ -271,6 +272,12 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
     appDispatch(clearReducer()); //open comment when done
     rootDispatch({ type: TYPES.LOGOUT_APP, payload: true });
     setFirstStart(true);
+    if (navigationRef.isReady()) {
+      navigationRef.current?.reset({
+        index: 0,
+        routes: [{ name: rootRoute as any }],
+      });
+    }
   };
 
   const logoutAppWhenLostNetwork = async () => {
@@ -282,6 +289,12 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
     appDispatch(clearReducer()); //open comment when done
     rootDispatch({ type: TYPES.LOGOUT_APP, payload: true });
     setFirstStart(true);
+    if (navigationRef.isReady()) {
+      navigationRef.current?.reset({
+        index: 0,
+        routes: [{ name: rootRoute as any }],
+      });
+    }
   };
 
   const rootAction = useMemo(
@@ -296,6 +309,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       // },
       login: async (userInfo: any) => {
         console.log('🚀 ~ RootNavigator ~ userInfo SSO:', userInfo);
+        rootDispatch({ type: TYPES.RESET_LOGOUT, payload: false });
         initSocketIO();
         appDispatch(getProfile(null));
       },

@@ -2,8 +2,10 @@ import { create } from 'apisauce';
 
 import Config from 'react-native-config';
 import apiMonitor from './monitor';
-import { GLOBAL, HOME, SETTINGS, PROFILE, CARELY, NOTIFICATION, COMMUNITY } from './uris';
+import { GLOBAL, HOME, SETTINGS, PROFILE, CARELY, NOTIFICATION, COMMUNITY, ORDER, PAYMENT } from './uris';
 import i18n from 'i18next';
+import { getObjectData } from '@/storages';
+import { STORAGEKEY } from '@/constants';
 
 const createApiClient = (baseURL = Config.BASE_API_URL) => {
   const api = create({
@@ -21,6 +23,23 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   });
 
   api.addMonitor(apiMonitor);
+
+  api.addAsyncRequestTransform(async request => {
+    if (!request.headers) {
+      request.headers = {};
+    }
+    if (!request.headers['Authorization']) {
+      try {
+        const jwtToken: any = await getObjectData(STORAGEKEY.JWT_TOKEN);
+        if (jwtToken?.access_token) {
+          request.headers['Authorization'] = 'Bearer ' + jwtToken.access_token;
+          api.setHeader('Authorization', 'Bearer ' + jwtToken.access_token);
+        }
+      } catch (err) {
+        console.log('Error getting token in request transform:', err);
+      }
+    }
+  });
 
   /*
     AUTHENTICATION
@@ -69,6 +88,10 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   const getHistoryBookings = (payload: object) => {
     return api.get(HOME.APPOINTMENTS, payload);
   };
+  const updateBookingStatus = (payload: any) => {
+    const id = payload?.id || payload?._id;
+    return api.put(`${HOME.APPOINTMENTS}/${id}`, payload);
+  };
   /*
     SETTINGS
   */
@@ -93,6 +116,43 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
 
   const deleteAccount = () => {
     return api.delete(PROFILE.GET_PROFILE);
+  };
+
+  const getListFollowings = (payload: object) => {
+    return api.get(PROFILE.FOLLOWINGS, payload);
+  };
+
+  const getListFollowers = (payload: object) => {
+    return api.get(PROFILE.FOLLOWERS, payload);
+  };
+
+  const postFollow = (payload: any) => {
+    return api.post(PROFILE.FOLLOW, payload);
+  };
+
+  const putUnFollow = (payload: any) => {
+    const docId = payload?.doctorId || payload?.id;
+    return api.put(`${PROFILE.FOLLOW}/${docId}`, payload?.data1 || payload || {});
+  };
+
+  const getVideosLiked = (payload: object) => {
+    return api.get(PROFILE.LIST_VIDEO, payload);
+  };
+
+  const getVideosSaved = (payload: object) => {
+    return api.get(PROFILE.LIST_VIDEO_SAVED, payload);
+  };
+
+  const getMyCourses = (payload: object) => {
+    return api.get(PROFILE.MY_COURSES, payload);
+  };
+
+  const getMyPackages = (payload: object) => {
+    return api.get(PROFILE.ORDERS, payload);
+  };
+
+  const postFeedback = (payload: object) => {
+    return api.post(PROFILE.FEEDBACK, payload);
   };
 
   /*
@@ -128,6 +188,47 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   */
   const getCarelyServices = (payload: any) => {
     return api.get(CARELY.SERVICES, payload);
+  };
+
+  const postRatingCarely = (payload: any) => {
+    return api.post(CARELY.RATING, payload);
+  };
+
+  /*
+    ORDER
+  */
+  const createOrder = (payload: any) => {
+    return api.post(ORDER.CREATE, payload);
+  };
+
+  const getOrderDetail = (orderId: string) => {
+    return api.get(ORDER.DETAIL(orderId));
+  };
+
+  /*
+    PAYMENT
+  */
+  const payWithMomo = (payload: {
+    order_id: string;
+    amount: number;
+    redirect_url?: string;
+    ipn_url?: string;
+    extra_data?: string;
+  }) => {
+    return api.post(PAYMENT.MOMO, payload);
+  };
+
+  const payWithVnpay = (payload: {
+    order_id: string;
+    amount: number;
+    return_url?: string;
+    extra_data?: string;
+  }) => {
+    return api.post(PAYMENT.VNPAY, payload);
+  };
+
+  const getPaymentStatus = (orderId: string) => {
+    return api.get(PAYMENT.STATUS(orderId));
   };
 
   /*
@@ -176,6 +277,7 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     */
     getBanner,
     getHistoryBookings,
+    updateBookingStatus,
     /*
       SETTINGS
     */
@@ -188,6 +290,15 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     updateProfile,
     logoutApp,
     deleteAccount,
+    getListFollowings,
+    getListFollowers,
+    postFollow,
+    putUnFollow,
+    getVideosLiked,
+    getVideosSaved,
+    getMyCourses,
+    getMyPackages,
+    postFeedback,
 
     /*
       NOTIFICATION
@@ -203,6 +314,18 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
       CARELY
     */
     getCarelyServices,
+    postRatingCarely,
+    /*
+      ORDER
+    */
+    createOrder,
+    getOrderDetail,
+    /*
+      PAYMENT
+    */
+    payWithMomo,
+    payWithVnpay,
+    getPaymentStatus,
     /*
       CHANNEL
     */

@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
+  Linking,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -7,48 +10,231 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { IconX, ImageHelper } from '@/components';
+import { formatMoneyVND } from '@/configs/common';
 import { images } from '@/configs/image';
 import { CText } from '@/utils';
+import ApiService from '@/services/api-base';
+import { useCheckPaymentOnResume } from '@/hooks';
 import { BookingCancelPolicyModal } from './BookingCancelPolicyModal';
 
-interface PaymentMethod {
-  id: 'momo' | 'vnpay' | 'cash';
-  name: string;
-}
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const PAYMENT_METHODS: PaymentMethod[] = [
-  { id: 'momo', name: 'Ví điện tử MoMo' },
-  { id: 'vnpay', name: 'Ví điện tử VNPay' },
-  { id: 'cash', name: 'Thanh toán trực tiếp' },
-];
+const DAY_LABEL: Record<string, string> = {
+  CN: 'Chủ nhật',
+  T2: 'Thứ 2',
+  T3: 'Thứ 3',
+  T4: 'Thứ 4',
+  T5: 'Thứ 5',
+  T6: 'Thứ 6',
+  T7: 'Thứ 7',
+};
+
+const formatTimePeriod = (time: string): string => {
+  if (!time) return '';
+  const [hStr] = time.split(':');
+  const h = parseInt(hStr, 10);
+  if (isNaN(h)) return time;
+  return `${time} ${h >= 12 ? 'PM' : 'AM'}`;
+};
+
+const addMinutes = (time: string, minutes: number): string => {
+  const [hStr, mStr] = time.split(':');
+  const totalMins = parseInt(hStr, 10) * 60 + parseInt(mStr || '0', 10) + minutes;
+  const h = Math.floor(totalMins / 60) % 24;
+  const m = totalMins % 60;
+  return formatTimePeriod(
+    `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
+  );
+};
+
+const buildDateLabel = (selectedDay: any): string => {
+  if (!selectedDay) return '';
+  const dayLabel = DAY_LABEL[selectedDay.dayName] || selectedDay.dayName || '';
+  const dateStr: string = selectedDay.dateStr || '';
+  if (!dateStr) return dayLabel;
+  return `${dayLabel}, Ngày ${dateStr}/${new Date().getFullYear()}`;
+};
+
+const buildTimeLabel = (selectedTimeSlot: any, durationMinutes: number): string => {
+  if (!selectedTimeSlot?.time) return '';
+  const start = formatTimePeriod(selectedTimeSlot.time);
+  if (!durationMinutes) return start;
+  const end = addMinutes(selectedTimeSlot.time, durationMinutes);
+  return `${start} – ${end}`;
+};
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export const BookingConfirm: React.FC = () => {
-  const [selectedPayment, setSelectedPayment] = useState<'momo' | 'vnpay' | 'cash'>('momo');
-  const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
 
-  const renderPaymentIcon = (id: string) => {
-    if (id === 'momo') {
-      return (
-        <View style={styles.momoBadge}>
-          <CText style={styles.momoText}>mo{'\n'}mo</CText>
-        </View>
-      );
+  const service       = route.params?.service || {};
+  const selectedDay   = route.params?.selectedDay;       // { id, dayName, dateStr }
+  const selectedTimeSlot = route.params?.selectedTimeSlot; // { id, time, available }
+
+  // ── Derived values ────────────────────────────────────────────────────────
+  const serviceTitle = service?.name;
+  const nurseName    = service?.channel?.name || service?.doctor?.full_name;
+  const address      = service?.address || service?.doctor?.address;
+  const price        = Number(service?.price ?? service?.package?.price ?? 0);
+  const isFree       = price === 0;
+  const priceFormatted = isFree ? 'Miễn phí' : formatMoneyVND(price, '.');
+  const thumbnail    = service?.thumbnail
+    ? { uri: service.thumbnail }
+    : images.common.img_default;
+
+  const rawDuration =
+    service?.duration ||
+    service?.working_hours ||
+    service?.hours ||
+    service?.package?.duration ||
+    null;
+  // duration từ API có thể là phút (>= 24) hoặc giờ (< 24)
+  const durationMinutes = rawDuration
+    ? rawDuration >= 24 ? rawDuration : rawDuration * 60
+    : 90;
+
+  const dateLabel = buildDateLabel(selectedDay);
+  const timeLabel = buildTimeLabel(selectedTimeSlot, durationMinutes);
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const [isLoading, setIsLoading]             = useState(false);
+
+  // Lưu orderId để check khi user quay lại app từ MoMo
+  const pendingOrderId = useRef<string | null>(null);
+
+  // ── useCheckPaymentOnResume (copy pattern từ drcarely) ────────────────────
+  // Khi user quay lại app sau khi mở MoMo, gọi API check trạng thái thanh toán
+  useCheckPaymentOnResume(async () => {
+    const orderId = pendingOrderId.current;
+    if (!orderId) return;
+
+    try {
+      const res: any = await ApiService.getPaymentStatus(orderId);
+      if (!res.ok) return;
+
+      const status: string =
+        res.data?.result?.status ||
+        res.data?.status ||
+        '';
+
+      if (status === 'paid' || status === 'success' || status === 'completed') {
+        pendingOrderId.current = null;
+        Alert.alert(
+          'Thanh toán thành công',
+          'Đơn hàng của bạn đã được xác nhận.',
+          [
+            {
+              text: 'Xem lịch hẹn',
+              onPress: () => navigation.navigate('AppointmentTab', { idxTab: 0 }),
+            },
+          ],
+        );
+      } else if (status === 'failed' || status === 'cancelled') {
+        pendingOrderId.current = null;
+        Alert.alert('Thanh toán thất bại', 'Giao dịch không thành công. Vui lòng thử lại.');
+      }
+      // status === 'pending' → chưa xử lý, giữ nguyên để check lần sau
+    } catch (_) {
+      // Bỏ qua lỗi network khi check resume
     }
-    if (id === 'vnpay') {
-      return (
-        <View style={styles.vnpayBadge}>
-          <View style={styles.vnpayTopTriangle} />
-          <View style={styles.vnpayBottomTriangle} />
-        </View>
+  });
+
+  // ── Payment handler ───────────────────────────────────────────────────────
+
+  const handlePayNow = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      // 1. Tạo order
+      const orderRes: any = await ApiService.createOrder({
+        package_id:     service?._id || service?.id,
+        payment_method: isFree ? 'free' : 'momo',
+        amount:         price,
+        selected_date:  selectedDay?.dateStr,
+        selected_time:  selectedTimeSlot?.time,
+        duration:       durationMinutes,
+      });
+
+      if (!orderRes.ok) {
+        throw new Error(
+          orderRes?.data?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại.',
+        );
+      }
+
+      const orderId: string =
+        orderRes.data?.result?._id ||
+        orderRes.data?.result?.id  ||
+        orderRes.data?._id         ||
+        orderRes.data?.id;
+
+      if (!orderId) {
+        throw new Error('Không nhận được mã đơn hàng từ server.');
+      }
+
+      // 2a. Giá 0 đồng → không cần thanh toán, chuyển thẳng sang lịch hẹn
+      if (isFree) {
+        Alert.alert(
+          'Đặt lịch thành công',
+          'Lịch hẹn của bạn đã được xác nhận.',
+          [
+            {
+              text: 'Xem lịch hẹn',
+              onPress: () => navigation.navigate('AppointmentTab', { idxTab: 0 }),
+            },
+          ],
+        );
+        return;
+      }
+
+      // 2b. Gọi MoMo API → nhận deeplink
+      const momoRes: any = await ApiService.payWithMomo({
+        order_id: orderId,
+        amount:   price,
+      });
+
+      if (!momoRes.ok) {
+        throw new Error(
+          momoRes?.data?.message || 'Không thể kết nối MoMo. Vui lòng thử lại.',
+        );
+      }
+
+      const deeplink: string =
+        momoRes.data?.result?.deeplink  ||
+        momoRes.data?.result?.payUrl    ||
+        momoRes.data?.deeplink          ||
+        momoRes.data?.payUrl;
+
+      const webUrl: string =
+        momoRes.data?.result?.qrCodeUrl  ||
+        momoRes.data?.result?.shortLink  ||
+        deeplink;
+
+      if (!deeplink) {
+        throw new Error('Không nhận được link thanh toán MoMo.');
+      }
+
+      // 3. Lưu orderId → useCheckPaymentOnResume sẽ dùng khi user quay lại
+      pendingOrderId.current = orderId;
+
+      // 4. Mở app MoMo; fallback sang web nếu chưa cài
+      const canOpen = await Linking.canOpenURL(deeplink);
+      await Linking.openURL(canOpen ? deeplink : webUrl);
+    } catch (err: any) {
+      Alert.alert(
+        'Lỗi thanh toán',
+        err?.message || 'Đã xảy ra lỗi. Vui lòng thử lại.',
       );
+    } finally {
+      setIsLoading(false);
     }
-    return (
-      <View style={styles.cashBadge}>
-        <IconX type="ionicons" name="cash-outline" size={20} color="#344054" />
-      </View>
-    );
   };
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <SafeAreaView style={styles.container}>
@@ -56,51 +242,59 @@ export const BookingConfirm: React.FC = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.headerBtn}
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}
+        >
           <IconX type="ionicons" name="chevron-back" size={24} color="#1D2939" />
         </TouchableOpacity>
         <CText style={styles.headerTitle}>Xem lại và xác nhận</CText>
-        <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}>
-          <IconX type="ionicons" name="share-social-outline" size={22} color="#344054" />
-        </TouchableOpacity>
+        <View style={styles.headerBtn} />
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Section 1: Thông tin */}
+        {/* ── Thông tin ── */}
         <CText style={styles.sectionHeading}>Thông tin</CText>
         <View style={styles.card}>
           <View style={styles.serviceRow}>
             <ImageHelper
-              source={images.common.img_default}
+              source={thumbnail}
               style={styles.serviceThumbnail}
               resizeMode="cover"
             />
             <View style={styles.serviceDetails}>
               <CText style={styles.serviceTitle} numberOfLines={2}>
-                Dịch vụ Nuôi sinh & Chăm sóc mẹ bé tại bệnh viện
+                {serviceTitle}
               </CText>
-              <CText style={styles.nurseName}>Điều dưỡng Thúy Ngọc</CText>
+              <CText style={styles.nurseName}>{nurseName}</CText>
             </View>
           </View>
 
           <View style={styles.divider} />
 
           <View style={styles.infoMetaList}>
-            <View style={styles.metaRow}>
-              <IconX type="ionicons" name="calendar-outline" size={17} color="#667085" />
-              <CText style={styles.metaText}>Thứ 4, Ngày 25/01/2026</CText>
-            </View>
-            <View style={styles.metaRow}>
-              <IconX type="ionicons" name="time-outline" size={17} color="#667085" />
-              <CText style={styles.metaText}>15:30 PM - 17:00 PM</CText>
-            </View>
-            <View style={styles.metaRow}>
-              <IconX type="ionicons" name="location-outline" size={17} color="#667085" />
-              <CText style={styles.metaText}>44/7 Đường N4, P. Tân Hưng, Quận 7, TP. HCM</CText>
-            </View>
+            {!!dateLabel && (
+              <View style={styles.metaRow}>
+                <IconX type="ionicons" name="calendar-outline" size={17} color="#667085" />
+                <CText style={styles.metaText}>{dateLabel}</CText>
+              </View>
+            )}
+            {!!timeLabel && (
+              <View style={styles.metaRow}>
+                <IconX type="ionicons" name="time-outline" size={17} color="#667085" />
+                <CText style={styles.metaText}>{timeLabel}</CText>
+              </View>
+            )}
+            {!!address && (
+              <View style={styles.metaRow}>
+                <IconX type="ionicons" name="location-outline" size={17} color="#667085" />
+                <CText style={styles.metaText}>{address}</CText>
+              </View>
+            )}
           </View>
 
           <TouchableOpacity
@@ -112,32 +306,7 @@ export const BookingConfirm: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Section 2: Phương thức thanh toán */}
-        <CText style={styles.sectionHeading}>Phương thức thanh toán</CText>
-        <View style={styles.card}>
-          {PAYMENT_METHODS.map((method, index) => {
-            const isSelected = selectedPayment === method.id;
-            const isLast = index === PAYMENT_METHODS.length - 1;
-            return (
-              <TouchableOpacity
-                key={method.id}
-                onPress={() => setSelectedPayment(method.id)}
-                style={[styles.paymentRow, !isLast && styles.rowBorderBottom]}
-                activeOpacity={0.7}
-              >
-                <View style={styles.paymentLeft}>
-                  {renderPaymentIcon(method.id)}
-                  <CText style={styles.paymentName}>{method.name}</CText>
-                </View>
-                <View style={[styles.radioCircle, isSelected && styles.radioCircleActive]}>
-                  {isSelected && <View style={styles.radioDot} />}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Section 3: Mã giảm giá */}
+        {/* ── Mã giảm giá ── */}
         <TouchableOpacity style={styles.actionCard} activeOpacity={0.7}>
           <View style={styles.actionCardLeft}>
             <IconX type="ionicons" name="ticket-outline" size={20} color="#344054" />
@@ -146,56 +315,61 @@ export const BookingConfirm: React.FC = () => {
           <CText style={styles.promoActionText}>Chọn hoặc nhập mã</CText>
         </TouchableOpacity>
 
-        {/* Section 4: Lời nhắn/Ghi chú */}
-        <TouchableOpacity style={styles.actionCard} activeOpacity={0.7}>
-          <View style={styles.actionCardLeft}>
-            <IconX type="ionicons" name="chatbox-outline" size={20} color="#344054" />
-            <CText style={styles.actionCardTitle}>Lời nhắn/Ghi chú</CText>
-          </View>
-          <IconX type="ionicons" name="chevron-forward" size={18} color="#667085" />
-        </TouchableOpacity>
+        {/* ── Phương thức thanh toán (ẩn khi miễn phí) ── */}
+        {!isFree && (
+          <>
+            <CText style={styles.sectionHeading}>Phương thức thanh toán</CText>
+            <View style={styles.card}>
+              <View style={styles.paymentRow}>
+                <View style={styles.paymentLeft}>
+                  <View style={styles.momoBadge}>
+                    <CText style={styles.momoText}>mo{'\n'}mo</CText>
+                  </View>
+                  <CText style={styles.paymentName}>Ví điện tử MoMo</CText>
+                </View>
+                <View style={styles.radioCircleActive}>
+                  <View style={styles.radioDot} />
+                </View>
+              </View>
+            </View>
+          </>
+        )}
 
-        {/* Section 5: Chi tiết thanh toán */}
+        {/* ── Chi tiết thanh toán ── */}
         <CText style={styles.sectionHeading}>Chi tiết thanh toán</CText>
         <View style={styles.card}>
-          <View style={styles.receiptRow}>
-            <CText style={styles.receiptLabel}>Giá gốc</CText>
-            <CText style={styles.receiptValue}>199.000đ/Giờ</CText>
-          </View>
-          <View style={styles.receiptRow}>
-            <CText style={styles.receiptLabel}>Tổng giờ</CText>
-            <CText style={styles.receiptValue}>2 giờ</CText>
-          </View>
-          <View style={styles.receiptRow}>
-            <CText style={styles.receiptLabel}>Giảm giá</CText>
-            <CText style={styles.discountValue}>10.000đ</CText>
-          </View>
-          <View style={styles.receiptRow}>
-            <CText style={styles.receiptLabel}>Giá sau khuyến mãi</CText>
-            <CText style={styles.afterDiscountValue}>189.000đ</CText>
-          </View>
-          <View style={styles.receiptRow}>
-            <CText style={styles.receiptLabel}>Phụ phí (nếu có)</CText>
-            <CText style={styles.receiptValue}>0đ</CText>
-          </View>
-
-          <View style={styles.divider} />
-
           <View style={styles.receiptTotalRow}>
-            <CText style={styles.receiptTotalLabel}>Tổng thanh toán</CText>
-            <CText style={styles.receiptTotalValue}>189.000đ</CText>
+            <CText style={styles.receiptTotalLabel}>Thành tiền</CText>
+            <CText style={[styles.receiptTotalValue, isFree && styles.receiptFreeValue]}>
+              {priceFormatted}
+            </CText>
+          </View>
+          <View style={styles.securityRow}>
+            <IconX type="ionicons" name="lock-closed-outline" size={13} color="#667085" />
+            <CText style={styles.securityText}>
+              Chúng tôi cam kết bảo mật mọi thông tin của bạn khi mua gói dịch vụ.
+            </CText>
           </View>
         </View>
       </ScrollView>
 
       {/* Bottom Button */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.payNowBtn} activeOpacity={0.8}>
-          <CText style={styles.payNowBtnText}>Thanh toán ngay</CText>
+        <TouchableOpacity
+          style={[styles.payNowBtn, isLoading && styles.payNowBtnDisabled]}
+          activeOpacity={0.8}
+          onPress={handlePayNow}
+          disabled={isLoading}
+        >
+          {isLoading
+            ? <ActivityIndicator size="small" color="#FFFFFF" />
+            : <CText style={styles.payNowBtnText}>
+                {isFree ? 'Xác nhận đặt lịch' : 'Thanh toán ngay'}
+              </CText>
+          }
         </TouchableOpacity>
       </View>
 
-      {/* Cancel Policy Modal */}
       <BookingCancelPolicyModal
         visible={showPolicyModal}
         onClose={() => setShowPolicyModal(false)}
@@ -205,289 +379,88 @@ export const BookingConfirm: React.FC = () => {
   );
 };
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
+  container:    { flex: 1, backgroundColor: '#F9FAFB' },
   header: {
-    height: 52,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EAECF0',
+    height: 52, flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#EAECF0',
   },
-  headerBtn: {
-    width: 36,
-    height: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#101828',
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 100,
-  },
+  headerBtn:    { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
+  headerTitle:  { fontSize: 16, fontWeight: '700', color: '#101828' },
+  scrollContent: { padding: 16, paddingBottom: 110 },
   sectionHeading: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#101828',
-    marginTop: 10,
-    marginBottom: 10,
+    fontSize: 15, fontWeight: '700', color: '#101828',
+    marginTop: 10, marginBottom: 10,
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 6,
-    borderWidth: 1,
-    borderColor: '#EAECF0',
+    backgroundColor: '#FFFFFF', borderRadius: 12,
+    padding: 14, marginBottom: 6,
+    borderWidth: 1, borderColor: '#EAECF0',
   },
-  serviceRow: {
-    flexDirection: 'row',
-  },
-  serviceThumbnail: {
-    width: 54,
-    height: 54,
-    borderRadius: 8,
-    backgroundColor: '#F2F4F7',
-  },
-  serviceDetails: {
-    flex: 1,
-    marginLeft: 12,
-    justifyContent: 'center',
-  },
-  serviceTitle: {
-    fontSize: 13.5,
-    fontWeight: '600',
-    color: '#101828',
-    lineHeight: 19,
-  },
-  nurseName: {
-    fontSize: 12,
-    color: '#98A2B3',
-    marginTop: 4,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F2F4F7',
-    marginVertical: 12,
-  },
-  infoMetaList: {
-    gap: 8,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metaText: {
-    fontSize: 13,
-    color: '#344054',
-    marginLeft: 8,
-    flex: 1,
-  },
+  serviceRow:     { flexDirection: 'row' },
+  serviceThumbnail: { width: 54, height: 54, borderRadius: 8, backgroundColor: '#F2F4F7' },
+  serviceDetails: { flex: 1, marginLeft: 12, justifyContent: 'center' },
+  serviceTitle:   { fontSize: 13.5, fontWeight: '600', color: '#101828', lineHeight: 19 },
+  nurseName:      { fontSize: 12, color: '#98A2B3', marginTop: 4 },
+  divider:        { height: 1, backgroundColor: '#F2F4F7', marginVertical: 12 },
+  infoMetaList:   { gap: 8 },
+  metaRow:        { flexDirection: 'row', alignItems: 'center' },
+  metaText:       { fontSize: 13, color: '#344054', marginLeft: 8, flex: 1 },
   viewDetailsBtn: {
-    borderWidth: 1.2,
-    borderColor: '#14B8A6',
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 14,
-    backgroundColor: '#FFFFFF',
+    borderWidth: 1.2, borderColor: '#14B8A6', borderRadius: 8,
+    paddingVertical: 10, alignItems: 'center', marginTop: 14, backgroundColor: '#FFFFFF',
   },
-  viewDetailsBtnText: {
-    fontSize: 13.5,
-    color: '#14B8A6',
-    fontWeight: '600',
+  viewDetailsBtnText: { fontSize: 13.5, color: '#14B8A6', fontWeight: '600' },
+  actionCard: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14,
+    marginTop: 4, marginBottom: 6, borderWidth: 1, borderColor: '#EAECF0',
   },
+  actionCardLeft:  { flexDirection: 'row', alignItems: 'center' },
+  actionCardTitle: { fontSize: 13.5, fontWeight: '500', color: '#101828', marginLeft: 10 },
+  promoActionText: { fontSize: 13.5, color: '#14B8A6', fontWeight: '500' },
   paymentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', paddingVertical: 4,
   },
-  rowBorderBottom: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F4F7',
-  },
-  paymentLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  paymentLeft: { flexDirection: 'row', alignItems: 'center' },
   momoBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
-    backgroundColor: '#A50064',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
+    width: 44, height: 44, borderRadius: 10,
+    backgroundColor: '#A50064', alignItems: 'center',
+    justifyContent: 'center', marginRight: 12,
   },
   momoText: {
-    color: '#FFFFFF',
-    fontSize: 8,
-    fontWeight: '800',
-    lineHeight: 9,
-    textAlign: 'center',
+    color: '#FFFFFF', fontSize: 10, fontWeight: '800',
+    lineHeight: 11, textAlign: 'center',
   },
-  vnpayBadge: {
-    width: 26,
-    height: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  vnpayTopTriangle: {
-    width: 0,
-    height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderLeftWidth: 7,
-    borderRightWidth: 7,
-    borderBottomWidth: 9,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#ED1C24',
-    marginBottom: 1,
-  },
-  vnpayBottomTriangle: {
-    width: 0,
-    height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderLeftWidth: 7,
-    borderRightWidth: 7,
-    borderTopWidth: 9,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#005BAA',
-  },
-  cashBadge: {
-    width: 26,
-    height: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  paymentName: {
-    fontSize: 13.5,
-    color: '#344054',
-    fontWeight: '500',
-  },
-  radioCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: '#98A2B3',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  paymentName:      { fontSize: 14, color: '#344054', fontWeight: '500' },
   radioCircleActive: {
-    borderColor: '#14B8A6',
+    width: 22, height: 22, borderRadius: 11,
+    borderWidth: 2, borderColor: '#14B8A6',
+    alignItems: 'center', justifyContent: 'center',
   },
-  radioDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#14B8A6',
-  },
-  actionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#EAECF0',
-  },
-  actionCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  actionCardTitle: {
-    fontSize: 13.5,
-    fontWeight: '500',
-    color: '#101828',
-    marginLeft: 10,
-  },
-  promoActionText: {
-    fontSize: 13.5,
-    color: '#14B8A6',
-    fontWeight: '500',
-  },
-  receiptRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  receiptLabel: {
-    fontSize: 13,
-    color: '#475467',
-  },
-  receiptValue: {
-    fontSize: 13,
-    color: '#101828',
-    fontWeight: '500',
-  },
-  discountValue: {
-    fontSize: 13,
-    color: '#F04438',
-    fontWeight: '600',
-  },
-  afterDiscountValue: {
-    fontSize: 13,
-    color: '#14B8A6',
-    fontWeight: '600',
-  },
+  radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#14B8A6' },
   receiptTotalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 12,
   },
-  receiptTotalLabel: {
-    fontSize: 13.5,
-    fontWeight: '500',
-    color: '#101828',
-  },
-  receiptTotalValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#101828',
-  },
+  receiptTotalLabel: { fontSize: 14, fontWeight: '500', color: '#101828' },
+  receiptTotalValue: { fontSize: 15, fontWeight: '700', color: '#101828' },
+  receiptFreeValue:  { color: '#14B8A6' },
+  securityRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  securityText: { fontSize: 12, color: '#667085', flex: 1, lineHeight: 17 },
   bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#EAECF0',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 24,
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#EAECF0',
+    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24,
   },
   payNowBtn: {
-    backgroundColor: '#14B8A6',
-    height: 48,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#14B8A6', height: 50,
+    borderRadius: 10, alignItems: 'center', justifyContent: 'center',
   },
-  payNowBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
+  payNowBtnDisabled: { opacity: 0.7 },
+  payNowBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
 });

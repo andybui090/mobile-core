@@ -18,6 +18,7 @@ export const enum TYPES {
   SET_USER = 'SET_USER',
   LOGOUT_APP = 'LOGOUT_APP',
   SET_LOCATION = 'SET_LOCATION',
+  RESET_LOGOUT = 'RESET_LOGOUT',
 }
 
 type ACTIONTYPE =
@@ -25,7 +26,8 @@ type ACTIONTYPE =
   | {type: TYPES.LOGOUT_APP; payload: boolean}
   | {type: TYPES.SHOW_GETTING_START; payload: boolean}
   // | {type: TYPES.SHOW_CATEGORY; payload: boolean}
-  | {type: TYPES.SET_LOCATION; payload: object};
+  | {type: TYPES.SET_LOCATION; payload: object}
+  | {type: TYPES.RESET_LOGOUT; payload: boolean};
 
 export const enum UserTypes {
   doctor = 'doctor',
@@ -45,6 +47,8 @@ export function rootReducer(
       return {...prevState, isGetting: action.payload};
     // case TYPES.SHOW_CATEGORY:
     //   return {...prevState, isCategory: action.payload};
+    case TYPES.RESET_LOGOUT:
+      return {...prevState, isLogout: action.payload};
     case TYPES.SET_USER:
       const currentUser: any = action.payload;
       const type: UserTypes = currentUser?.personalization?.type
@@ -55,6 +59,7 @@ export function rootReducer(
         user: action.payload,
         userType: type,
         isLoading: false,
+        isLogout: false,
         isDoctor:
           type == UserTypes.doctor ||
           type == UserTypes.nurse ||

@@ -7,6 +7,11 @@ import { common } from './common';
 import { community } from './community';
 import { setting } from './setting';
 
+export const doctor = {
+  setting: require('../../assets/images/setting/setting.png'),
+  ic_edit: require('../../assets/images/setting/ic_edit.png'),
+};
+
 export const images = {
   intro,
   home,
@@ -16,6 +21,7 @@ export const images = {
   common,
   community,
   setting,
+  doctor,
 };
 
 

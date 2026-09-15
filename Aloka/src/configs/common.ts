@@ -247,3 +247,21 @@ export const parseIntToBoolean = (value: any) => {
   return false;
 };
 
+export const shareInviteFriend = async (
+  linkInviteFriend: string,
+  title: string,
+  caption?: string,
+) => {
+  try {
+    const Share = require('react-native-share').default;
+    const shareOption = {
+      title,
+      message: caption || '',
+      url: linkInviteFriend,
+    };
+    await Share.open(shareOption);
+  } catch (error) {
+    console.log('shareInviteFriend error', error);
+  }
+};
+

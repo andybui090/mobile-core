@@ -2,6 +2,11 @@ export const rootRoute = 'rootRoute';
 
 export const homeTabRoute = {
   homeScreen: 'HomeScreen',
+  carelyServiceScreen: 'CarelyServiceScreen',
+  carelyServiceDetailScreen: 'CarelyServiceDetailScreen',
+  searchService: 'SearchService',
+  bookingSchedule: 'BookingSchedule',
+  bookingConfirm: 'BookingConfirm',
 };
 
 export const drnetworkTabRoute = {
@@ -22,6 +27,22 @@ export const mainRoute = {
   settingScreen: 'SettingScreen',
   aboutUsScreen: 'AboutUsScreen',
   feedbackScreen: 'FeedbackScreen',
+  followingList: 'FollowingList',
+  followerList: 'FollowerList',
+  editProfileScreen: 'EditProfileScreen',
+  videosLiked: 'VideosLiked',
+  videosSaved: 'VideosSaved',
+  qrCodeScreen: 'QRCodeScreen',
+  myCourses: 'MyCourses',
+  myPackages: 'MyPackages',
+  myAppointment: 'AppointmentScreen',
+  carelyServiceScreen: 'CarelyServiceScreen',
+  carelyServiceDetailScreen: 'CarelyServiceDetailScreen',
+  searchService: 'SearchService',
+  bookingSchedule: 'BookingSchedule',
+  bookingConfirm: 'BookingConfirm',
+  carelyReviewScreen: 'CarelyReviewScreen',
+  reviewService: 'ReviewService',
 };
 
 

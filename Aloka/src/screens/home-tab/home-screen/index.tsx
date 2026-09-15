@@ -16,7 +16,7 @@ import {
 import { Row, CText, Container, CScrollView } from '@/utils';
 import { onLinkBanner } from './function';
 import { getBanner, getUpcomingBookingHome } from '@/redux/slices/homeSlice';
-import { PAGINATION } from '@/constants';
+import { PAGINATION, homeTabRoute } from '@/constants';
 import {
   getCarelySearchServices,
   getCarelyServices,
@@ -113,7 +113,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
     const param: any = {
       limit: PAGINATION.ITEMS_50,
       offset: _offset,
-      fq: `status:1,is_deleted:0,parent_id:0,is_book_service:1'`,
+      fq: `status:1,is_deleted:0,parent_id:0,is_book_service:1`,
       s: '',
     };
     console.log('🚀 ~ callAPICarelyServices ~ param:', param);
@@ -128,7 +128,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
     const param: any = {
       limit: PAGINATION.ITEMS_50,
       offset: _offset,
-      fq: `status:1,is_deleted:0,parent_id:${filterId},is_book_service:1'`,
+      fq: `status:1,is_deleted:0,parent_id:${filterId},is_book_service:1`,
       s: `${searchTxt}|name`,
     };
     console.log('🚀 ~ callAPICarelyServicesSearch ~ param:', param);
@@ -274,7 +274,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
   // -------------------------------
 
   const handlePressSearch = () => {
-    // navigation.navigate(carelyHomeTabRoute.carelySearchScreen);
+    navigation.navigate(homeTabRoute.searchService);
   };
 
   const handleChooseFilterService = (item: any) => {
@@ -292,7 +292,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
   };
 
   const handlePressDetailService = (item: any) => {
-    // navigation.navigate(mainRoute.carelyServiceDetailScreen, { service: item });
+    navigation.navigate(homeTabRoute.carelyServiceDetailScreen, { service: item });
   };
 
   const _handleLoadMoreSearch = () => {
@@ -308,9 +308,9 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
   };
 
   const handlePressItemService = (item: any) => {
-    // navigation.navigate(carelyHomeTabRoute.carelyServiceScreen, {
-    //   parentService: item,
-    // });
+    navigation.navigate(homeTabRoute.carelyServiceScreen, {
+      parentService: item,
+    });
   };
 
   const _handleLoadMore = () => {
@@ -322,7 +322,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
   };
 
   const handlePressBookingDetail = () => {
-    // navigation.navigate('CarelyAppointmentTab', { idxTab: 0 });
+    navigation.navigate('AppointmentTab', { idxTab: 0 });
   };
 
   const _handleLoadMoreUpcoming = () => {

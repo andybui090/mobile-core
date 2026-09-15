@@ -163,6 +163,9 @@ export const screenStyles = StyleSheet.create({
   pV16: {
     paddingVertical: 16,
   },
+  pV22: {
+    paddingVertical: 22,
+  },
   pT8: {
     paddingTop: 8,
   },

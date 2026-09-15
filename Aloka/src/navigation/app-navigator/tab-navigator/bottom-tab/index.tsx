@@ -1,3 +1,4 @@
+import React, { useContext } from 'react';
 import {
   ScreenWidth,
   getBottomSpace,
@@ -9,6 +10,8 @@ import {
 import { Row } from '@/utils';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { AppContext } from '@/contexts';
+import { openDoctorNetworkApp } from '@/navigation/app-helper';
 import { BottomMenuItem } from './BottomMenuItem';
 import registercustomAnimations from './animations';
 import withPressAnimated from './animations/withPressAnimated';
@@ -18,6 +21,8 @@ const AnimatedTouch = withPressAnimated(TouchableOpacity);
 
 export const TabBar = ({ state, descriptors, navigation }: any) => {
   const { t } = useTranslation();
+  const { user } = useContext<any>(AppContext) || {};
+
   const renderItem = (route: any, index: number) => {
     const { options } = descriptors[route.key];
     const isFocused = state.index === index;
@@ -29,8 +34,22 @@ export const TabBar = ({ state, descriptors, navigation }: any) => {
         type: 'tabPress',
         target: route.key,
       });
+      if (route.name === 'DrNetworkTab') {
+        openDoctorNetworkApp();
+        return;
+      }
       if (route.name === 'AccountTab') {
-        navigation.navigate('PartnerAppNavigator');
+        const isUserType =
+          user?.personalization?.type === 'User' ||
+          user?.personalization?.type === 'user' ||
+          user?.personalization?.type?.toLowerCase() === 'user';
+        if (isUserType) {
+          if (!isFocused) {
+            navigation.navigate('AccountTab');
+          }
+        } else {
+          navigation.getParent()?.navigate('PartnerAppNavigator');
+        }
         return;
       }
       if (!isFocused && !event.defaultPrevented) {
@@ -87,10 +106,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabContainer: {
-    height: 55 + getBottomSpace() - ifIphoneX(16, 0),
+    height: 56 + getBottomSpace() - ifIphoneX(16, 0),
     paddingBottom: getBottomSpace() - ifIphoneX(16, 0),
     backgroundColor: 'white',
     width: ScreenWidth,
     paddingHorizontal: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F2F4F7',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 8,
   },
 });
