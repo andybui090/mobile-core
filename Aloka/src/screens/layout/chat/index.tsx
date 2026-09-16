@@ -90,10 +90,20 @@ export const ChatScreen: React.FC = () => {
     theme: { colors },
   } = useTheme();
 
-  // Unified params supporting name / customerName / partnerName
-  const targetName = route.params?.customerName;
+  // Unified params supporting name / customerName / partnerName / item
+  const targetName =
+    route.params?.customerName ||
+    route.params?.name ||
+    route.params?.partnerName ||
+    route.params?.item?.title ||
+    route.params?.item?.name ||
+    '';
 
-  const rawAvatar = route.params?.customerAvatar;
+  const rawAvatar =
+    route.params?.customerAvatar ||
+    route.params?.avatar ||
+    route.params?.item?.thumbnail ||
+    route.params?.item?.avatar;
 
   const targetAvatar = useMemo(() => {
     return safeImageSource(
@@ -1104,8 +1114,6 @@ export const ChatScreen: React.FC = () => {
   );
 };
 
-// Aliases so both PartnerChatScreen and BookingChat can use this unified screen
-export const PartnerChatScreen = ChatScreen;
 export const BookingChat = ChatScreen;
 
 export default ChatScreen;

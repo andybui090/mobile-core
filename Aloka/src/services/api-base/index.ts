@@ -2,7 +2,7 @@ import { create } from 'apisauce';
 
 import Config from 'react-native-config';
 import apiMonitor from './monitor';
-import { GLOBAL, HOME, SETTINGS, PROFILE, CARELY, NOTIFICATION, COMMUNITY, ORDER, PAYMENT } from './uris';
+import { GLOBAL, HOME, SETTINGS, PROFILE, CARELY, NOTIFICATION, COMMUNITY, ORDER, PAYMENT, SCHEDULE, CHANNEL } from './uris';
 import i18n from 'i18next';
 import { getObjectData } from '@/storages';
 import { STORAGEKEY } from '@/constants';
@@ -77,6 +77,10 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
 
   const getProvinces = (payload?: object) => {
     return api.get(GLOBAL.GET_PROVINCE, payload);
+  };
+
+  const searchLocation = (input: string) => {
+    return api.get(GLOBAL.SEARCH_LOCATION, { input });
   };
 
   /*
@@ -195,14 +199,45 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   };
 
   /*
-    ORDER
+    SCHEDULE / APPOINTMENT TIME
   */
+  /**
+   * Lấy danh sách giờ đã được book của channel.
+   * Giống doctor-mobile-app: GET /appointments/time/:channelId
+   * Kết quả dùng để đánh dấu slot bận khi render time grid.
+   */
+  const getChannelAppointmentTime = (channelId: string) => {
+    return api.get(`${SCHEDULE.APPOINT_TIME}/${channelId}`);
+  };
+
+  /**
+   * Lấy thông tin channel (bao gồm schedules, working hours).
+   * GET /channels/:channelId
+   */
+  const getChannelDetail = (channelId: string) => {
+    return api.get(CHANNEL.DETAIL(channelId));
+  };
+
+  const updateChannel = (payload: any) => {
+    const { id, ...data } = payload || {};
+    return api.put(CHANNEL.UPDATE(id), data);
+  };
   const createOrder = (payload: any) => {
     return api.post(ORDER.CREATE, payload);
   };
 
   const getOrderDetail = (orderId: string) => {
     return api.get(ORDER.DETAIL(orderId));
+  };
+
+  /** POST /orders/packages – mua gói (giống doctor-mobile-app BUY_PACKAGE) */
+  const buyPackageFree = (payload: { package_id: string; payment: string }) => {
+    return api.post(ORDER.SUBSCRIPTION, payload);
+  };
+
+  /** POST /appointments – đặt lịch sau khi mua gói (giống postBookingCall doctor-mobile-app) */
+  const bookAppointment = (payload: any) => {
+    return api.post(ORDER.APPOINTMENT, payload);
   };
 
   /*
@@ -229,18 +264,6 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
 
   const getPaymentStatus = (orderId: string) => {
     return api.get(PAYMENT.STATUS(orderId));
-  };
-
-  /*
-    CHANNEL
-  */
-  const getChannelDetail = (channelId: string) => {
-    return api.get(`/channels/${channelId}`);
-  };
-
-  const updateChannel = (payload: any) => {
-    const { id, ...data } = payload || {};
-    return api.put(`/channels/${id}`, data);
   };
 
   /*
@@ -272,6 +295,7 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     getTutorials,
     getLanguage,
     getProvinces,
+    searchLocation,
     /*
       HOME
     */
@@ -316,22 +340,24 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     getCarelyServices,
     postRatingCarely,
     /*
+      SCHEDULE / APPOINTMENT TIME
+    */
+    getChannelAppointmentTime,
+    getChannelDetail,
+    updateChannel,
+    /*
       ORDER
     */
     createOrder,
     getOrderDetail,
+    buyPackageFree,
+    bookAppointment,
     /*
       PAYMENT
     */
     payWithMomo,
     payWithVnpay,
     getPaymentStatus,
-    /*
-      CHANNEL
-    */
-    getChannelDetail,
-    updateChannel,
-
     /*
       COMMUNITY
     */

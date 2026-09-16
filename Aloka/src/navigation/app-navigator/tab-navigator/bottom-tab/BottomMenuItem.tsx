@@ -47,11 +47,11 @@ export const BottomMenuItem = ({ isFocused, index }: any) => {
       return isFocused
         ? renderItemActive(
             images.bottomTab.appointment_active,
-            t('common.appointment', 'Appointment'),
+            t('profile.appoints', 'Lịch hẹn'),
           )
         : renderItemUnactive(
             images.bottomTab.appointment_unactive,
-            t('common.appointment', 'Appointment'),
+            t('profile.appoints', 'Lịch hẹn'),
           );
 
     case 3:

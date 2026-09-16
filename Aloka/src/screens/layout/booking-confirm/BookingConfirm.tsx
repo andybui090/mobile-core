@@ -71,9 +71,10 @@ export const BookingConfirm: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
 
-  const service       = route.params?.service || {};
-  const selectedDay   = route.params?.selectedDay;       // { id, dayName, dateStr }
-  const selectedTimeSlot = route.params?.selectedTimeSlot; // { id, time, available }
+  const service          = route.params?.service || {};
+  const selectedDay      = route.params?.selectedDay;
+  const selectedTimeSlot = route.params?.selectedTimeSlot;
+  const bookingAddress   = route.params?.bookingAddress || service?.address || '';
 
   // ── Derived values ────────────────────────────────────────────────────────
   const serviceTitle = service?.name;
@@ -148,89 +149,137 @@ export const BookingConfirm: React.FC = () => {
 
   const handlePayNow = async () => {
     if (isLoading) return;
+    if (!selectedDay || !selectedTimeSlot) {
+      Alert.alert('Thông báo', 'Vui lòng chọn ngày và giờ');
+      return;
+    }
     setIsLoading(true);
     try {
-      // 1. Tạo order
-      const orderRes: any = await ApiService.createOrder({
-        package_id:     service?._id || service?.id,
-        payment_method: isFree ? 'free' : 'momo',
+      const packageId = service?._id || service?.id || String(service?.package_id || '');
+
+      // ── Bước 1: Mua gói → POST /orders/packages (giống doctor-mobile-app buyPackage) ──
+      const buyRes: any = await ApiService.createOrder({
+        package_id:     packageId,
+        payment:        'momo',    // doctor-mobile-app luôn gửi 'momo' kể cả gói 0đ
         amount:         price,
-        selected_date:  selectedDay?.dateStr,
-        selected_time:  selectedTimeSlot?.time,
-        duration:       durationMinutes,
       });
 
-      if (!orderRes.ok) {
-        throw new Error(
-          orderRes?.data?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại.',
-        );
+      let orderId: string =
+        buyRes?.data?.result?.order_id ||
+        buyRes?.data?.result?._id      ||
+        buyRes?.data?.result?.id       ||
+        buyRes?.data?.order_id         ||
+        buyRes?.data?._id              ||
+        buyRes?.data?.id               || '';
+
+      // Lỗi: gói 0đ đã mua lần trước → message chứa order_id cũ
+      if (!buyRes?.ok) {
+        const errMsg: string = buyRes?.data?.message || buyRes?.data?.error || '';
+        const existingOrderId = errMsg.match(/order_id[:\s"]*([a-zA-Z0-9-]+)/)?.[1];
+
+        if (existingOrderId && isFree) {
+          // Dùng order_id cũ để đặt lịch tiếp (lần sau với gói 0đ)
+          orderId = existingOrderId;
+        } else {
+          throw new Error(errMsg || 'Không thể tạo đơn hàng. Vui lòng thử lại.');
+        }
       }
 
-      const orderId: string =
-        orderRes.data?.result?._id ||
-        orderRes.data?.result?.id  ||
-        orderRes.data?._id         ||
-        orderRes.data?.id;
-
-      if (!orderId) {
-        throw new Error('Không nhận được mã đơn hàng từ server.');
-      }
-
-      // 2a. Giá 0 đồng → không cần thanh toán, chuyển thẳng sang lịch hẹn
+      // ── Bước 2a (0đ): Đặt lịch thực sự → POST /appointments ──────────────
       if (isFree) {
-        Alert.alert(
-          'Đặt lịch thành công',
-          'Lịch hẹn của bạn đã được xác nhận.',
-          [
-            {
-              text: 'Xem lịch hẹn',
-              onPress: () => navigation.navigate('AppointmentTab', { idxTab: 0 }),
-            },
-          ],
-        );
+        await _bookAppointment(orderId);
         return;
       }
 
-      // 2b. Gọi MoMo API → nhận deeplink
+      // ── Bước 2b (có phí): Gọi MoMo API → nhận deeplink ──────────────────
+      if (!orderId) throw new Error('Không nhận được mã đơn hàng từ server.');
+
       const momoRes: any = await ApiService.payWithMomo({
         order_id: orderId,
         amount:   price,
       });
 
-      if (!momoRes.ok) {
-        throw new Error(
-          momoRes?.data?.message || 'Không thể kết nối MoMo. Vui lòng thử lại.',
-        );
+      if (!momoRes?.ok) {
+        throw new Error(momoRes?.data?.message || 'Không thể kết nối MoMo. Vui lòng thử lại.');
       }
 
       const deeplink: string =
         momoRes.data?.result?.deeplink  ||
         momoRes.data?.result?.payUrl    ||
         momoRes.data?.deeplink          ||
-        momoRes.data?.payUrl;
+        momoRes.data?.payUrl            || '';
 
       const webUrl: string =
-        momoRes.data?.result?.qrCodeUrl  ||
-        momoRes.data?.result?.shortLink  ||
+        momoRes.data?.result?.qrCodeUrl ||
+        momoRes.data?.result?.shortLink ||
         deeplink;
 
-      if (!deeplink) {
-        throw new Error('Không nhận được link thanh toán MoMo.');
-      }
+      if (!deeplink) throw new Error('Không nhận được link thanh toán MoMo.');
 
-      // 3. Lưu orderId → useCheckPaymentOnResume sẽ dùng khi user quay lại
+      // Lưu orderId → useCheckPaymentOnResume dùng sau khi quay lại từ MoMo
       pendingOrderId.current = orderId;
 
-      // 4. Mở app MoMo; fallback sang web nếu chưa cài
       const canOpen = await Linking.canOpenURL(deeplink);
       await Linking.openURL(canOpen ? deeplink : webUrl);
+
     } catch (err: any) {
-      Alert.alert(
-        'Lỗi thanh toán',
-        err?.message || 'Đã xảy ra lỗi. Vui lòng thử lại.',
-      );
+      Alert.alert('Lỗi', err?.message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // ── Đặt lịch hẹn sau khi có order_id (POST /appointments) ─────────────────
+  // Giống bookService() trong doctor-mobile-app
+  const _bookAppointment = async (orderId: string) => {
+    try {
+      const channelId  = service?.channel_id || service?.channel?.id || '';
+      const doctorId   = service?.user_id || service?.doctor?.id || service?.channel?.user_id || '';
+      const categoryId = service?.category_id ||
+        (Array.isArray(service?.categories) && service.categories[0]?.id) || '';
+
+      // Parse date + time thành DateTime
+      const [dd, mm] = (selectedDay.dateStr || '').split('/').map(Number);
+      const year = new Date().getFullYear();
+      const [hh, mnt] = (selectedTimeSlot.time || '').split(':').map(Number);
+      const dt = new Date(year, (mm || 1) - 1, dd || 1, hh || 0, mnt || 0, 0, 0);
+
+      const bookingPayload: any = {
+        package_id:  service?._id || service?.id || String(service?.package_id || ''),
+        order_id:    orderId,
+        channel_id:  channelId,
+        doctor_id:   doctorId,
+        category_id: categoryId,
+        date:        dt,
+        duration:    Number(service?.time_package || service?.duration || 30),
+        type:        service?.is_book_service == 0 ? 'ONLINE' : 'OFFLINE',
+        address:     bookingAddress || service?.address || '',
+        note:        '',
+      };
+
+      const bookRes: any = await ApiService.updateBookingStatus(bookingPayload);
+
+      if (bookRes?.ok || bookRes?.status === 200 || bookRes?.status === 201) {
+        Alert.alert(
+          '🎉 Đặt lịch thành công',
+          'Lịch hẹn của bạn đã được xác nhận. Bạn sẽ nhận được kết quả trong 12 giờ.',
+          [
+            {
+              text: 'Xem lịch hẹn',
+              onPress: () => {
+                navigation.popToTop?.();
+                navigation.navigate('AppointmentTab', { idxTab: 0 });
+              },
+            },
+            { text: 'Đóng', onPress: () => navigation.goBack() },
+          ],
+        );
+      } else {
+        const msg = bookRes?.data?.message || 'Đặt lịch thất bại. Vui lòng thử lại.';
+        Alert.alert('Lỗi đặt lịch', msg);
+      }
+    } catch (e: any) {
+      Alert.alert('Lỗi', e?.message || 'Đặt lịch thất bại.');
     }
   };
 

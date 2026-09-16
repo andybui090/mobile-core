@@ -15,6 +15,8 @@ export const drnetworkTabRoute = {
 
 export const appointmentTabRoute = {
   appointmentScreen: 'AppointmentScreen',
+  bookingChat: 'BookingChat',
+  chatScreen: 'ChatScreen',
 };
 
 export const accountTabRoute = {
@@ -43,6 +45,8 @@ export const mainRoute = {
   bookingConfirm: 'BookingConfirm',
   carelyReviewScreen: 'CarelyReviewScreen',
   reviewService: 'ReviewService',
+  bookingChat: 'BookingChat',
+  chatScreen: 'ChatScreen',
 };
 
 

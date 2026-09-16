@@ -16,6 +16,10 @@ import QRCodeScreen from './qrCode';
 import MyCourses from './myCourse';
 import MyPackages from './packages';
 import { EditProfileScreen } from '../layout/partner-profile/EditProfileScreen';
+import {
+  ChatScreen,
+  BookingChat,
+} from '../layout/chat';
 
 export {
   NotificationScreen,
@@ -37,4 +41,6 @@ export {
   MyCourses,
   MyPackages,
   EditProfileScreen,
+  ChatScreen,
+  BookingChat,
 };

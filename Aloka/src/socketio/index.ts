@@ -217,16 +217,30 @@ class SocketService {
   emitCreateSocketUser(
     title: string,
     toUserId: string,
-    extraData?: any,
+    mediaOrExtra?: any,
+    isPremium?: any,
+    is_chat?: any,
+    packageId?: any,
+    orderId?: any,
+    expiredChat?: any,
   ) {
     try {
-      const payload = {
+      let payload: any = {
         title,
         to: toUserId,
         type: '1-1',
         created_at: Date.now(),
-        ...extraData,
       };
+      if (typeof mediaOrExtra === 'object' && mediaOrExtra !== null) {
+        payload = { ...payload, ...mediaOrExtra };
+      } else {
+        if (mediaOrExtra) payload.media = mediaOrExtra;
+        if (isPremium) payload.is_premium = isPremium;
+        if (is_chat) payload.is_chat = is_chat;
+        if (packageId) payload.package_id = packageId;
+        if (orderId) payload.order_id = orderId;
+        if (expiredChat) payload.expired_chat = expiredChat;
+      }
       console.log('Socket emit room:create:', payload);
       if (socket?.connected) {
         socket.emit('room:create', payload);
@@ -243,6 +257,7 @@ class SocketService {
     customerName: string,
     toUserId: string,
     customerAvatar?: any,
+    extraData?: any,
   ): Promise<RoomDetail> {
     // Đảm bảo socket đã kết nối
     if (!socket?.connected) {
@@ -277,6 +292,9 @@ class SocketService {
       // Phát sự kiện tạo phòng
       this.emitCreateSocketUser(customerName, toUserId, {
         thumbnail: customerAvatar,
+        media: 'text',
+        is_chat: 1,
+        ...extraData,
       });
 
       // Timeout dự phòng sau 1.5 giây nếu socket chưa phản hồi kịp

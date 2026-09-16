@@ -1,2 +1,8 @@
 import AppointmentScreen from './appointment-screen';
-export { AppointmentScreen };
+import { ChatScreen, BookingChat } from '../layout/chat';
+
+export {
+  AppointmentScreen,
+  ChatScreen,
+  BookingChat,
+};

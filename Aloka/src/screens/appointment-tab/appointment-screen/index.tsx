@@ -24,6 +24,8 @@ import { PAGINATION, STORAGEKEY } from '@/constants';
 import { AppContext } from '@/contexts';
 import { getObjectData } from '@/storages';
 import ApiService from '@/services/api-base';
+import socketService from '@/socketio';
+import { navigate2 } from '@/navigation/RootNavigation';
 import { CText } from '@/utils';
 import {
   CompleteReviewModal,
@@ -41,35 +43,53 @@ export enum StatusAppointment {
   COMPLETED = 'COMPLETED',
 }
 
+export const STATUS_COLORS = {
+  completed: '#28A745',
+  cancel: '#F87171',
+  reject: '#DC2626',
+  upcoming: '#0D6EFD',
+  request: '#F59E0B',
+};
+
 const TABS = [
   {
     key: 'upcoming',
-    title: 'Sắp diễn ra',
+    title: 'Sắp tới',
     fq: 'type:OFFLINE',
     fqin: 'status:CONFIRMED,ON_THE_WAY,ARRIVED',
+    sort: 'date',
   },
   {
     key: 'request',
     title: 'Yêu cầu',
     fq: 'status:PENDING,type:OFFLINE',
+    sort: 'date',
   },
   {
     key: 'completed',
     title: 'Đã hoàn thành',
     fq: 'status:COMPLETED,type:OFFLINE',
+    sort: '-date',
   },
   {
     key: 'canceled',
-    title: 'Đã hủy',
+    title: 'Hủy',
     fq: 'status:CANCELED,type:OFFLINE',
+    sort: '-date',
   },
 ];
 
-const formatAppointmentDate = (dateVal: any) => {
-  if (!dateVal) return '';
-  const m = moment(dateVal);
-  if (!m.isValid()) return '';
-  const days = [
+const pad2 = (n: number) => n.toString().padStart(2, '0');
+
+const formatISOToVietnameseDate = (isoString: any, lang = 'vi') => {
+  if (!isoString) return '--/--/----';
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) {
+    return '--/--/----';
+  }
+  const vnDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+
+  const labels = [
     'Chủ nhật',
     'Thứ 2',
     'Thứ 3',
@@ -78,20 +98,38 @@ const formatAppointmentDate = (dateVal: any) => {
     'Thứ 6',
     'Thứ 7',
   ];
-  const dayName = days[m.day()];
-  return `${dayName}, Ngày ${m.format('DD/MM/YYYY')}`;
+
+  const dayName = labels[vnDate.getDay()];
+  const dd = vnDate.getDate().toString().padStart(2, '0');
+  const mm = (vnDate.getMonth() + 1).toString().padStart(2, '0');
+  const yyyy = vnDate.getFullYear();
+  if (lang === 'vi') {
+    return `${dayName}, Ngày ${dd}/${mm}/${yyyy}`;
+  }
+  return `${dayName}, ${dd}/${mm}/${yyyy}`;
 };
 
-const formatAppointmentTime = (dateVal: any, durationMinutes = 0) => {
-  if (!dateVal) return '';
-  const m = moment(dateVal);
-  if (!m.isValid()) return '';
-  const start = m.format('HH:mm A');
-  if (durationMinutes > 0) {
-    const end = moment(dateVal).add(durationMinutes, 'minutes').format('HH:mm A');
-    return `${start} - ${end}`;
-  }
-  return start;
+const formatTimeRangeWithDurationFromISO = (
+  isoString: any,
+  durationMinutes: number,
+) => {
+  if (!isoString) return '';
+
+  const start = new Date(isoString);
+
+  if (isNaN(start.getTime())) return '';
+
+  const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+
+  const format24hWithPeriod = (date: Date) => {
+    const hh = pad2(date.getHours());
+    const mm = pad2(date.getMinutes());
+    const period = date.getHours() >= 12 ? 'PM' : 'AM';
+
+    return `${hh}:${mm} ${period}`;
+  };
+
+  return `${format24hWithPeriod(start)} \u2013 ${format24hWithPeriod(end)}`;
 };
 
 interface TabData {
@@ -138,6 +176,7 @@ const AppointmentScreen: React.FC<any> = () => {
   const [confirmedCompletedIds, setConfirmedCompletedIds] = useState<
     Record<string, boolean>
   >({});
+  const [chatLoadingId, setChatLoadingId] = useState<string | null>(null);
 
   const isFocusScreen = useIsFocused();
 
@@ -180,7 +219,7 @@ const AppointmentScreen: React.FC<any> = () => {
         limit: PAGINATION.ITEMS_20 || 20,
         offset,
         fq: activeTab.fq,
-        sort: 'date',
+        sort: (activeTab as any).sort || 'date',
       };
       if ((activeTab as any).fqin) {
         param.fqin = (activeTab as any).fqin;
@@ -524,7 +563,7 @@ const AppointmentScreen: React.FC<any> = () => {
     );
   };
 
-  const handleChatPartner = (item: any) => {
+  const handleChatPartner = async (item: any) => {
     const isDoctor =
       currentUserId &&
       (String(item?.doctor_id) === String(currentUserId) ||
@@ -535,20 +574,88 @@ const AppointmentScreen: React.FC<any> = () => {
       : item?.doctor || item?.partner || {};
 
     const targetName =
-      targetPerson.full_name || targetPerson.name || 'Người dùng';
-    const targetId = targetPerson.id || targetPerson._id;
+      targetPerson.full_name ||
+      targetPerson.name ||
+      (isDoctor ? 'Khách hàng' : 'Điều dưỡng');
+
+    const targetId =
+      targetPerson.id ||
+      targetPerson._id ||
+      (isDoctor ? item?.user_id || item?.customer_id : item?.doctor_id);
+
     const targetAvatar = targetPerson.avatar;
 
+    const packageInfo = item?.package || {};
+    const packageId = packageInfo?.id || packageInfo?._id || item?.package_id;
+    const orderId = item?.id || item?._id;
+
+    if (chatLoadingId) return;
+    const currentLoadingKey = String(orderId || targetId || Date.now());
+    setChatLoadingId(currentLoadingKey);
+
     try {
-      navigation.navigate('PartnerChatScreen', {
+      // 1. Gọi Socket IO tạo hoặc join room 1-1 giống logic mobile-doctor-app
+      const room = await socketService.createRoom1vs1(
+        targetName,
+        String(targetId || ''),
+        targetAvatar,
+        {
+          media: 'text',
+          is_premium: 1,
+          is_chat: 1,
+          package_id: packageId,
+          order_id: orderId,
+        },
+      );
+
+      const roomId = room?.id || room?.room_id;
+
+      // 2. Chuẩn bị params đầy đủ cho ChatScreen
+      const chatParams = {
+        roomId,
         name: targetName,
         customerName: targetName,
         avatar: targetAvatar,
         customerAvatar: targetAvatar,
         toUserId: targetId,
-      });
-    } catch {
-      Alert.alert('Liên hệ', `Nhắn tin với ${targetName}`);
+        packageId,
+        orderId,
+        item: {
+          id: roomId,
+          room_id: roomId,
+          title: targetName,
+          thumbnail: targetAvatar,
+          to: targetId,
+          package_id: packageId,
+          order_id: orderId,
+          media: 'text',
+        },
+      };
+
+      // 3. Điều hướng an toàn: ưu tiên local navigator, fallback sang RootNavigation
+      try {
+        navigation.navigate('BookingChat', chatParams);
+      } catch {
+        navigate2('BookingChat', chatParams);
+      }
+    } catch (error) {
+      console.warn('handleChatPartner error:', error);
+      const fallbackParams = {
+        name: targetName,
+        customerName: targetName,
+        avatar: targetAvatar,
+        customerAvatar: targetAvatar,
+        toUserId: targetId,
+        packageId,
+        orderId,
+      };
+      try {
+        navigation.navigate('BookingChat', fallbackParams);
+      } catch {
+        navigate2('BookingChat', fallbackParams);
+      }
+    } finally {
+      setChatLoadingId(null);
     }
   };
 
@@ -687,13 +794,11 @@ const AppointmentScreen: React.FC<any> = () => {
       ? { uri: packageInfo.thumbnail }
       : (item?.thumbnail ? { uri: item.thumbnail } : images.common.img_default);
 
-    const dateFormatted = formatAppointmentDate(item?.date);
+    const dateFormatted = formatISOToVietnameseDate(item?.date);
     const duration = Number(item?.duration || 0);
-    const timeFormatted = formatAppointmentTime(item?.date, duration);
-    const addressText = item?.address || '';
-
-    const rawPrice = item?.package?.price ?? item?.price ?? 0;
-    const totalPriceFormatted = formatMoneyVND(rawPrice, '.');
+    const timeFormatted = formatTimeRangeWithDurationFromISO(item?.date, duration);
+    const addressText = item?.address || '---';
+    const noteText = item?.note || '---';
 
     const isCompletedTab = currentTab === 2;
     const itemId = String(item?.id || item?._id || index);
@@ -734,275 +839,338 @@ const AppointmentScreen: React.FC<any> = () => {
 
     return (
       <View style={styles.card}>
-        {/* Service Header */}
-        <View style={styles.serviceHeader}>
-          <ImageHelper
-            source={serviceImage}
-            style={styles.serviceImage}
-            resizeMode="cover"
-          />
-          <View style={styles.serviceInfo}>
-            {serviceTitle ? (
-              <CText style={styles.serviceTitle} numberOfLines={2}>
-                {serviceTitle}
-              </CText>
-            ) : null}
-            {nurseOrDoctorName ? (
-              <CText style={styles.nurseName}>{nurseOrDoctorName}</CText>
-            ) : null}
-          </View>
-        </View>
-
-        {/* Action Link: Liên hệ điều dưỡng / Chat (chỉ hiện cho User, ẩn khi là Bác sĩ) */}
-        {showChat && (
-          <>
-            <View style={styles.divider} />
-            <TouchableOpacity
-              style={styles.actionLinkRow}
-              activeOpacity={0.7}
-              onPress={() => handleChatPartner(item)}
-            >
-              <IconX
-                type="ionicons"
-                name="chatbubble-ellipses-outline"
-                size={18}
-                color="#14B8A6"
-              />
-              <CText style={styles.actionLinkText}>{chatButtonLabel}</CText>
-            </TouchableOpacity>
-          </>
-        )}
-
-        <View style={styles.divider} />
-
-        {/* Metadata: Date, Time, Address */}
-        <View style={styles.metaContainer}>
-          {dateFormatted ? (
-            <View style={styles.metaRow}>
-              <IconX
-                type="ionicons"
-                name="calendar-outline"
-                size={16}
-                color="#667085"
-              />
-              <CText style={styles.metaText}>{dateFormatted}</CText>
-            </View>
-          ) : null}
-          {timeFormatted ? (
-            <View style={styles.metaRow}>
-              <IconX
-                type="ionicons"
-                name="time-outline"
-                size={16}
-                color="#667085"
-              />
-              <CText style={styles.metaText}>{timeFormatted}</CText>
-            </View>
-          ) : null}
-          {addressText ? (
-            <View style={styles.metaRow}>
-              <IconX
-                type="ionicons"
-                name="location-outline"
-                size={16}
-                color="#667085"
-              />
-              <CText style={styles.metaText} numberOfLines={2}>
-                {addressText}
-              </CText>
-            </View>
-          ) : null}
-        </View>
-
-        {/* Total Price - Ẩn ở tab Đã hoàn thành theo UI */}
-        {!isCompletedTab && (
-          <View style={styles.totalRow}>
-            <CText style={styles.totalLabel}>Tổng thanh toán</CText>
-            <CText style={styles.totalValue}>{totalPriceFormatted}</CText>
-          </View>
-        )}
-
-        {/* Card Actions Row */}
-        {hasCardActions && (
-          <View style={styles.cardActionsRow}>
-            {/* Tab 0: Sắp diễn ra */}
-            {currentTab === 0 &&
-              (isViewByDoctor ? (
-                // Vai trò Bác sĩ / Điều dưỡng (giống Doctor Network)
-                item?.status === StatusAppointment.CONFIRMED || !item?.status ? (
-                  <TouchableOpacity
-                    style={styles.doctorActionBtn}
-                    activeOpacity={0.8}
-                    onPress={() => handleGoToLocation(item)}
-                  >
-                    <IconX
-                      type="ionicons"
-                      name="map-outline"
-                      size={16}
-                      color="#FFFFFF"
-                    />
-                    <CText style={styles.doctorActionBtnText}>
-                      Đi đến điểm hẹn
+        <View style={styles.page1TopWrap}>
+          {/* Top Section with Light Gray Background */}
+          <View style={styles.topWrap}>
+            <View style={styles.serviceHeaderRow}>
+              <View style={styles.thumn}>
+                <ImageHelper
+                  source={serviceImage}
+                  style={styles.serviceImage}
+                  resizeMode="cover"
+                />
+              </View>
+              <View style={styles.serviceInfo}>
+                {serviceTitle ? (
+                  <CText style={styles.serviceTitle} numberOfLines={2}>
+                    {serviceTitle}
+                  </CText>
+                ) : null}
+                {nurseOrDoctorName ? (
+                  <CText style={styles.nurseName} numberOfLines={2}>
+                    {nurseOrDoctorName}
+                  </CText>
+                ) : null}
+                {/* Status text */}
+                {currentTab === 1 ? (
+                  <View style={styles.statusRow}>
+                    <CText style={styles.statusRequest}>
+                      {t('bookingStatus.waitForConfirmation', 'Chờ xác nhận')}
                     </CText>
-                  </TouchableOpacity>
-                ) : item?.status === StatusAppointment.ON_THE_WAY ? (
-                  <TouchableOpacity
-                    style={styles.doctorActionBtn}
-                    activeOpacity={0.8}
-                    onPress={() => handleConfirmArrival(item)}
-                  >
-                    <IconX
-                      type="ionicons"
-                      name="location-outline"
-                      size={16}
-                      color="#FFFFFF"
-                    />
-                    <CText style={styles.doctorActionBtnText}>
-                      Xác nhận đã đến điểm hẹn
+                  </View>
+                ) : currentTab === 0 ? (
+                  <View style={styles.statusRow}>
+                    <CText style={styles.statusUpcoming}>
+                      {t('bookingStatus.confirmed', 'Đã xác nhận')}
                     </CText>
-                  </TouchableOpacity>
-                ) : item?.status === StatusAppointment.ARRIVED ? (
-                  <TouchableOpacity
-                    style={styles.doctorActionBtn}
-                    activeOpacity={0.8}
-                    onPress={() => handleDoctorComplete(item)}
-                  >
+                  </View>
+                ) : currentTab === 3 ? (
+                  <View style={styles.statusRow}>
+                    <CText style={styles.statusCancel}>
+                      {item?.canceled_by === item?.doctor_id
+                        ? t('booking.reject', 'Từ chối')
+                        : t('booking.cancel', 'Hủy')}
+                    </CText>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+          </View>
+
+          {/* Body Section with White Background */}
+          <View style={styles.bodyWrap}>
+            {/* 1. Liên hệ điều dưỡng */}
+            {showChat && (
+              <>
+                <TouchableOpacity
+                  style={styles.actionLinkRow}
+                  activeOpacity={0.7}
+                  onPress={() => handleChatPartner(item)}
+                  disabled={Boolean(chatLoadingId)}
+                >
+                  {chatLoadingId === String(item?.id || item?._id || item?.doctor_id) ? (
+                    <ActivityIndicator size="small" color="#14B8A6" />
+                  ) : (
                     <IconX
                       type="ionicons"
-                      name="checkmark-done"
+                      name="chatbubble-ellipses-outline"
                       size={18}
-                      color="#FFFFFF"
+                      color="#14B8A6"
                     />
-                    <CText style={styles.doctorActionBtnText}>
-                      Hoàn thành
-                    </CText>
-                  </TouchableOpacity>
-                ) : null
-              ) : (
-                // Vai trò Khách hàng
-                <>
-                  <TouchableOpacity
-                    style={styles.cskhBtn}
-                    activeOpacity={0.7}
-                    onPress={() => setShowCskhModal(true)}
-                  >
-                    <CText style={styles.cskhBtnText}>Liên hệ CSKH</CText>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.cancelBtn}
-                    activeOpacity={0.7}
-                    onPress={() => handleCancelBooking(item)}
-                  >
-                    <CText style={styles.cancelBtnText}>Hủy lịch/Hoàn tiền</CText>
-                  </TouchableOpacity>
-                </>
-              ))}
+                  )}
+                  <CText style={styles.actionLinkText}>{chatButtonLabel}</CText>
+                </TouchableOpacity>
+                <View style={styles.divider} />
+              </>
+            )}
 
-            {/* Tab 1: Yêu cầu */}
-            {currentTab === 1 &&
-              (isViewByDoctor ? (
-                // Vai trò Bác sĩ: 2 nút Từ chối & Tiếp nhận
-                <>
-                  <TouchableOpacity
-                    style={styles.rejectBtn}
-                    activeOpacity={0.7}
-                    onPress={() => handleRejectBooking(item)}
-                  >
-                    <CText style={styles.rejectBtnText}>Từ chối</CText>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.acceptBtn}
-                    activeOpacity={0.8}
-                    onPress={() => handleAcceptBooking(item)}
-                  >
-                    <CText style={styles.acceptBtnText}>Tiếp nhận</CText>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                // Vai trò Khách hàng: 2 nút Liên hệ CSKH & Hủy yêu cầu
-                <>
-                  <TouchableOpacity
-                    style={styles.cskhBtn}
-                    activeOpacity={0.7}
-                    onPress={() => setShowCskhModal(true)}
-                  >
-                    <CText style={styles.cskhBtnText}>Liên hệ CSKH</CText>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.cancelBtn}
-                    activeOpacity={0.7}
-                    onPress={() => handleCancelBooking(item)}
-                  >
-                    <CText style={styles.cancelBtnText}>Hủy yêu cầu</CText>
-                  </TouchableOpacity>
-                </>
-              ))}
+            {/* 2. Lời nhắn/Ghi chú */}
+            <View style={styles.noteRow}>
+              <IconX
+                type="ionicons"
+                name="create-outline"
+                size={16}
+                color="#101828"
+              />
+              <CText style={styles.noteText}>
+                {`${t('package.consultationNote', 'Lời nhắn/Ghi chú')}: ${noteText}`}
+              </CText>
+            </View>
 
-            {/* Tab 2: Đã hoàn thành (chỉ hiện nút cho User, Bác sĩ không có action) */}
-            {currentTab === 2 &&
-              !isViewByDoctor && (
-                <View style={styles.completedActionsWrapper}>
-                  {/* Hàng 1: Đánh giá & Xác nhận hoàn thành (chỉ hiện khi chưa confirm) */}
-                  {isPendingConfirm && (
-                    <View style={styles.completedTopRow}>
+            <View style={styles.divider} />
+
+            {/* 3. Metadata: Ngày, Giờ, Địa chỉ */}
+            <View style={styles.metaContainer}>
+              {dateFormatted ? (
+                <View style={styles.metaRow}>
+                  <IconX
+                    type="ionicons"
+                    name="calendar-outline"
+                    size={16}
+                    color="#1D2939"
+                  />
+                  <CText style={styles.metaText}>{dateFormatted}</CText>
+                </View>
+              ) : null}
+              {timeFormatted ? (
+                <View style={styles.metaRow}>
+                  <IconX
+                    type="ionicons"
+                    name="time-outline"
+                    size={16}
+                    color="#1D2939"
+                  />
+                  <CText style={styles.metaText}>{timeFormatted}</CText>
+                </View>
+              ) : null}
+              <View style={[styles.metaRow, { alignItems: 'flex-start' }]}>
+                <IconX
+                  type="ionicons"
+                  name="location-sharp"
+                  size={16}
+                  color="#1D2939"
+                  style={{ marginTop: 2 }}
+                />
+                <CText style={styles.metaText} numberOfLines={2}>
+                  {addressText}
+                </CText>
+              </View>
+            </View>
+
+            {/* Card Actions Row */}
+            {hasCardActions && (
+              <View style={styles.cardActionsRow}>
+                {/* Tab 0: Sắp tới */}
+                {currentTab === 0 &&
+                  (isViewByDoctor ? (
+                    // Vai trò Bác sĩ / Điều dưỡng (giống Doctor Network)
+                    item?.status === StatusAppointment.CONFIRMED || !item?.status ? (
                       <TouchableOpacity
-                        style={styles.reviewBtn}
-                        activeOpacity={0.7}
-                        onPress={() => handleReview(item, index)}
+                        style={styles.doctorActionBtn}
+                        activeOpacity={0.8}
+                        onPress={() => handleGoToLocation(item)}
                       >
-                        <CText style={styles.reviewBtnText}>Đánh giá</CText>
+                        <IconX
+                          type="ionicons"
+                          name="map-outline"
+                          size={16}
+                          color="#FFFFFF"
+                        />
+                        <CText style={styles.doctorActionBtnText}>
+                          {t('booking.goToAppointment', 'Đi đến điểm hẹn')}
+                        </CText>
+                      </TouchableOpacity>
+                    ) : item?.status === StatusAppointment.ON_THE_WAY ? (
+                      <TouchableOpacity
+                        style={styles.doctorActionBtn}
+                        activeOpacity={0.8}
+                        onPress={() => handleConfirmArrival(item)}
+                      >
+                        <IconX
+                          type="ionicons"
+                          name="location-outline"
+                          size={16}
+                          color="#FFFFFF"
+                        />
+                        <CText style={styles.doctorActionBtnText}>
+                          {t('booking.confirmArrival', 'Xác nhận đã đến điểm hẹn')}
+                        </CText>
+                      </TouchableOpacity>
+                    ) : item?.status === StatusAppointment.ARRIVED ? (
+                      <TouchableOpacity
+                        style={styles.doctorActionBtn}
+                        activeOpacity={0.8}
+                        onPress={() => handleDoctorComplete(item)}
+                      >
+                        <IconX
+                          type="ionicons"
+                          name="checkmark-done"
+                          size={18}
+                          color="#FFFFFF"
+                        />
+                        <CText style={styles.doctorActionBtnText}>
+                          {t('appointment.markAsComplete', 'Hoàn thành')}
+                        </CText>
+                      </TouchableOpacity>
+                    ) : null
+                  ) : (
+                    // Vai trò Khách hàng
+                    <>
+                      <TouchableOpacity
+                        style={styles.cskhBtn}
+                        activeOpacity={0.7}
+                        onPress={() => setShowCskhModal(true)}
+                      >
+                        <IconX
+                          type="materialicons"
+                          name="support-agent"
+                          size={17}
+                          color="#19A2A7"
+                        />
+                        <CText style={styles.cskhBtnText}>
+                          {t('appointment.contactSupport', 'Liên hệ CSKH')}
+                        </CText>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={styles.confirmDoneBtn}
-                        activeOpacity={0.8}
-                        onPress={() => handleOpenCompleteModal(item, index)}
+                        style={styles.cancelBtn}
+                        activeOpacity={0.7}
+                        onPress={() => handleCancelBooking(item)}
                       >
-                        <CText style={styles.confirmDoneBtnText}>
-                          Xác nhận hoàn thành
+                        <CText style={styles.cancelBtnText}>
+                          {t('booking.cancelRefund', 'Huỷ lịch/Hoàn tiền')}
+                        </CText>
+                      </TouchableOpacity>
+                    </>
+                  ))}
+
+                {/* Tab 1: Yêu cầu */}
+                {currentTab === 1 &&
+                  (isViewByDoctor ? (
+                    // Vai trò Bác sĩ: 2 nút Từ chối & Tiếp nhận
+                    <>
+                      <TouchableOpacity
+                        style={styles.rejectBtn}
+                        activeOpacity={0.7}
+                        onPress={() => handleRejectBooking(item)}
+                      >
+                        <CText style={styles.rejectBtnText}>
+                          {t('booking.reject', 'Từ chối')}
+                        </CText>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.acceptBtn}
+                        activeOpacity={0.8}
+                        onPress={() => handleAcceptBooking(item)}
+                      >
+                        <CText style={styles.acceptBtnText}>
+                          {t('booking.accept', 'Tiếp nhận')}
+                        </CText>
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    // Vai trò Khách hàng: 2 nút Liên hệ CSKH & Huỷ lịch/Hoàn tiền
+                    <>
+                      <TouchableOpacity
+                        style={styles.cskhBtn}
+                        activeOpacity={0.7}
+                        onPress={() => setShowCskhModal(true)}
+                      >
+                        <IconX
+                          type="materialicons"
+                          name="support-agent"
+                          size={17}
+                          color="#19A2A7"
+                        />
+                        <CText style={styles.cskhBtnText}>
+                          {t('appointment.contactSupport', 'Liên hệ CSKH')}
+                        </CText>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.cancelBtn}
+                        activeOpacity={0.7}
+                        onPress={() => handleCancelBooking(item)}
+                      >
+                        <CText style={styles.cancelBtnText}>
+                          {t('booking.cancelRefund', 'Huỷ lịch/Hoàn tiền')}
+                        </CText>
+                      </TouchableOpacity>
+                    </>
+                  ))}
+
+                {/* Tab 2: Đã hoàn thành */}
+                {currentTab === 2 &&
+                  !isViewByDoctor && (
+                    <View style={styles.completedActionsWrapper}>
+                      {/* Hàng 1: Đánh giá & Xác nhận hoàn thành (chỉ hiện khi chưa confirm) */}
+                      {isPendingConfirm && (
+                        <View style={styles.completedTopRow}>
+                          <TouchableOpacity
+                            style={styles.reviewBtn}
+                            activeOpacity={0.7}
+                            onPress={() => handleReview(item, index)}
+                          >
+                            <CText style={styles.reviewBtnText}>
+                              {t('common.review', 'Đánh giá')}
+                            </CText>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.confirmDoneBtn}
+                            activeOpacity={0.8}
+                            onPress={() => handleOpenCompleteModal(item, index)}
+                          >
+                            <CText style={styles.confirmDoneBtnText}>
+                              {t('booking.confirmComplete', 'Xác nhận hoàn thành')}
+                            </CText>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                      {/* Hàng 2: Đặt lịch lại full-width (luôn hiện) */}
+                      <TouchableOpacity
+                        style={[styles.rebookBtn, { marginTop: isPendingConfirm ? 10 : 0 }]}
+                        activeOpacity={0.7}
+                        onPress={() => handleReschedule(item)}
+                      >
+                        <CText style={styles.rebookBtnText}>
+                          {t('booking.rebook', 'Đặt lịch lại')}
                         </CText>
                       </TouchableOpacity>
                     </View>
                   )}
-                  {/* Hàng 2: Đặt lịch lại full-width (luôn hiện) */}
-                  <TouchableOpacity
-                    style={[styles.rebookBtn, { marginTop: isPendingConfirm ? 10 : 0 }]}
-                    activeOpacity={0.7}
-                    onPress={() => handleReschedule(item)}
-                  >
-                    <CText style={styles.rebookBtnText}>Đặt lịch lại</CText>
-                  </TouchableOpacity>
-                </View>
-              )}
 
-            {/* Tab 3: Đã hủy (chỉ hiện cho User) */}
-            {currentTab === 3 &&
-              !isViewByDoctor && (
-                <>
-                  <TouchableOpacity
-                    style={styles.cskhBtn}
-                    activeOpacity={0.7}
-                    onPress={() => setShowCskhModal(true)}
-                  >
-                    <CText style={styles.cskhBtnText}>Liên hệ CSKH</CText>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.rebookBtn}
-                    activeOpacity={0.7}
-                    onPress={() => handleReschedule(item)}
-                  >
-                    <CText style={styles.rebookBtnText}>Đặt lịch lại</CText>
-                  </TouchableOpacity>
-                </>
-              )}
+                {/* Tab 3: Hủy */}
+                {currentTab === 3 &&
+                  !isViewByDoctor && (
+                    <TouchableOpacity
+                      style={styles.rebookBtn}
+                      activeOpacity={0.7}
+                      onPress={() => handleReschedule(item)}
+                    >
+                      <CText style={styles.rebookBtnText}>
+                        {t('booking.rebook', 'Đặt lịch lại')}
+                      </CText>
+                    </TouchableOpacity>
+                  )}
+              </View>
+            )}
           </View>
-        )}
+        </View>
       </View>
     );
   };
 
   const renderEmptyList = (tabIdx: number = activeTabIndex) => {
     const emptyMessages = [
-      'Không có lịch hẹn sắp diễn ra',
+      'Không có lịch hẹn sắp tới',
       'Không có yêu cầu đặt lịch nào đang chờ',
       'Chưa có lịch hẹn nào đã hoàn thành',
       'Chưa có lịch hẹn nào đã hủy',
@@ -1027,31 +1195,14 @@ const AppointmentScreen: React.FC<any> = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* Header */}
+      {/* Header - Centered title without back arrow matching Image 2 */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          activeOpacity={0.7}
-          onPress={() => {
-            if (navigation.canGoBack()) {
-              navigation.goBack();
-            } else {
-              navigation.navigate('HomeTab');
-            }
-          }}
-        >
-          <IconX
-            type="ionicons"
-            name="chevron-back"
-            size={24}
-            color="#1D2939"
-          />
-        </TouchableOpacity>
-        <CText style={styles.headerTitle}>Lịch hẹn</CText>
-        <View style={styles.placeholder} />
+        <CText style={styles.headerTitle}>
+          {t('profile.appoints', 'Lịch hẹn')}
+        </CText>
       </View>
 
-      {/* Tabs */}
+      {/* Tabs - Blue active indicator and text matching Image 2 */}
       <View style={styles.tabsContainer}>
         {TABS.map((tab, idx) => {
           const isActive = activeTabIndex === idx;
@@ -1134,6 +1285,19 @@ const AppointmentScreen: React.FC<any> = () => {
         </ScrollView>
       </View>
 
+      {/* Pinned Bottom Button: Tìm dịch vụ mới matching Image 2 */}
+      <View style={styles.bottomBarWrap}>
+        <TouchableOpacity
+          style={styles.findServiceBtn}
+          activeOpacity={0.8}
+          onPress={handleFindService}
+        >
+          <CText style={styles.findServiceBtnText}>
+            {t('carely.findService', 'Tìm dịch vụ mới')}
+          </CText>
+        </TouchableOpacity>
+      </View>
+
       {/* CSKH Contact Modal Bottom Sheet */}
       <CskhModal
         visible={showCskhModal}
@@ -1168,30 +1332,22 @@ const styles = StyleSheet.create({
   },
   header: {
     height: 48,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
     justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EAECF0',
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '700',
     color: '#101828',
   },
-  placeholder: {
-    width: 36,
-  },
   tabsContainer: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#F2F4F7',
+    borderBottomColor: '#EAECF0',
   },
   tabItem: {
     flex: 1,
@@ -1200,22 +1356,22 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   tabText: {
-    fontSize: 13.5,
+    fontSize: 14,
     color: '#667085',
     fontWeight: '500',
   },
   tabTextActive: {
-    color: '#19A2A7',
-    fontWeight: '700',
+    color: '#0D6EFD',
+    fontWeight: '600',
   },
   activeTabIndicator: {
     position: 'absolute',
     bottom: 0,
-    left: 12,
-    right: 12,
-    height: 2.5,
-    backgroundColor: '#19A2A7',
-    borderRadius: 2,
+    left: 8,
+    right: 8,
+    height: 2,
+    backgroundColor: '#0D6EFD',
+    borderRadius: 1,
   },
   content: {
     flex: 1,
@@ -1230,58 +1386,112 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listContent: {
-    padding: 16,
-    paddingBottom: 32,
+    paddingVertical: 12,
+    paddingBottom: 24,
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    backgroundColor: '#FAFAFA',
+  },
+  page1TopWrap: {
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#EAECF0',
-    padding: 14,
-    marginBottom: 16,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
   },
-  serviceHeader: {
+  topWrap: {
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  serviceHeaderRow: {
     flexDirection: 'row',
-    gap: 12,
+    alignItems: 'flex-start',
   },
-  serviceImage: {
+  thumn: {
     width: 60,
     height: 60,
-    borderRadius: 8,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#EAECF0',
+    overflow: 'hidden',
     backgroundColor: '#E5E7EB',
+  },
+  serviceImage: {
+    width: '100%',
+    height: '100%',
   },
   serviceInfo: {
     flex: 1,
+    marginLeft: 12,
     justifyContent: 'center',
   },
   serviceTitle: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: '700',
     color: '#101828',
-    lineHeight: 19,
+    lineHeight: 20,
   },
   nurseName: {
     fontSize: 12,
     color: '#98A2B3',
-    marginTop: 3,
+    marginTop: 2,
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#F2F4F7',
-    marginVertical: 12,
+  statusRow: {
+    flexDirection: 'row',
+    marginTop: 4,
+  },
+  statusRequest: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#F59E0B',
+  },
+  statusUpcoming: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#0D6EFD',
+  },
+  statusCancel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#F87171',
+  },
+  bodyWrap: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingBottom: 14,
   },
   actionLinkRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 10,
     gap: 8,
   },
   actionLinkText: {
     fontSize: 13.5,
-    color: '#344054',
+    color: '#101828',
     fontWeight: '500',
   },
+  noteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 8,
+  },
+  noteText: {
+    fontSize: 13.5,
+    color: '#101828',
+    fontWeight: '500',
+    flex: 1,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F2F4F7',
+  },
   metaContainer: {
+    paddingTop: 10,
     gap: 8,
   },
   metaRow: {
@@ -1290,58 +1500,45 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   metaText: {
-    fontSize: 12.5,
-    color: '#475467',
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 14,
-    marginBottom: 12,
-  },
-  totalLabel: {
-    fontSize: 13.5,
-    color: '#344054',
-  },
-  totalValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#101828',
+    fontSize: 13,
+    color: '#1D2939',
+    flex: 1,
   },
   cardActionsRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 12,
+    gap: 12,
+    paddingTop: 14,
   },
   cskhBtn: {
     flex: 1,
     height: 38,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#14B8A6',
+    borderColor: '#19A2A7',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    gap: 6,
   },
   cskhBtnText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#14B8A6',
+    fontWeight: '500',
+    color: '#19A2A7',
   },
   cancelBtn: {
     flex: 1,
     height: 38,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#FDA29B',
+    borderColor: '#F04438',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
   },
   cancelBtnText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#F04438',
   },
   reviewBtn: {
@@ -1384,7 +1581,7 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#14B8A6',
+    borderColor: '#19A2A7',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
@@ -1392,7 +1589,7 @@ const styles = StyleSheet.create({
   rebookBtnText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#14B8A6',
+    color: '#19A2A7',
   },
   doctorActionBtn: {
     flex: 1,
@@ -1437,8 +1634,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-
-  /* Empty State */
+  bottomBarWrap: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#EAECF0',
+  },
+  findServiceBtn: {
+    backgroundColor: '#19A2A7',
+    borderRadius: 8,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  findServiceBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',

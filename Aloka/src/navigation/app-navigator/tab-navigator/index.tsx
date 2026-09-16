@@ -57,6 +57,14 @@ function HomeStack() {
           />
         );
       })}
+      <StackHome.Screen
+        name="BookingChat"
+        component={appointmentStack.BookingChat}
+      />
+      <StackHome.Screen
+        name="ChatScreen"
+        component={appointmentStack.ChatScreen}
+      />
     </StackHome.Navigator>
   );
 }
@@ -82,11 +90,13 @@ function AppointmentStack() {
       initialRouteName={appointmentTabRoute.appointmentScreen}
     >
       {Object.values(appointmentTabRoute).map(item => {
+        const ScreenComponent = appointmentStack[item as keyof typeof appointmentStack];
+        if (!ScreenComponent) return null;
         return (
           <StackAppointment.Screen
             key={item}
             name={item}
-            component={appointmentStack[item as keyof typeof appointmentStack]}
+            component={ScreenComponent}
           />
         );
       })}

@@ -5,6 +5,7 @@ export const GLOBAL = {
   GET_TUTORIAL: '/tutorials',
   GET_LAGUAGES: '/languages',
   GET_PROVINCE: '/states',
+  SEARCH_LOCATION: '/places',
 };
 
 export const HOME = {
@@ -40,7 +41,6 @@ export const NOTIFICATION = {
   TOTAL_UNREAD: '/notifications/unreads',
 };
 
-
 export const CARELY = {
   SERVICES: '/packages',
   RATING: '/orders/rating',
@@ -48,9 +48,21 @@ export const CARELY = {
   REVIEW: '/rating',
 };
 
+export const SCHEDULE = {
+  /** GET /appointments/time/:channelId - lay danh sach gio da book (giong doctor-mobile-app) */
+  APPOINT_TIME: '/appointments/time',
+};
+
+export const CHANNEL = {
+  DETAIL: (id: string) => `/channels/${id}`,
+  UPDATE: (id: string) => `/channels/${id}`,
+};
+
 export const ORDER = {
-  CREATE: '/orders',
-  DETAIL: (id: string) => `/orders/${id}`,
+  CREATE:       '/orders',           // tạo order (Aloka)
+  DETAIL:       (id: string) => `/orders/${id}`,
+  APPOINTMENT:  '/appointments',     // đặt lịch sau khi mua
+  SUBSCRIPTION: '/orders/packages',  // quản lý subscription (active/pause)
 };
 
 export const PAYMENT = {
@@ -59,14 +71,8 @@ export const PAYMENT = {
   STATUS: (orderId: string) => `/payments/${orderId}/status`,
 };
 
-export const CHANNEL = {
-  DETAIL: (id: string) => `/channels/${id}`,
-  UPDATE: (id: string) => `/channels/${id}`,
-};
-
 export const COMMUNITY = {
   GET_LISTROOM: '/rooms',
   GET_LISTHISTORYCHAT: '/rooms',
   POST_MESSAGE_SEEN: '/messages/seen',
 };
-

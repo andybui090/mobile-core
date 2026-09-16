@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Dimensions,
-  SafeAreaView,
+  Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -9,210 +9,361 @@ import {
   View,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconX, ImageHelper } from '@/components';
 import { formatMoneyVND } from '@/configs/common';
 import { images } from '@/configs/image';
-import { homeTabRoute } from '@/constants';
-import { CText, onShare } from '@/utils';
+import { homeTabRoute, accountTabRoute } from '@/constants';
+import { CText, Row } from '@/utils';
+import { onShare } from '@/utils/shareHelper';
 
-const { width } = Dimensions.get('window');
-
-interface ServicePackage {
-  id: string;
-  title: string;
-  description: string;
-  dateInfo: string;
-}
-
-const PACKAGES: ServicePackage[] = [
-  {
-    id: '1',
-    title: 'Gói theo tuần',
-    description:
-      'Chuyên chăm sóc mẹ và bé sau sinh, hỗ trợ tiêu hóa, ăn uống, tắm bé chăm sóc toàn diện',
-    dateInfo: '10/2021 · Số lần sử dụng',
-  },
-  {
-    id: '2',
-    title: 'Gói theo tháng',
-    description:
-      'Chuyên chăm sóc mẹ và bé sau sinh, hỗ trợ tiêu hóa, ăn uống, tắm bé chăm sóc toàn diện',
-    dateInfo: '10/2021 · Số lần sử dụng',
-  },
-];
-
-const DESCRIPTIONS = [
-  'Mẹ đi sinh không còn lo lắng vì thiếu người thân. Đội ngũ Hộ lý/Điều dưỡng sẽ túc trực 24/24 tại bệnh viện để hỗ trợ mẹ vệ sinh, đón tay bé, pha sữa và chăm sóc những ngày đầu đời ngay tại viện.',
-  'Túc trực 24/24 hoặc theo ca (Sáng/Đêm).',
-  'Hỗ trợ mẹ đi vệ sinh, thay băng vết thương.',
-  'Chăm sóc bé sơ sinh trọn gói tại phòng.',
-];
+const { width, height } = Dimensions.get('window');
+const THUMBNAIL_HEIGHT = Math.round(height / 2.2);
+const GRADIENT_HEIGHT = Math.round(height / 3.6);
 
 export const ServiceDetail: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const insets = useSafeAreaInsets();
+
   const service = route.params?.service || {};
 
-  const [selectedPackage, setSelectedPackage] = useState('1');
+  const title = service?.name || '';
+  const channelName =
+    service?.channel?.name ||
+    service?.channel_name ||
+    '';
 
-  const title = service?.name || 'Chi tiết dịch vụ';
-  const nurseName =
-    service?.channel?.name || service?.doctor?.full_name || 'Điều dưỡng Aloka';
+  const channelDescription =
+    service?.channel?.description || service?.channel_description || '';
+
   const location =
-    service?.address || service?.doctor?.address || 'Phú Nhuận - Hồ Chí Minh';
-  const rating = service?.avg_value ? Number(service.avg_value).toFixed(1) : '5.0';
+    service?.address ||
+    service?.doctor?.address ||
+    service?.location?.address ||
+    '';
+
+  const numRating = service?.avg_value ? Number(service.avg_value) : 0;
+  const rating = numRating > 0 ? numRating.toFixed(1) : '';
   const reviewCount = service?.total_ratings || 0;
-  const totalJobs = service?.total_orders || service?.total_bookings || 100;
+
+  const distanceKm =
+    service?.distance != null && service?.distance !== ''
+      ? Number(service.distance).toFixed(2)
+      : null;
+
+  const rawDuration =
+    service?.time_package != null && service?.time_package !== ''
+      ? Number(service.time_package)
+      : service?.duration != null && service?.duration !== ''
+        ? Number(service.duration)
+        : null;
+
+  const durationText =
+    rawDuration != null && rawDuration > 0
+      ? rawDuration < 24
+        ? `${rawDuration * 60} phút`
+        : `${rawDuration} phút`
+      : '';
+
+  const radiusKm =
+    service?.radius != null && service?.radius !== ''
+      ? Number(service.radius)
+      : null;
+
   const price = service?.price ?? service?.package?.price ?? 0;
-  const priceFormatted = formatMoneyVND(price, '.');
+  const priceFormatted = `${formatMoneyVND(price, '.')}đ`;
 
   const bannerSource = service?.thumbnail
     ? { uri: service.thumbnail }
-    : (images.common as any)?.service_mom_baby || images.common.img_default;
+    : images.common.img_default;
+
+  const description = service?.description || '';
+
+  const options = [
+    service?.option1,
+    service?.option2,
+    service?.option3,
+    service?.option4,
+    service?.option5,
+  ].filter(Boolean);
 
   const handleBookNow = () => {
-    navigation.navigate(homeTabRoute.bookingSchedule, { service });
+    navigation.navigate(homeTabRoute.bookingSchedule, {
+      service,
+      channelData: service?.channel || (channelName ? { name: channelName } : undefined),
+    });
   };
+
+  const handleViewChannel = () => {
+    const channelId =
+      service?.channel_id || service?.channel?.id || service?.channel?._id;
+    if (channelId) {
+      navigation.navigate(accountTabRoute.partnerProfileScreen, { channelId });
+    }
+  };
+
+  // 1. Top floating buttons: Back & Share
+  const renderHeader = () => (
+    <>
+      <TouchableOpacity
+        style={[styles.backBtn, { top: (insets.top || 16) + 4 }]}
+        activeOpacity={0.7}
+        onPress={() => navigation.goBack()}
+      >
+        <View style={styles.backBtnWrapper}>
+          <IconX type="fontisto" name="angle-left" size={16} color="#FFFFFF" />
+        </View>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.shareBtn, { top: (insets.top || 16) + 4 }]}
+        activeOpacity={0.7}
+        onPress={() =>
+          onShare({
+            title: title || 'Aloka',
+            message: title ? `${title}${channelName ? ` - ${channelName}` : ''}` : undefined,
+          })
+        }
+      >
+        <View style={styles.backBtnWrapper}>
+          <IconX type="entypo" name="share" size={18} color="#FFFFFF" />
+        </View>
+      </TouchableOpacity>
+    </>
+  );
+
+  // 2. Banner hero image with SVG smooth linear gradient and title inside overlay
+  const renderThumbnail = () => {
+    const gradientH = GRADIENT_HEIGHT + 6;
+    return (
+      <View style={styles.thumbnailWrap}>
+        <ImageHelper
+          source={bannerSource}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        />
+        <View style={styles.layerBlur}>
+          <Svg
+            width={width}
+            height={gradientH}
+            style={StyleSheet.absoluteFill}
+          >
+            <Defs>
+              <SvgLinearGradient id="gradBlur" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0%" stopColor="#FFFFFF" stopOpacity={0} />
+                <Stop offset="25%" stopColor="#FFFFFF" stopOpacity={0.05} />
+                <Stop offset="45%" stopColor="#FFFFFF" stopOpacity={0.15} />
+                <Stop offset="70%" stopColor="#FFFFFF" stopOpacity={0.4} />
+                <Stop offset="85%" stopColor="#FFFFFF" stopOpacity={0.85} />
+                <Stop offset="100%" stopColor="#FFFFFF" stopOpacity={1} />
+              </SvgLinearGradient>
+            </Defs>
+            <Rect x={0} y={0} width={width} height={gradientH} fill="url(#gradBlur)" />
+          </Svg>
+          {Boolean(title) && (
+            <View style={styles.titleWrap}>
+              <Row start>
+                <CText color="#101828" h3 w600 numberOfLines={2}>
+                  {title}
+                </CText>
+              </Row>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
+
+  // 3. Info 1: Channel Name, Address, Rating, Distance
+  const renderInfo1 = () => {
+    const hasAnyInfo =
+      Boolean(channelName) ||
+      Boolean(location) ||
+      numRating > 0 ||
+      Boolean(distanceKm && Number(distanceKm) > 0) ||
+      Boolean(channelDescription);
+
+    if (!hasAnyInfo) {
+      return null;
+    }
+
+    return (
+      <View style={styles.info1Section}>
+        {Boolean(channelName) && (
+          <Row start style={{ marginTop: 2 }}>
+            <Pressable onPress={handleViewChannel}>
+              <CText color="#19A2A7" h46 w400>
+                {channelName}
+              </CText>
+            </Pressable>
+          </Row>
+        )}
+
+        {Boolean(location) && (
+          <Row start style={{ marginTop: 5, paddingRight: 12 }}>
+            <IconX type="ionicons" name="location-outline" size={13} color="#667085" />
+            <CText color="#667085" h5 style={{ marginLeft: 5 }}>
+              {location}
+            </CText>
+          </Row>
+        )}
+
+        {numRating > 0 && (
+          <Row start style={{ marginTop: 8 }}>
+            <IconX type="ionicons" name="star" size={14} color="#FDB022" />
+            <CText color="#374151" h56 w500 style={{ marginLeft: 5 }}>
+              {rating}
+            </CText>
+            <CText color="#EAECF0" h56 style={{ marginLeft: 6 }}>
+              {'|'}
+            </CText>
+            <CText color="#374151" h56 style={{ marginLeft: 6 }}>
+              {`Đánh giá (${reviewCount})`}
+            </CText>
+          </Row>
+        )}
+
+        {Boolean(distanceKm && Number(distanceKm) > 0) && (
+          <View style={{ marginTop: 6 }}>
+            <Row start>
+              <IconX type="ionicons" name="locate-outline" size={15} color="#19A2A7" />
+              <CText color="#19A2A7" h56 w500 style={{ marginLeft: 5 }}>
+                {`${distanceKm}km`}
+              </CText>
+            </Row>
+            <CText color="#667085" h6 style={{ marginLeft: 20, marginTop: 2 }}>
+              (Khoảng cách đến nhà cung cấp dịch vụ)
+            </CText>
+          </View>
+        )}
+
+        {Boolean(channelDescription) && (
+          <View style={styles.chipWrapper}>
+            <CText color="#374151" h5 numberOfLines={2}>
+              {channelDescription}
+            </CText>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // 4. Description section: Mô tả, Thời gian, Phạm vi phục vụ, Thông tin khác
+  const renderDescriptionSession = () => (
+    <View style={styles.descriptionSection}>
+      <Row start style={{ marginTop: 5 }}>
+        <CText color="#101828" h5 w600>
+          Mô tả dịch vụ
+        </CText>
+      </Row>
+      <View style={styles.grayBox}>
+        <CText color="#33353A" h5 style={{ flexShrink: 1 }}>
+          {description || 'Chưa có thông tin'}
+        </CText>
+      </View>
+
+      {/* Thời gian thực hiện */}
+      {Boolean(durationText) && (
+        <>
+          <Row start style={{ marginTop: 12 }}>
+            <CText color="#101828" h5 w600>
+              Thời gian thực hiện dịch vụ
+            </CText>
+          </Row>
+          <View style={styles.grayBox}>
+            <Row start>
+              <IconX type="ionicons" name="time-outline" size={16} color="#101828" />
+              <CText color="#101828" h5 w400 style={{ marginLeft: 6 }}>
+                {durationText}
+              </CText>
+            </Row>
+          </View>
+        </>
+      )}
+
+      {/* Phạm vi phục vụ */}
+      {Boolean(radiusKm && radiusKm > 0) && (
+        <>
+          <Row start style={{ marginTop: 12 }}>
+            <CText color="#101828" h5 w600>
+              Phạm vi phục vụ
+            </CText>
+          </Row>
+          <View style={styles.grayBox}>
+            <Row start>
+              <IconX type="materialicons" name="share-location" size={16} color="#101828" />
+              <CText color="#101828" h5 w400 style={{ marginLeft: 6 }}>
+                {`${radiusKm}km`}
+              </CText>
+            </Row>
+          </View>
+        </>
+      )}
+
+      {/* Thông tin khác */}
+      {Boolean(options.length > 0) && (
+        <>
+          <Row start style={{ marginTop: 12 }}>
+            <CText color="#101828" h5 w600>
+              Thông tin khác
+            </CText>
+          </Row>
+          {options.map((opt, idx) => (
+            <View key={idx} style={styles.grayBox}>
+              <CText color="#33353A" h5 style={{ flexShrink: 1 }}>
+                {opt}
+              </CText>
+            </View>
+          ))}
+        </>
+      )}
+    </View>
+  );
+
+  // 5. Footer: Giá trị gói & Button Đặt lịch ngay
+  const renderFooter = () => (
+    <View style={styles.footerWrapper}>
+      <View>
+        <Row start>
+          <CText color="#101828" h5 w400>
+            Giá trị gói
+          </CText>
+        </Row>
+        <Row start style={{ marginTop: 5 }}>
+          <CText h3 w600 color="#F04438">
+            {priceFormatted}
+          </CText>
+        </Row>
+      </View>
+      <TouchableOpacity
+        style={styles.btnWrapper}
+        activeOpacity={0.8}
+        onPress={handleBookNow}
+      >
+        <CText color="#FFFFFF" h5 w500>
+          Đặt lịch ngay
+        </CText>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-
+      {renderHeader()}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: (insets.bottom || 16) + 12 },
+        ]}
       >
-        {/* Banner Hero Photo with Top Controls */}
-        <View style={styles.bannerContainer}>
-          <ImageHelper
-            source={bannerSource}
-            style={styles.bannerImage}
-            resizeMode="cover"
-          />
-
-          <SafeAreaView style={styles.topBar}>
-            <TouchableOpacity
-              style={styles.circleBtn}
-              activeOpacity={0.7}
-              onPress={() => navigation.goBack()}
-            >
-              <IconX type="ionicons" name="chevron-back" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.circleBtn}
-              activeOpacity={0.7}
-              onPress={() =>
-                onShare({
-                  title: title,
-                  message: `${title} - ${nurseName}`,
-                })
-              }
-            >
-              <IconX type="ionicons" name="share-social-outline" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          </SafeAreaView>
-        </View>
-
-        {/* Header Information Section */}
-        <View style={styles.mainInfoSection}>
-          <CText style={styles.serviceTitle}>{title}</CText>
-
-          <CText style={styles.nurseName}>{nurseName}</CText>
-
-          <View style={styles.locationRow}>
-            <IconX type="ionicons" name="location-outline" size={15} color="#667085" />
-            <CText style={styles.locationText}>{location}</CText>
-          </View>
-
-          <View style={styles.ratingStatsRow}>
-            <View style={styles.ratingLeft}>
-              <IconX type="ionicons" name="star" size={15} color="#F59E0B" />
-              <CText style={styles.starScore}>{rating}</CText>
-              <CText style={styles.reviewCount}>{reviewCount} Đánh giá</CText>
-            </View>
-            <CText style={styles.jobsRight}>
-              Tổng công việc đã nhận <CText style={styles.jobCountBold}>{totalJobs}</CText>
-            </CText>
-          </View>
-        </View>
-
-        <View style={styles.sectionDivider} />
-
-        {/* Section: Mô tả dịch vụ */}
-        <View style={styles.sectionBlock}>
-          <CText style={styles.sectionTitle}>Mô tả dịch vụ</CText>
-          <View style={styles.cardContainer}>
-            <CText style={styles.paragraphText}>
-              {service?.description || DESCRIPTIONS[0]}
-            </CText>
-            {DESCRIPTIONS.slice(1).map((item, index) => (
-              <View key={index} style={styles.bulletRow}>
-                <IconX
-                  type="ionicons"
-                  name="checkmark"
-                  size={16}
-                  color="#101828"
-                  style={styles.checkIcon}
-                />
-                <CText style={styles.bulletText}>{item}</CText>
-              </View>
-            ))}
-          </View>
-
-          {/* Thời gian thực hiện dịch vụ */}
-          <CText style={[styles.sectionTitle, { marginTop: 18 }]}>
-            Thời gian thực hiện dịch vụ
-          </CText>
-          <View style={styles.durationCard}>
-            <IconX type="ionicons" name="time-outline" size={18} color="#101828" />
-            <CText style={styles.durationText}>2 giờ</CText>
-          </View>
-        </View>
-
-        <View style={styles.sectionDivider} />
-
-        {/* Section: Thông tin khác */}
-        <View style={styles.sectionBlock}>
-          <CText style={styles.sectionTitle}>Thông tin khác</CText>
-          <View style={styles.packagesList}>
-            {PACKAGES.map(pkg => {
-              const isSelected = selectedPackage === pkg.id;
-              return (
-                <TouchableOpacity
-                  key={pkg.id}
-                  onPress={() => setSelectedPackage(pkg.id)}
-                  style={styles.packageCard}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.packageIconBadge}>
-                    <IconX type="ionicons" name="location" size={16} color="#FFFFFF" />
-                  </View>
-                  <View style={styles.packageBody}>
-                    <CText style={styles.packageTitle}>{pkg.title}</CText>
-                    <CText style={styles.packageDesc}>{pkg.description}</CText>
-                    <CText style={styles.packageDate}>{pkg.dateInfo}</CText>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
+        {renderThumbnail()}
+        {renderInfo1()}
+        {renderDescriptionSession()}
+        {renderFooter()}
       </ScrollView>
-
-      {/* Bottom Floating Bar */}
-      <View style={styles.bottomBar}>
-        <View style={styles.priceContainer}>
-          <CText style={styles.priceLabel}>Giá trị gói</CText>
-          <CText style={styles.priceValue}>{priceFormatted}</CText>
-        </View>
-        <TouchableOpacity
-          style={styles.bookButton}
-          activeOpacity={0.8}
-          onPress={handleBookNow}
-        >
-          <CText style={styles.bookButtonText}>Đặt lịch ngay</CText>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -220,229 +371,95 @@ export const ServiceDetail: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F9FAFB',
   },
   scrollContent: {
-    paddingBottom: 90,
+    backgroundColor: '#F9FAFB',
   },
-  bannerContainer: {
-    width: width,
-    height: 330,
-    backgroundColor: '#E5E7EB',
-    position: 'relative',
-  },
-  bannerImage: {
-    width: '100%',
-    height: '100%',
-  },
-  topBar: {
+  backBtn: {
     position: 'absolute',
-    top: 10,
     left: 16,
-    right: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     zIndex: 10,
   },
-  circleBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mainInfoSection: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 14,
-    backgroundColor: '#FFFFFF',
-  },
-  serviceTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#101828',
-    lineHeight: 28,
-  },
-  nurseName: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#14B8A6',
-    marginTop: 6,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  locationText: {
-    fontSize: 13,
-    color: '#667085',
-    marginLeft: 4,
-  },
-  ratingStatsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  ratingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  starScore: {
-    fontSize: 13.5,
-    fontWeight: '700',
-    color: '#F59E0B',
-    marginLeft: 4,
-  },
-  reviewCount: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#101828',
-    marginLeft: 6,
-  },
-  jobsRight: {
-    fontSize: 12.5,
-    color: '#667085',
-  },
-  jobCountBold: {
-    fontWeight: '700',
-    color: '#101828',
-  },
-  sectionDivider: {
-    height: 8,
-    backgroundColor: '#F8F9FA',
-  },
-  sectionBlock: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#101828',
-    marginBottom: 10,
-  },
-  cardContainer: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 10,
-    padding: 14,
-  },
-  paragraphText: {
-    fontSize: 13,
-    color: '#344054',
-    lineHeight: 20,
-    marginBottom: 10,
-  },
-  bulletRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginTop: 6,
-  },
-  checkIcon: {
-    marginTop: 2,
-    marginRight: 8,
-  },
-  bulletText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#344054',
-    lineHeight: 19,
-  },
-  durationCard: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  durationText: {
-    fontSize: 13.5,
-    fontWeight: '600',
-    color: '#101828',
-    marginLeft: 8,
-  },
-  packagesList: {
-    gap: 12,
-  },
-  packageCard: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 10,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  packageIconBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    backgroundColor: '#0D9488',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  packageBody: {
-    flex: 1,
-  },
-  packageTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#101828',
-  },
-  packageDesc: {
-    fontSize: 12.5,
-    color: '#475467',
-    lineHeight: 18,
-    marginTop: 4,
-  },
-  packageDate: {
-    fontSize: 11,
-    color: '#98A2B3',
-    marginTop: 6,
-  },
-  bottomBar: {
+  shareBtn: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#EAECF0',
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    right: 16,
+    zIndex: 10,
   },
-  priceContainer: {
+  backBtnWrapper: {
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 16,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  priceLabel: {
-    fontSize: 12,
-    color: '#667085',
+  thumbnailWrap: {
+    width,
+    height: THUMBNAIL_HEIGHT,
+    backgroundColor: '#FFFFFF',
+    position: 'relative',
+    overflow: 'hidden',
   },
-  priceValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#F04438',
-    marginTop: 2,
+  layerBlur: {
+    position: 'absolute',
+    bottom: -2,
+    right: 0,
+    left: 0,
+    height: GRADIENT_HEIGHT + 6,
+    justifyContent: 'flex-end',
+    zIndex: 1,
   },
-  bookButton: {
-    backgroundColor: '#0D9488',
-    paddingHorizontal: 32,
-    height: 44,
+  titleWrap: {
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+    zIndex: 2,
+  },
+  info1Section: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    marginTop: -2,
+  },
+  chipWrapper: {
+    marginTop: 8,
+    borderRadius: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#F9FAFB',
+  },
+  descriptionSection: {
+    marginTop: 8,
+    borderRadius: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  grayBox: {
+    marginTop: 8,
+    borderRadius: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#F9FAFB',
+  },
+  footerWrapper: {
+    marginTop: 8,
+    borderRadius: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  btnWrapper: {
+    backgroundColor: '#19A2A7',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bookButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14.5,
-    fontWeight: '700',
-  },
 });
+
+export default ServiceDetail;

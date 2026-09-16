@@ -10,7 +10,7 @@ export const useCheckPaymentOnResume = (callback: () => void) => {
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextState => {
       if (
-        appState.current.match(/inactive|background/) &&
+        appState.current?.match(/inactive|background/) &&
         nextState === 'active'
       ) {
         callback();
