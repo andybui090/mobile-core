@@ -310,10 +310,13 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       login: async (userInfo: any) => {
         console.log('🚀 ~ RootNavigator ~ userInfo SSO:', userInfo);
         rootDispatch({ type: TYPES.RESET_LOGOUT, payload: false });
-        if (userInfo?.username) {
+        if (userInfo) {
           rootDispatch({
             type: TYPES.SET_USER,
-            payload: userInfo,
+            payload: {
+              ...userInfo,
+              username: userInfo.username || userInfo.phone || userInfo.id || 'user',
+            },
           });
         }
         initSocketIO();
@@ -430,7 +433,10 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       } else {
         // return <AuthScreen />;
         const userTemp: any = stateRoot.user;
-        if (userTemp.username && !waitingRegisterComplete) {
+        if (
+          (userTemp?.username || userTemp?.id || userTemp?.phone) &&
+          !waitingRegisterComplete
+        ) {
           return <MainNavigator />;
         }
         return <AuthScreen />;

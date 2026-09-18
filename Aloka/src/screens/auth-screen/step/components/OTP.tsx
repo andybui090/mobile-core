@@ -1,4 +1,4 @@
-import { ActionSheet, CHeader, IconX, ReCaptcha, Wrapper, hideLoading, showLoading } from '@/components';
+import { ActionSheet, CHeader, IconX, ReCaptcha, Wrapper } from '@/components';
 import { OTPType } from '@/components/modal-otp';
 import {
   ScreenWidth,
@@ -21,7 +21,6 @@ import { makeStyles, useTheme } from '@rneui/themed';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator,
   Alert,
   Image,
   Keyboard,
@@ -101,40 +100,21 @@ const OTP = ({
   }, [resetTimer]);
 
   useEffect(() => {
-    if (otpVerify.loading) {
-      showLoading(t('auth.verifyingOTP', 'Đang xác minh OTP...'));
-    }
-  }, [otpVerify.loading]);
-
-  useEffect(() => {
-    return () => {
-      hideLoading();
-    };
-  }, []);
-
-  useEffect(() => {
     const processVerifyOTP = () => {
       if (!otpVerify.loading) {
         if (otpVerify.data) {
-          hideLoading();
           const { status, result }: any = otpVerify.data;
-          if (result?.id) {
-            if (result.username) {
-              login(result);
-              closeModal();
-            } else {
-              // Onboard
-              updateLoginData('otpCode', '');
-              gotoOnboard(result);
-            }
-          } else if (statusSuccess(status)) {
-            console.log('Cannot get access_token');
+          if (result?.id || result?.username || statusSuccess(status)) {
+            login(result || {});
+            closeModal();
+          } else {
+            // Onboard
             updateLoginData('otpCode', '');
+            gotoOnboard(result);
           }
           dispatch(resetAuth());
           dispatch(resetOTP(null));
         } else if (otpVerify.error) {
-          hideLoading();
           setErrorOTP(logError(otpVerify.error, '', true));
           dispatch(resetOTP(null));
         }
@@ -271,14 +251,6 @@ const OTP = ({
             restrictToNumbers={true}
           />
         </View>
-        {otpVerify.loading && (
-          <Row center style={screenStyles.mT10}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <CText h6 color={colors.primary} style={screenStyles.mL5}>
-              {t('auth.verifyingOTP', 'Đang xác minh OTP...')}
-            </CText>
-          </Row>
-        )}
         {errOTP ? (
           <Row>
             <CText h5 w400 style={styles.txtError}>
