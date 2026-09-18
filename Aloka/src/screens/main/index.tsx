@@ -4,7 +4,7 @@ import AboutUsScreen from './aboutUs';
 import FeedbackScreen from './feedback';
 import CarelyServiceScreen from '../home-tab/carely-service-screen';
 import { ServiceDetail as CarelyServiceDetailScreen } from '../layout/service-detail';
-import { SearchService } from '../layout/search-service';
+import { SearchService, MCNDetailScreen } from '../layout/search-service';
 import { BookingSchedule } from '../layout/booking-schedule';
 import { BookingConfirm } from '../layout/booking-confirm';
 import AppointmentScreen from '../appointment-tab/appointment-screen';
@@ -43,4 +43,5 @@ export {
   EditProfileScreen,
   ChatScreen,
   BookingChat,
+  MCNDetailScreen,
 };

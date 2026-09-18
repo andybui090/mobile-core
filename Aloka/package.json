@@ -25,6 +25,7 @@
   "dependencies": {
     "@gorhom/bottom-sheet": "^5",
     "@invertase/react-native-apple-authentication": "^2.5.1",
+    "@react-native-community/geolocation": "^3.4.0",
     "@react-native-community/netinfo": "^12.0.1",
     "@react-native-documents/picker": "^12.0.2",
     "@react-native-firebase/app": "26.3.2",

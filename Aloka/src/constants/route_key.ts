@@ -7,6 +7,7 @@ export const homeTabRoute = {
   searchService: 'SearchService',
   bookingSchedule: 'BookingSchedule',
   bookingConfirm: 'BookingConfirm',
+  mcnDetailScreen: 'MCNDetailScreen',
 };
 
 export const drnetworkTabRoute = {
@@ -48,6 +49,7 @@ export const mainRoute = {
   reviewService: 'ReviewService',
   bookingChat: 'BookingChat',
   chatScreen: 'ChatScreen',
+  mcnDetailScreen: 'MCNDetailScreen',
 };
 
 
