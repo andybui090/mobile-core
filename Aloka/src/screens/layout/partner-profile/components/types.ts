@@ -15,6 +15,8 @@ export interface ConversationItem {
 
 export interface WorkRequestItem {
   id: string;
+  rawItem?: any;
+  customerId?: string;
   customerName: string;
   customerAvatar?: any;
   customerPhone: string;
@@ -26,6 +28,8 @@ export interface WorkRequestItem {
   address: string;
   amount: string;
   status: SubStatus;
+  appointmentStatus?: string;
   cancelReason?: string;
   isMoving?: boolean;
+  isArrived?: boolean;
 }

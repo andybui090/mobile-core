@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   Dimensions,
+  Image,
   Pressable,
   ScrollView,
   StatusBar,
@@ -17,6 +18,8 @@ import { images } from '@/configs/image';
 import { homeTabRoute, accountTabRoute } from '@/constants';
 import { CText, Row } from '@/utils';
 import { onShare } from '@/utils/shareHelper';
+import { AppContext } from '@/contexts';
+import ApiService from '@/services/api-base';
 
 const { width, height } = Dimensions.get('window');
 const THUMBNAIL_HEIGHT = Math.round(height / 2.2);
@@ -29,20 +32,38 @@ export const ServiceDetail: React.FC = () => {
 
   const service = route.params?.service || {};
 
+  const { user, isDoctor: isDoctorCtx } = useContext<any>(AppContext) || {};
+
+  const channelId = service?.channel_id || route.params?.channelId;
+  const [channelData, setChannelData] = useState<any>(route.params?.channelData || {});
+
+  const isDoctor = Boolean(
+    isDoctorCtx ||
+    user?.personalization?.type === 'doctor' ||
+    user?.personalization?.type === 'nurse' ||
+    user?.personalization?.type === 'student'
+  );
+
+  useEffect(() => {
+    if (channelId) {
+      ApiService.getChannelDetail(channelId)
+        .then((res: any) => {
+          if (res?.ok && res?.data?.result) {
+            setChannelData(res.data.result);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [channelId]);
+
+  const isOwner = Boolean(
+    (channelData?.manager?.id === user?.id || channelData?.owner_id === user?.id) && isDoctor
+  );
+
   const title = service?.name || '';
-  const channelName =
-    service?.channel?.name ||
-    service?.channel_name ||
-    '';
-
-  const channelDescription =
-    service?.channel?.description || service?.channel_description || '';
-
-  const location =
-    service?.address ||
-    service?.doctor?.address ||
-    service?.location?.address ||
-    '';
+  const channelName = channelData?.name || '';
+  const channelDescription = channelData?.description || '';
+  const location = service?.address || '';
 
   const numRating = service?.avg_value ? Number(service.avg_value) : 0;
   const rating = numRating > 0 ? numRating.toFixed(1) : '';
@@ -53,31 +74,19 @@ export const ServiceDetail: React.FC = () => {
       ? Number(service.distance).toFixed(2)
       : null;
 
-  const rawDuration =
-    service?.time_package != null && service?.time_package !== ''
-      ? Number(service.time_package)
-      : service?.duration != null && service?.duration !== ''
-        ? Number(service.duration)
-        : null;
+  const timeService = service?.time_package || 0;
+  const radiusKm = service?.radius ? Number(service.radius) : null;
 
-  const durationText =
-    rawDuration != null && rawDuration > 0
-      ? rawDuration < 24
-        ? `${rawDuration * 60} phút`
-        : `${rawDuration} phút`
-      : '';
+  const price = service?.price ?? 0;
+  const priceFormatted = formatMoneyVND(price, '.');
 
-  const radiusKm =
-    service?.radius != null && service?.radius !== ''
-      ? Number(service.radius)
-      : null;
-
-  const price = service?.price ?? service?.package?.price ?? 0;
-  const priceFormatted = `${formatMoneyVND(price, '.')}đ`;
-
-  const bannerSource = service?.thumbnail
-    ? { uri: service.thumbnail }
-    : images.common.img_default;
+  const renderErrorImage = () => (
+    <Image
+      source={images.global.img_default}
+      style={StyleSheet.absoluteFill}
+      resizeMode="cover"
+    />
+  );
 
   const description = service?.description || '';
 
@@ -90,17 +99,16 @@ export const ServiceDetail: React.FC = () => {
   ].filter(Boolean);
 
   const handleBookNow = () => {
+    if (isOwner || isDoctor) return;
     navigation.navigate(homeTabRoute.bookingSchedule, {
       service,
-      channelData: service?.channel || (channelName ? { name: channelName } : undefined),
+      channelData,
     });
   };
 
   const handleViewChannel = () => {
-    const channelId =
-      service?.channel_id || service?.channel?.id || service?.channel?._id;
-    if (channelId) {
-      navigation.navigate(accountTabRoute.partnerProfileScreen, { channelId });
+    if (channelData?.id) {
+      navigation.navigate(accountTabRoute.partnerProfileScreen, { channelId: channelData.id });
     }
   };
 
@@ -138,11 +146,14 @@ export const ServiceDetail: React.FC = () => {
     const gradientH = GRADIENT_HEIGHT + 6;
     return (
       <View style={styles.thumbnailWrap}>
-        <ImageHelper
-          source={bannerSource}
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-        />
+        <View style={StyleSheet.absoluteFill}>
+          <ImageHelper
+            source={{ uri: service?.thumbnail }}
+            renderErrorImage={renderErrorImage}
+            style={StyleSheet.absoluteFill}
+            resizeMode="cover"
+          />
+        </View>
         <View style={styles.layerBlur}>
           <Svg
             width={width}
@@ -225,17 +236,11 @@ export const ServiceDetail: React.FC = () => {
         )}
 
         {Boolean(distanceKm && Number(distanceKm) > 0) && (
-          <View style={{ marginTop: 6 }}>
-            <Row start>
-              <IconX type="ionicons" name="locate-outline" size={15} color="#19A2A7" />
-              <CText color="#19A2A7" h56 w500 style={{ marginLeft: 5 }}>
-                {`${distanceKm}km`}
-              </CText>
-            </Row>
-            <CText color="#667085" h6 style={{ marginLeft: 20, marginTop: 2 }}>
-              (Khoảng cách đến nhà cung cấp dịch vụ)
+          <Row start style={{ marginTop: 3 }}>
+            <CText color="#667085" h56>
+              {`${distanceKm}km`}
             </CText>
-          </View>
+          </Row>
         )}
 
         {Boolean(channelDescription) && (
@@ -259,28 +264,24 @@ export const ServiceDetail: React.FC = () => {
       </Row>
       <View style={styles.grayBox}>
         <CText color="#33353A" h5 style={{ flexShrink: 1 }}>
-          {description || 'Chưa có thông tin'}
+          {description || 'Không có dữ liệu'}
         </CText>
       </View>
 
-      {/* Thời gian thực hiện */}
-      {Boolean(durationText) && (
-        <>
-          <Row start style={{ marginTop: 12 }}>
-            <CText color="#101828" h5 w600>
-              Thời gian thực hiện dịch vụ
-            </CText>
-          </Row>
-          <View style={styles.grayBox}>
-            <Row start>
-              <IconX type="ionicons" name="time-outline" size={16} color="#101828" />
-              <CText color="#101828" h5 w400 style={{ marginLeft: 6 }}>
-                {durationText}
-              </CText>
-            </Row>
-          </View>
-        </>
-      )}
+      {/* Thời gian thực hiện dịch vụ */}
+      <Row start style={{ marginTop: 12 }}>
+        <CText color="#101828" h5 w600>
+          Thời gian thực hiện dịch vụ
+        </CText>
+      </Row>
+      <View style={styles.grayBox}>
+        <Row start>
+          <IconX type="ionicons" name="time-outline" size={16} color="#101828" />
+          <CText color="#101828" h5 w400 style={{ marginLeft: 6 }}>
+            {`${timeService} phút`}
+          </CText>
+        </Row>
+      </View>
 
       {/* Phạm vi phục vụ */}
       {Boolean(radiusKm && radiusKm > 0) && (
@@ -336,15 +337,19 @@ export const ServiceDetail: React.FC = () => {
           </CText>
         </Row>
       </View>
-      <TouchableOpacity
-        style={styles.btnWrapper}
-        activeOpacity={0.8}
-        onPress={handleBookNow}
-      >
-        <CText color="#FFFFFF" h5 w500>
-          Đặt lịch ngay
-        </CText>
-      </TouchableOpacity>
+      {!isOwner && !isDoctor && (
+        <View style={{ marginTop: 10 }}>
+          <TouchableOpacity
+            style={styles.btnWrapper}
+            activeOpacity={0.8}
+            onPress={handleBookNow}
+          >
+            <CText color="#FFFFFF" h5 w500>
+              Đặt lịch ngay
+            </CText>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 

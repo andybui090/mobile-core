@@ -16,6 +16,7 @@ export default {
     },
     "filter": "Bộ lọc",
     "notice": "Thông báo",
+    "featureDeveloping": "Tính năng đang phát triển",
     "retry": "Thử lại",
     "ok": "OK",
     "categories": "Chuyên khoa",
@@ -134,7 +135,8 @@ export default {
     "otpTitle": "Xác minh OTP",
     "pleaseEnterOTP": "Vui lòng nhập mã OTP được gửi tới số điện thoại",
     "timeSenOTP": "Thời gian nhập mã {{timerCount}} giây",
-    "pleaseEnterOTPEmail": "Vui lòng nhập mã OTP được gửi tới email"
+    "pleaseEnterOTPEmail": "Vui lòng nhập mã OTP được gửi tới email",
+    "verifyingOTP": "Đang xác minh OTP..."
   },
   "home": {
     "belowDistance": "Dưới {{distance}}km",

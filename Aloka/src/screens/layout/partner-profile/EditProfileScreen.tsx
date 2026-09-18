@@ -27,6 +27,8 @@ import {
   ImageHelper,
   ModalGender,
   Wrapper,
+  hideLoading,
+  showLoading,
 } from '@/components';
 import { useKeyboardAwareScroll } from '@/hooks';
 import { images } from '@/configs/image';
@@ -34,6 +36,7 @@ import { AppContext } from '@/contexts';
 import { useAppDispatch } from '@/redux/store/customReduxHook';
 import { getProfile } from '@/redux/slices/profileSlice';
 import ApiService from '@/services/api-base';
+import { ModalSearchAddress, LocationItem } from '@/screens/layout/booking-schedule';
 import ImageCropPicker from 'react-native-image-crop-picker';
 import moment from 'moment';
 import {
@@ -433,12 +436,10 @@ export const EditProfileScreen: React.FC = () => {
   );
 
   const [workingArea, setWorkingArea] = useState<string>(
-    user?.personalization?.working_area || user?.city || ''
+    user?.personalization?.working_area || user?.address || user?.city || ''
   );
+  const [workingAreaLocation, setWorkingAreaLocation] = useState<LocationItem | null>(null);
   const [showAreaModal, setShowAreaModal] = useState<boolean>(false);
-  const [provinces, setProvinces] = useState<any[]>([]);
-  const [searchArea, setSearchArea] = useState<string>('');
-  const [isLoadingAreas, setIsLoadingAreas] = useState<boolean>(false);
 
   const [errors, setErrors] = useState<{
     fullName?: string;
@@ -467,36 +468,6 @@ export const EditProfileScreen: React.FC = () => {
     workingArea &&
     workingArea.trim()
   );
-
-  useEffect(() => {
-    const fetchProvinces = async () => {
-      setIsLoadingAreas(true);
-      try {
-        const res: any = await ApiService.getProvinces({
-          country_id: 237,
-          fq: 'country_id:237',
-          limit: 100,
-        });
-        if (res?.ok && res?.data) {
-          const items =
-            res.data?.items ||
-            res.data?.data ||
-            (Array.isArray(res.data) ? res.data : []);
-          setProvinces(items);
-        }
-      } catch (err) {
-        console.log('fetchProvinces error:', err);
-      } finally {
-        setIsLoadingAreas(false);
-      }
-    };
-    fetchProvinces();
-  }, []);
-
-  const filteredProvinces = provinces.filter((p: any) => {
-    const name = p?.name || (typeof p === 'string' ? p : '');
-    return name.toLowerCase().includes(searchArea.trim().toLowerCase());
-  });
 
   const [movingRadius, setMovingRadius] = useState<string>(
     user?.personalization?.moving_radius
@@ -659,6 +630,10 @@ export const EditProfileScreen: React.FC = () => {
       newErrors.certificateNumber = t('partnerEditProfile.errorCertificateNumber', 'Vui lòng bổ sung số CCHN');
     }
 
+    if (!workingArea || !workingArea.trim()) {
+      newErrors.workingArea = t('partnerEditProfile.errorWorkingArea', 'Vui lòng chọn khu vực làm việc');
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
 
@@ -685,6 +660,7 @@ export const EditProfileScreen: React.FC = () => {
 
     setErrors({});
     setIsSubmitting(true);
+    showLoading();
     try {
       // Format DOB to YYYY-MM-DD for backend API
       const formattedDob = dob
@@ -708,8 +684,18 @@ export const EditProfileScreen: React.FC = () => {
         certificateNumber: certificateNumber.trim(),
         experience: experience.trim(),
         workplace: workplace.trim(),
-        workingArea,
+        workingArea: (workingArea || workingAreaLocation?.text || '').trim(),
+        working_area: (workingArea || workingAreaLocation?.text || '').trim(),
       };
+
+      if (workingAreaLocation?.geometry?.location) {
+        payload.latitude = workingAreaLocation.geometry.location.lat;
+        payload.longitude = workingAreaLocation.geometry.location.lng;
+      }
+      if (workingAreaLocation?.text) {
+        payload.address = workingAreaLocation.text;
+        payload.full_address = workingAreaLocation.text;
+      }
 
       if (genderVal) {
         payload.gender = genderVal; // 'Male', 'Female', or 'Undisclosed'
@@ -744,7 +730,10 @@ export const EditProfileScreen: React.FC = () => {
 
         Alert.alert(
           t('profile.editProfileScreen.updateSuccessTitle', 'Thành công'),
-          t('partnerEditProfile.updateSuccess', 'Cập nhật hồ sơ cá nhân thành công!'),
+          t(
+            'profile.editProfileScreen.updateKYCMessage',
+            'Thông tin đã được cập nhật. Vui lòng chờ chúng tôi xét duyệt.',
+          ),
           [
             {
               text: t('partnerEditProfile.btnAgree', 'Đồng ý'),
@@ -785,6 +774,7 @@ export const EditProfileScreen: React.FC = () => {
       );
     } finally {
       setIsSubmitting(false);
+      hideLoading();
     }
   };
 
@@ -1111,11 +1101,7 @@ export const EditProfileScreen: React.FC = () => {
             onPress={handleUpdateProfile}
             disabled={isSubmitting}
           >
-            {isSubmitting ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <CText style={styles.submitButtonText}>{t('partnerEditProfile.btnUpdate', 'Cập nhật')}</CText>
-            )}
+            <CText style={styles.submitButtonText}>{t('partnerEditProfile.btnUpdate', 'Cập nhật')}</CText>
           </TouchableOpacity>
         </View>
       </CKeyboardAvoidingView>
@@ -1133,90 +1119,16 @@ export const EditProfileScreen: React.FC = () => {
       )}
 
       {/* Working Area Selection Modal */}
-      <Modal
+      <ModalSearchAddress
         visible={showAreaModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => {
+        onClose={() => setShowAreaModal(false)}
+        onChooseLocation={(item: LocationItem) => {
+          setWorkingArea(item.text);
+          setWorkingAreaLocation(item);
+          setErrors(prev => ({ ...prev, workingArea: undefined }));
           setShowAreaModal(false);
-          setSearchArea('');
         }}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => {
-            setShowAreaModal(false);
-            setSearchArea('');
-          }}
-        >
-          <Pressable style={styles.modalContent} onPress={e => e.stopPropagation()}>
-            <View style={styles.modalHandle} />
-            <CText style={styles.modalTitle}>{t('partnerEditProfile.workingAreaPlaceholder', 'Chọn khu vực làm việc')}</CText>
-
-            <View style={styles.searchContainer}>
-              <IconX type="ionicons" name="search" size={18} color="#94A3B8" />
-              <TextInput
-                style={styles.searchInput}
-                placeholder={t('partnerEditProfile.searchAreaPlaceholder', 'Tìm kiếm tỉnh, thành phố...')}
-                placeholderTextColor="#94A3B8"
-                value={searchArea}
-                onChangeText={setSearchArea}
-                clearButtonMode="while-editing"
-              />
-              {searchArea.length > 0 && Platform.OS === 'android' && (
-                <TouchableOpacity onPress={() => setSearchArea('')}>
-                  <IconX type="ionicons" name="close-circle" size={18} color="#94A3B8" />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {isLoadingAreas ? (
-              <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                <ActivityIndicator size="small" color="#19A2A7" />
-              </View>
-            ) : (
-              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                {filteredProvinces.map((item: any) => {
-                  const name = item?.name || item;
-                  const key = item?.id || name;
-                  const isSelected = workingArea === name;
-                  return (
-                    <TouchableOpacity
-                      key={key}
-                      style={styles.modalItemRow}
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        setWorkingArea(name);
-                        setErrors(prev => ({ ...prev, workingArea: undefined }));
-                        setShowAreaModal(false);
-                        setSearchArea('');
-                      }}
-                    >
-                      <CText
-                        style={
-                          isSelected
-                            ? styles.modalItemTextActive
-                            : styles.modalItemText
-                        }
-                      >
-                        {name}
-                      </CText>
-                      {isSelected && (
-                        <IconX
-                          type="ionicons"
-                          name="checkmark"
-                          size={20}
-                          color="#19A2A7"
-                        />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            )}
-          </Pressable>
-        </Pressable>
-      </Modal>
+      />
 
       {/* Date of Birth Picker Modal */}
       <CDatePicker

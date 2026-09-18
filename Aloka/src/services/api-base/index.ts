@@ -214,13 +214,17 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
    * Lấy thông tin channel (bao gồm schedules, working hours).
    * GET /channels/:channelId
    */
-  const getChannelDetail = (channelId: string) => {
+  const getChannelDetail = (payload: any) => {
+    const channelId =
+      typeof payload === 'string'
+        ? payload
+        : payload?.channelId || payload?.id || payload?.channel_id;
     return api.get(CHANNEL.DETAIL(channelId));
   };
 
   const updateChannel = (payload: any) => {
-    const { id, ...data } = payload || {};
-    return api.put(CHANNEL.UPDATE(id), data);
+    const channelId = payload?.id || payload?.channel_id;
+    return api.put(CHANNEL.UPDATE(channelId), payload);
   };
   const createOrder = (payload: any) => {
     return api.post(ORDER.CREATE, payload);
@@ -366,7 +370,42 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   };
 };
 
+export const getApiErrorMessage = (
+  res: any,
+  defaultMsg: string = 'Có lỗi xảy ra, vui lòng thử lại',
+): string => {
+  const data = res?.data;
+  if (!data) return res?.problem || defaultMsg;
+  if (typeof data === 'string') return data;
+  if (data?.errors?.msg) return data.errors.msg;
+  if (data?.errors?.message) return data.errors.message;
+  if (Array.isArray(data?.errors)) {
+    const first = data.errors[0];
+    if (typeof first === 'string') return first;
+    if (first?.msg) return first.msg;
+    if (first?.message) return first.message;
+  }
+  if (typeof data?.errors === 'string') return data.errors;
+  if (data?.message) return data.message;
+  if (data?.msg) return data.msg;
+  if (data?.error) {
+    return typeof data.error === 'string'
+      ? data.error
+      : data.error?.msg || data.error?.message || defaultMsg;
+  }
+  return res?.problem || defaultMsg;
+};
+
+export const isApiSuccess = (res: any): boolean => {
+  if (!res) return false;
+  const isOkStatus = Boolean(res.ok || res.status === 200 || res.status === 201);
+  const hasErrorStatus = res.data?.status === 'error';
+  const hasErrors = Boolean(res.data?.errors);
+  return isOkStatus && !hasErrorStatus && !hasErrors;
+};
+
 const ApiService = createApiClient();
 
 export default ApiService;
+
 

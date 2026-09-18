@@ -310,6 +310,12 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       login: async (userInfo: any) => {
         console.log('🚀 ~ RootNavigator ~ userInfo SSO:', userInfo);
         rootDispatch({ type: TYPES.RESET_LOGOUT, payload: false });
+        if (userInfo?.username) {
+          rootDispatch({
+            type: TYPES.SET_USER,
+            payload: userInfo,
+          });
+        }
         initSocketIO();
         appDispatch(getProfile(null));
       },

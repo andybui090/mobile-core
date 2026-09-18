@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -13,9 +13,10 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { IconX, ImageHelper } from '@/components';
-import { formatMoneyVND } from '@/configs/common';
+import { calculateDistance, formatMoneyVND } from '@/configs/common';
 import { images } from '@/configs/image';
 import { PAGINATION } from '@/constants';
+import { AppContext } from '@/contexts';
 import ApiService from '@/services/api-base';
 import { CText } from '@/utils';
 
@@ -26,6 +27,7 @@ const CarelyServiceScreen: React.FC<any> = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const { currentLocation } = useContext<any>(AppContext) || {};
 
   const parentService = route.params?.parentService || {};
   const parentTitle = parentService?.name || 'Dịch vụ';
@@ -85,16 +87,32 @@ const CarelyServiceScreen: React.FC<any> = () => {
 
   const renderServiceCard = ({ item }: { item: any }) => {
     const title = item?.name || '';
-    const nurseOrDoctor =
-      item?.channel?.name || item?.doctor?.full_name || 'Điều dưỡng Aloka';
-    const rating = item?.avg_value ? Number(item.avg_value).toFixed(1) : '5.0';
-    const totalRatings = item?.total_ratings || 0;
+    const numRating = Number(item?.avg_value || item?.rating || 0);
+    const totalRating = Number(item?.total_ratings || 0);
     const price = item?.price ?? item?.package?.price ?? 0;
     const priceFormatted = formatMoneyVND(price, '.');
 
-    const imageSource = item?.thumbnail
+    const lat = item?.latitude || item?.doctor?.latitude;
+    const lng = item?.longitude || item?.doctor?.longitude;
+    const distanceKm =
+      item?.distance != null
+        ? Number(item.distance)
+        : currentLocation?.latitude && lat
+        ? calculateDistance(
+            currentLocation.latitude,
+            currentLocation.longitude,
+            lat,
+            lng,
+          )
+        : null;
+
+    const hasRating = numRating > 0;
+    const hasDistance = distanceKm != null && distanceKm > 0;
+
+    const hasThumbnail = Boolean(item?.thumbnail);
+    const imageSource = hasThumbnail
       ? { uri: item.thumbnail }
-      : (images.common as any)?.service_mom_baby || images.common.img_default;
+      : images.common.img_default;
 
     return (
       <TouchableOpacity
@@ -102,28 +120,35 @@ const CarelyServiceScreen: React.FC<any> = () => {
         activeOpacity={0.7}
         onPress={() => handlePressDetail(item)}
       >
-        <ImageHelper
-          source={imageSource}
-          style={styles.cardImage}
-          resizeMode="cover"
-        />
+        <View style={styles.cardImageWrap}>
+          <ImageHelper
+            source={imageSource}
+            style={hasThumbnail ? styles.cardImage : styles.cardImageDefault}
+            resizeMode={hasThumbnail ? 'cover' : 'contain'}
+          />
+        </View>
 
         <View style={styles.cardContent}>
           <CText style={styles.cardTitle} numberOfLines={2}>
             {title}
           </CText>
 
-          <CText style={styles.nurseName} numberOfLines={1}>
-            {nurseOrDoctor}
-          </CText>
+          {hasRating && (
+            <View style={styles.ratingRow}>
+              <IconX type="ionicons" name="star" size={13} color="#F59E0B" />
+              <CText style={styles.ratingText}>{numRating.toFixed(1)}</CText>
+              <CText style={styles.ratingDivider}>|</CText>
+              <CText style={styles.ratingCount}>
+                {`Đánh giá (${totalRating})`}
+              </CText>
+            </View>
+          )}
 
-          <View style={styles.ratingRow}>
-            <IconX type="ionicons" name="star" size={13} color="#F59E0B" />
-            <CText style={styles.ratingText}>{rating}</CText>
-            {totalRatings > 0 && (
-              <CText style={styles.ratingCount}>({totalRatings})</CText>
-            )}
-          </View>
+          {hasDistance && (
+            <CText style={styles.distanceText}>
+              {`${distanceKm.toFixed(2)}km`}
+            </CText>
+          )}
 
           <View style={styles.priceRow}>
             <CText style={styles.priceText}>{priceFormatted}</CText>
@@ -272,53 +297,68 @@ const styles = StyleSheet.create({
   serviceCard: {
     width: CARD_WIDTH,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    marginBottom: 8,
+  },
+  cardImageWrap: {
+    width: '100%',
+    height: CARD_WIDTH,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#EAECF0',
+    backgroundColor: '#FFFFFF',
     overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardImage: {
     width: '100%',
-    height: 115,
-    backgroundColor: '#E5E7EB',
+    height: '100%',
+  },
+  cardImageDefault: {
+    width: '75%',
+    height: '75%',
   },
   cardContent: {
-    padding: 10,
+    paddingVertical: 8,
   },
   cardTitle: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     color: '#101828',
-    lineHeight: 18,
-    minHeight: 36,
-  },
-  nurseName: {
-    fontSize: 11.5,
-    color: '#667085',
-    marginTop: 4,
+    lineHeight: 19,
+    minHeight: 38,
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 4,
     gap: 4,
   },
   ratingText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#344054',
+    color: '#F59E0B',
+  },
+  ratingDivider: {
+    fontSize: 11,
+    color: '#D0D5DD',
   },
   ratingCount: {
-    fontSize: 11,
-    color: '#98A2B3',
+    fontSize: 12,
+    color: '#374151',
+  },
+  distanceText: {
+    fontSize: 12,
+    color: '#475467',
+    marginTop: 3,
   },
   priceRow: {
-    marginTop: 8,
+    marginTop: 4,
   },
   priceText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
-    color: '#19A2A7',
+    color: '#ff3b30',
   },
   emptyContainer: {
     alignItems: 'center',

@@ -1,16 +1,28 @@
-import { CHeader, IconX, Wrapper } from '@/components';
-import { CText } from '@/utils';
-import { useNavigation } from '@react-navigation/native';
-import { makeStyles, useTheme } from '@rneui/themed';
-import React, { useState } from 'react';
 import {
+  CHeader,
+  IconX,
+  Wrapper,
+  hideLoading,
+} from '@/components';
+import { DateRangePickerModal } from '@/components/picker/DateRangePickerModal';
+import { STORAGEKEY } from '@/constants';
+import { AppContext } from '@/contexts';
+import ApiService from '@/services/api-base';
+import { getObjectData } from '@/storages';
+import { CText } from '@/utils';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import { makeStyles, useTheme } from '@rneui/themed';
+import moment from 'moment';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-
 
 interface DateItem {
   dayName: string;
@@ -22,6 +34,7 @@ interface DateItem {
 interface ScheduleEvent {
   id: string;
   timeStart: string;
+  timeEnd: string;
   title: string;
   timeRange: string;
   address?: string;
@@ -29,70 +42,7 @@ interface ScheduleEvent {
   timeSlotHour: string;
 }
 
-const DATES: DateItem[] = [
-  { dayName: 'CN', dateStr: '22/01', fullDate: '2025-01-22' },
-  { dayName: 'T2', dateStr: '23/01', fullDate: '2025-01-23' },
-  { dayName: 'T3', dateStr: '24/01', fullDate: '2025-01-24' },
-  {
-    dayName: 'T4',
-    dateStr: '25/01',
-    fullDate: '2025-01-25',
-    hasSchedule: true,
-  },
-  {
-    dayName: 'T5',
-    dateStr: '26/01',
-    fullDate: '2025-01-26',
-    hasSchedule: true,
-  },
-  { dayName: 'T6', dateStr: '27/01', fullDate: '2025-01-27' },
-  { dayName: 'T7', dateStr: '28/01', fullDate: '2025-01-28' },
-];
-
-const SCHEDULE_DATA: ScheduleEvent[] = [
-  {
-    id: '1',
-    timeSlotHour: '07:00',
-    timeStart: '07:00',
-    title: 'Tắm bé - Massage',
-    timeRange: '07:00 - 07:55',
-    address: '344 Phạm Ngũ Lão, Cầu Kho, Quận 1, TP.HCM',
-    bgColor: '#E0F2FE',
-  },
-  {
-    id: '2',
-    timeSlotHour: '08:00',
-    timeStart: '08:00',
-    title: 'Vệ sinh vết thương',
-    timeRange: '08:00 - 9:30',
-    address: '344 Phạm Ngũ Lão, Cầu Kho, Quận 1, TP.HCM',
-    bgColor: '#E8F8F0',
-  },
-  {
-    id: '3',
-    timeSlotHour: '10:00',
-    timeStart: '10:00',
-    title: 'Tắm bé',
-    timeRange: '10:00 - 10:30',
-    bgColor: '#FFF1F2',
-  },
-  {
-    id: '4',
-    timeSlotHour: '12:00',
-    timeStart: '12:00',
-    title: 'Hỗ trợ khâu vết thương',
-    timeRange: '12:00 - 12:55',
-    bgColor: '#FEFBE8',
-  },
-  {
-    id: '5',
-    timeSlotHour: '13:00',
-    timeStart: '13:00',
-    title: 'Hỗ trợ vệ sinh cá nhân',
-    timeRange: '13:00 - 13:45',
-    bgColor: '#E0F2FE',
-  },
-];
+const BG_COLORS = ['#E0F2FE', '#E8F8F0', '#FFF1F2', '#FEFBE8'];
 
 const TIMELINE_HOURS = [
   '07:00',
@@ -103,199 +53,388 @@ const TIMELINE_HOURS = [
   '12:00',
   '13:00',
   '14:00',
+  '15:00',
+  '16:00',
+  '17:00',
+  '18:00',
+  '19:00',
+  '20:00',
+  '21:00',
 ];
 
 const useStyles = makeStyles(({ colors }) =>
   StyleSheet.create({
     container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  searchBox: {
-    height: 42,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.cEAECF0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 14,
-    color: colors.c1D2939,
-    paddingVertical: 0,
-  },
-  // Calendar header
-  monthHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  monthTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.c1D2939,
-  },
-  // Date strip
-  dateStripContainer: {
-    paddingHorizontal: 12,
-    marginBottom: 16,
-  },
-  dateStripContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  dateBox: {
-    width: 46,
-    height: 58,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.cEAECF0,
-    backgroundColor: colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 3,
-  },
-  dateBoxSelected: {
-    borderColor: colors.primary,
-    borderWidth: 1.5,
-  },
-  dayNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  dayNameText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.c344054,
-  },
-  dayNameTextSelected: {
-    color: colors.primary,
-  },
-  orangeDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: '#F79009',
-    marginLeft: 3,
-  },
-  dateNumText: {
-    fontSize: 11,
-    color: colors.c98A2B3,
-    fontWeight: '500',
-  },
-  dateNumTextSelected: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  // Timeline Section
-  timelineScroll: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  timelineScrollContent: {
-    paddingBottom: 40,
-  },
-  timelineRow: {
-    flexDirection: 'row',
-    marginBottom: 14,
-    minHeight: 52,
-  },
-  timeLabelCol: {
-    width: 56,
-    paddingTop: 4,
-  },
-  timeLabelText: {
-    fontSize: 13,
-    color: colors.c344054,
-    fontWeight: '500',
-  },
-  cardCol: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  // Event Card
-  eventCard: {
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  eventTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-  eventTitleText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.c1D2939,
-  },
-  eventTimeText: {
-    fontSize: 13,
-    color: colors.c667085,
-    fontWeight: '500',
-    marginLeft: 6,
-  },
-  eventAddressText: {
-    fontSize: 12,
-    color: colors.c667085,
-    marginTop: 6,
-    lineHeight: 16,
-  },
-  eventAddressTimeOnly: {
-    fontSize: 12,
-    color: colors.c667085,
-    marginTop: 4,
-    lineHeight: 16,
-  },
-
-  // Current time line
-  currentTimeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  orangeDotCurrent: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#F97066',
-    marginRight: 6,
-  },
-  currentTimeLine: {
-    flex: 1,
-    height: 1.5,
-    backgroundColor: '#F97066',
-  },
-  })
+      flex: 1,
+      backgroundColor: colors.white,
+    },
+    searchContainer: {
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      paddingBottom: 8,
+    },
+    searchBox: {
+      height: 42,
+      backgroundColor: '#F9FAFB',
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.cEAECF0,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+    },
+    searchInput: {
+      flex: 1,
+      marginLeft: 8,
+      fontSize: 14,
+      color: colors.c1D2939,
+      paddingVertical: 0,
+    },
+    // Calendar header
+    monthHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    monthTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.c1D2939,
+    },
+    // Date strip
+    dateStripContainer: {
+      paddingHorizontal: 12,
+      marginBottom: 16,
+    },
+    dateStripContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    dateBox: {
+      width: 46,
+      height: 58,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.cEAECF0,
+      backgroundColor: colors.white,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginHorizontal: 3,
+    },
+    dateBoxSelected: {
+      borderColor: colors.primary,
+      borderWidth: 1.5,
+    },
+    dayNameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 2,
+    },
+    dayNameText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.c344054,
+    },
+    dayNameTextSelected: {
+      color: colors.primary,
+    },
+    orangeDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 2.5,
+      backgroundColor: '#F79009',
+      marginLeft: 3,
+    },
+    dateNumText: {
+      fontSize: 11,
+      color: colors.c98A2B3,
+      fontWeight: '500',
+    },
+    dateNumTextSelected: {
+      color: colors.primary,
+      fontWeight: '600',
+    },
+    // Timeline Section
+    timelineScroll: {
+      flex: 1,
+      paddingHorizontal: 16,
+    },
+    timelineScrollContent: {
+      paddingBottom: 40,
+    },
+    timelineRow: {
+      flexDirection: 'row',
+      marginBottom: 14,
+      minHeight: 52,
+    },
+    timeLabelCol: {
+      width: 56,
+      paddingTop: 4,
+    },
+    timeLabelText: {
+      fontSize: 13,
+      color: colors.c344054,
+      fontWeight: '500',
+    },
+    cardCol: {
+      flex: 1,
+      justifyContent: 'center',
+    },
+    // Event Card
+    eventCard: {
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      marginBottom: 4,
+    },
+    eventTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+    },
+    eventTitleText: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.c1D2939,
+    },
+    eventTimeText: {
+      fontSize: 13,
+      color: colors.c667085,
+      fontWeight: '500',
+      marginLeft: 6,
+    },
+    eventAddressText: {
+      fontSize: 12,
+      color: colors.c667085,
+      marginTop: 6,
+      lineHeight: 16,
+    },
+    eventAddressTimeOnly: {
+      fontSize: 12,
+      color: colors.c667085,
+      marginTop: 4,
+      lineHeight: 16,
+    },
+    // Current time line
+    currentTimeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 4,
+    },
+    orangeDotCurrent: {
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: '#F97066',
+      marginRight: 6,
+    },
+    currentTimeLine: {
+      flex: 1,
+      height: 1.5,
+      backgroundColor: '#F97066',
+    },
+    loadingWrap: {
+      paddingVertical: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emptyWrap: {
+      paddingVertical: 48,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emptyText: {
+      marginTop: 12,
+      fontSize: 14,
+      color: colors.c667085 || '#667085',
+      textAlign: 'center',
+    },
+  }),
 );
 
 export const WorkScheduleScreen: React.FC = () => {
   const styles = useStyles();
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const { user } = useContext<any>(AppContext) || {};
   const {
     theme: { colors },
   } = useTheme();
 
-  const [searchText, setSearchText] = useState('');
-  const [selectedDate, setSelectedDate] = useState('2025-01-25');
+  const channelId = user?.channel_id || route.params?.channelId;
+
+  // Selected date (Defaults to current date YYYY-MM-DD)
+  const [selectedDate, setSelectedDate] = useState<string>(moment().format('YYYY-MM-DD'));
+  const [datePickerVisible, setDatePickerVisible] = useState<boolean>(false);
+  const [searchText, setSearchText] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
+  // Raw appointments from API
+  const [appointments, setAppointments] = useState<any[]>([]);
+
+  // Fetch appointments from API
+  const fetchAppointments = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setIsLoading(true);
+    }
+    try {
+      let header = ApiService.getAuthorizationHeader();
+      if (!header || header === 'Bearer ' || header === 'Bearer undefined') {
+        const jwtToken: any = await getObjectData(STORAGEKEY.JWT_TOKEN);
+        const token = jwtToken?.access_token || jwtToken?.accessToken;
+        if (token) {
+          ApiService.setAuthorizationHeader(token);
+        }
+      }
+
+      const param: any = {
+        limit: 100,
+        offset: 0,
+        sort: 'date',
+      };
+
+      let res: any = await ApiService.getHistoryBookings(param);
+
+      if (!res?.ok && res?.status === 401) {
+        const jwtToken: any = await getObjectData(STORAGEKEY.JWT_TOKEN);
+        const token = jwtToken?.access_token || jwtToken?.accessToken;
+        if (token) {
+          ApiService.setAuthorizationHeader(token);
+          res = await ApiService.getHistoryBookings(param);
+        }
+      }
+
+      console.log('[WorkScheduleScreen] getHistoryBookings res:', res);
+
+      if (res?.ok) {
+        const items: any[] =
+          res?.data?.items ||
+          res?.data?.result?.items ||
+          res?.data?.result?.item ||
+          (Array.isArray(res?.data) ? res.data : []) ||
+          [];
+        setAppointments(items);
+      }
+    } catch (err) {
+      console.warn('[WorkScheduleScreen] fetchAppointments error:', err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      hideLoading(true);
+      fetchAppointments(true);
+    }, [fetchAppointments]),
+  );
+
+  const onRefresh = () => {
+    setIsRefreshing(true);
+    fetchAppointments(false);
+  };
+
+  // Generate 7 days of the week around selectedDate
+  const datesStrip: DateItem[] = useMemo(() => {
+    const base = moment(selectedDate).isValid() ? moment(selectedDate) : moment();
+    const startOfWeek = base.clone().startOf('week'); // Sunday
+    const list: DateItem[] = [];
+    const vnDayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+
+    for (let i = 0; i < 7; i++) {
+      const cur = startOfWeek.clone().add(i, 'days');
+      const fullDate = cur.format('YYYY-MM-DD');
+      const dateStr = cur.format('DD/MM');
+      const dayName = vnDayNames[cur.day()];
+
+      // Check if this date has any appointment
+      const hasSchedule = appointments.some(appt => {
+        if (!appt?.date) return false;
+        return moment(appt.date).isSame(cur, 'day');
+      });
+
+      list.push({
+        dayName,
+        dateStr,
+        fullDate,
+        hasSchedule,
+      });
+    }
+
+    return list;
+  }, [selectedDate, appointments]);
+
+  // Month header text: e.g. "Tháng 01/2025" or "Tháng 09/2026"
+  const monthTitle = useMemo(() => {
+    const m = moment(selectedDate).isValid() ? moment(selectedDate) : moment();
+    return `Tháng ${m.format('MM/YYYY')}`;
+  }, [selectedDate]);
+
+  // Map API appointments to ScheduleEvents on selectedDate
+  const eventsForSelectedDate: ScheduleEvent[] = useMemo(() => {
+    const filtered = appointments.filter(item => {
+      if (!item?.date) return false;
+      return moment(item.date).isSame(moment(selectedDate), 'day');
+    });
+
+    if (filtered.length > 0) {
+      return filtered.map((item, idx) => {
+        const startM = moment(item.date);
+        const duration = Number(item.duration) || 60;
+        const endM = startM.clone().add(duration, 'minutes');
+        const timeStart = startM.format('HH:mm');
+        const timeEnd = endM.format('HH:mm');
+        const timeSlotHour = `${startM.format('HH')}:00`;
+
+        const title =
+          item.package?.name ||
+          item.package_name ||
+          item.name ||
+          item.title ||
+          'Dịch vụ y tế';
+
+        const address =
+          item.address ||
+          item.customer_address ||
+          item.user?.address ||
+          item.patient_address ||
+          '';
+
+        const bgColor = BG_COLORS[idx % BG_COLORS.length];
+
+        return {
+          id: String(item.id || item._id || idx),
+          timeSlotHour,
+          timeStart,
+          timeEnd,
+          title,
+          timeRange: `${timeStart} - ${timeEnd}`,
+          address,
+          bgColor,
+        };
+      });
+    }
+
+    return [];
+  }, [appointments, selectedDate]);
 
   // Filter events based on search
-  const filteredEvents = SCHEDULE_DATA.filter(item =>
-    item.title.toLowerCase().includes(searchText.toLowerCase()) ||
-    (item.address && item.address.toLowerCase().includes(searchText.toLowerCase())),
-  );
+  const filteredEvents = useMemo(() => {
+    if (!searchText.trim()) return eventsForSelectedDate;
+    const q = searchText.toLowerCase().trim();
+    return eventsForSelectedDate.filter(
+      item =>
+        item.title.toLowerCase().includes(q) ||
+        (item.address && item.address.toLowerCase().includes(q)),
+    );
+  }, [eventsForSelectedDate, searchText]);
+
+  const isToday = moment(selectedDate).isSame(moment(), 'day');
+  const currentHourString = `${moment().format('HH')}:00`;
 
   return (
     <Wrapper style={styles.container}>
@@ -340,8 +479,11 @@ export const WorkScheduleScreen: React.FC = () => {
 
       {/* Month Header */}
       <View style={styles.monthHeader}>
-        <CText style={styles.monthTitle}>Tháng 01/2025</CText>
-        <TouchableOpacity activeOpacity={0.7}>
+        <CText style={styles.monthTitle}>{monthTitle}</CText>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => setDatePickerVisible(true)}
+        >
           <IconX
             type="ionicons"
             name="calendar-outline"
@@ -358,7 +500,7 @@ export const WorkScheduleScreen: React.FC = () => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.dateStripContent}
         >
-          {DATES.map(item => {
+          {datesStrip.map(item => {
             const isSelected = item.fullDate === selectedDate;
             return (
               <TouchableOpacity
@@ -400,83 +542,105 @@ export const WorkScheduleScreen: React.FC = () => {
         style={styles.timelineScroll}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.timelineScrollContent}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+        }
       >
-        {TIMELINE_HOURS.map(hour => {
-          const matchedEvent = filteredEvents.find(
-            ev => ev.timeSlotHour === hour,
-          );
+        {isLoading && !isRefreshing && (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
+        )}
 
-          if (hour === '11:00') {
+        {!isLoading && filteredEvents.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <IconX
+              type="ionicons"
+              name="calendar-outline"
+              size={56}
+              color={colors.cD0D5DD || '#D0D5DD'}
+            />
+            <CText style={styles.emptyText}>
+              {searchText
+                ? 'Không tìm thấy lịch làm việc phù hợp'
+                : 'Chưa có lịch làm việc trong ngày này'}
+            </CText>
+          </View>
+        ) : (
+          TIMELINE_HOURS.map(hour => {
+            const matchedEvents = filteredEvents.filter(
+              ev => ev.timeSlotHour === hour,
+            );
+            const isCurrentSlot = isToday && hour === currentHourString;
+
             return (
-              <React.Fragment key={hour}>
-                <View style={styles.timelineRow}>
-                  <View style={styles.timeLabelCol}>
-                    <CText style={styles.timeLabelText}>11:00</CText>
-                  </View>
-                  <View style={styles.cardCol}>
+              <View key={hour} style={styles.timelineRow}>
+                <View style={styles.timeLabelCol}>
+                  <CText style={styles.timeLabelText}>{hour}</CText>
+                </View>
+
+                <View style={styles.cardCol}>
+                  {/* Red Current Time Line if viewing today and matching current hour */}
+                  {isCurrentSlot && (
                     <View style={styles.currentTimeRow}>
                       <View style={styles.orangeDotCurrent} />
                       <View style={styles.currentTimeLine} />
                     </View>
-                  </View>
-                </View>
-              </React.Fragment>
-            );
-          }
+                  )}
 
-          if (matchedEvent) {
-            return (
-              <View key={hour} style={styles.timelineRow}>
-                <View style={styles.timeLabelCol}>
-                  <CText style={styles.timeLabelText}>
-                    {matchedEvent.timeStart}
-                  </CText>
-                </View>
+                  {/* Event Cards */}
+                  {matchedEvents.map(ev => (
+                    <View
+                      key={ev.id}
+                      style={[
+                        styles.eventCard,
+                        { backgroundColor: ev.bgColor },
+                        matchedEvents.length > 1 && { marginBottom: 8 },
+                      ]}
+                    >
+                      <View style={styles.eventTitleRow}>
+                        <CText style={styles.eventTitleText}>
+                          {ev.title}
+                        </CText>
+                        <CText style={styles.eventTimeText}>
+                          {ev.address ? `| ${ev.timeRange}` : ''}
+                        </CText>
+                      </View>
 
-                <View style={styles.cardCol}>
-                  <View
-                    style={[
-                      styles.eventCard,
-                      { backgroundColor: matchedEvent.bgColor },
-                    ]}
-                  >
-                    <View style={styles.eventTitleRow}>
-                      <CText style={styles.eventTitleText}>
-                        {matchedEvent.title}
-                      </CText>
-                      <CText style={styles.eventTimeText}>
-                        {matchedEvent.address ? `| ${matchedEvent.timeRange}` : ''}
-                      </CText>
+                      {!ev.address && (
+                        <CText style={styles.eventAddressTimeOnly}>
+                          {ev.timeRange}
+                        </CText>
+                      )}
+
+                      {Boolean(ev.address) && (
+                        <CText style={styles.eventAddressText}>
+                          {ev.address}
+                        </CText>
+                      )}
                     </View>
-
-                    {!matchedEvent.address && (
-                      <CText style={styles.eventAddressTimeOnly}>
-                        {matchedEvent.timeRange}
-                      </CText>
-                    )}
-
-
-                    {matchedEvent.address && (
-                      <CText style={styles.eventAddressText}>
-                        {matchedEvent.address}
-                      </CText>
-                    )}
-                  </View>
+                  ))}
                 </View>
               </View>
             );
-          }
-
-          return (
-            <View key={hour} style={styles.timelineRow}>
-              <View style={styles.timeLabelCol}>
-                <CText style={styles.timeLabelText}>{hour}</CText>
-              </View>
-              <View style={styles.cardCol} />
-            </View>
-          );
-        })}
+          })
+        )}
       </ScrollView>
+
+      {/* Date Picker Modal to pick any date */}
+      <DateRangePickerModal
+        visible={datePickerVisible}
+        title="Chọn ngày"
+        mode="single"
+        startDate={selectedDate}
+        endDate={selectedDate}
+        onClose={() => setDatePickerVisible(false)}
+        onConfirm={({ startDate }) => {
+          if (startDate) {
+            setSelectedDate(startDate);
+          }
+        }}
+      />
     </Wrapper>
   );
 };

@@ -1,4 +1,4 @@
-import { ActionSheet, CHeader, IconX, ReCaptcha, Wrapper } from '@/components';
+import { ActionSheet, CHeader, IconX, ReCaptcha, Wrapper, hideLoading, showLoading } from '@/components';
 import { OTPType } from '@/components/modal-otp';
 import {
   ScreenWidth,
@@ -21,6 +21,7 @@ import { makeStyles, useTheme } from '@rneui/themed';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Keyboard,
@@ -100,9 +101,22 @@ const OTP = ({
   }, [resetTimer]);
 
   useEffect(() => {
+    if (otpVerify.loading) {
+      showLoading(t('auth.verifyingOTP', 'Đang xác minh OTP...'));
+    }
+  }, [otpVerify.loading]);
+
+  useEffect(() => {
+    return () => {
+      hideLoading();
+    };
+  }, []);
+
+  useEffect(() => {
     const processVerifyOTP = () => {
       if (!otpVerify.loading) {
         if (otpVerify.data) {
+          hideLoading();
           const { status, result }: any = otpVerify.data;
           if (result?.id) {
             if (result.username) {
@@ -110,15 +124,17 @@ const OTP = ({
               closeModal();
             } else {
               // Onboard
+              updateLoginData('otpCode', '');
               gotoOnboard(result);
             }
           } else if (statusSuccess(status)) {
             console.log('Cannot get access_token');
+            updateLoginData('otpCode', '');
           }
-          updateLoginData('otpCode', '');
           dispatch(resetAuth());
           dispatch(resetOTP(null));
         } else if (otpVerify.error) {
+          hideLoading();
           setErrorOTP(logError(otpVerify.error, '', true));
           dispatch(resetOTP(null));
         }
@@ -189,6 +205,7 @@ const OTP = ({
 
   //ACTION
   const handleConfirmOTP = async (valueOTP: string) => {
+    if (otpVerify.loading) return;
     const deviceId = await getDeviceId();
     const bodyData = {
       phone: dataLogin.phoneCode.value + dataLogin.phoneNumber,
@@ -201,6 +218,7 @@ const OTP = ({
   };
 
   const onValueChange = async (value: string, { isFulfilled }: any) => {
+    if (otpVerify.loading) return;
     if (errOTP) {
       setErrorOTP('');
     }
@@ -253,6 +271,14 @@ const OTP = ({
             restrictToNumbers={true}
           />
         </View>
+        {otpVerify.loading && (
+          <Row center style={screenStyles.mT10}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <CText h6 color={colors.primary} style={screenStyles.mL5}>
+              {t('auth.verifyingOTP', 'Đang xác minh OTP...')}
+            </CText>
+          </Row>
+        )}
         {errOTP ? (
           <Row>
             <CText h5 w400 style={styles.txtError}>
@@ -287,10 +313,10 @@ const OTP = ({
         </Row>
         <TouchableOpacity
           onPress={onResendOTP}
-          disabled={timerCount !== 0}
+          disabled={timerCount !== 0 || otpVerify.loading}
           style={[
             screenStyles.centerWrap,
-            timerCount !== 0 && { opacity: 0.5 },
+            (timerCount !== 0 || otpVerify.loading) && { opacity: 0.5 },
           ]}
         >
           <CText h5 w600 color={colors.primary} style={screenStyles.mT15}>

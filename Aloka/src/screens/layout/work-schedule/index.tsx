@@ -1,9 +1,10 @@
 import { CHeader, IconX, Wrapper } from '@/components';
 import { CText } from '@/utils';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { makeStyles, useTheme } from '@rneui/themed';
-import React from 'react';
+import React, { useContext } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { AppContext } from '@/contexts';
 
 interface MenuItem {
   id: string;
@@ -18,45 +19,50 @@ interface MenuItem {
 const useStyles = makeStyles(({ colors }) =>
   StyleSheet.create({
     container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-  itemContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-  },
-  iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  itemTitle: {
-    flex: 1,
-    marginLeft: 14,
-    fontSize: 15,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.cEAECF0,
-    marginLeft: 50,
-  },
+      flex: 1,
+      backgroundColor: colors.white,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 16,
+      paddingTop: 8,
+    },
+    itemContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+    },
+    iconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    itemTitle: {
+      flex: 1,
+      marginLeft: 14,
+      fontSize: 15,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.cEAECF0,
+      marginLeft: 50,
+    },
   })
 );
 
 export const WorkScheduleManageScreen: React.FC = () => {
   const styles = useStyles();
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const { user } = useContext<any>(AppContext) || {};
+
   const {
     theme: { colors },
   } = useTheme();
+
+  const channelId = user?.channel_id;
 
   const menuItems: MenuItem[] = [
     {
@@ -81,7 +87,7 @@ export const WorkScheduleManageScreen: React.FC = () => {
     if (item.onPress) {
       item.onPress();
     } else if (item.route) {
-      navigation.navigate(item.route);
+      navigation.navigate(item.route, { channelId });
     }
   };
 

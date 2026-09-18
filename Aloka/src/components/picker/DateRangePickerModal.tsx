@@ -14,6 +14,7 @@ import { CText } from '@/utils';
 export interface DateRangePickerModalProps {
   visible: boolean;
   title?: string;
+  mode?: 'range' | 'single';
   startDate?: string; // Format 'YYYY-MM-DD'
   endDate?: string;   // Format 'YYYY-MM-DD'
   onClose: () => void;
@@ -27,27 +28,34 @@ export interface DateRangePickerModalProps {
 
 const WEEK_DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
-// Generate months from current month + 6 months
-const MONTHS_TO_RENDER = [
-  '2026-08',
-  '2026-09',
-  '2026-10',
-  '2026-11',
-  '2026-12',
-  '2027-01',
-];
+// Dynamically generate months from current month or selected date
+const getMonthsToRender = (baseDate?: string) => {
+  const base = baseDate && moment(baseDate).isValid() ? moment(baseDate) : moment();
+  const start = base.clone().startOf('month');
+  const months: string[] = [];
+  for (let i = 0; i < 12; i++) {
+    months.push(start.clone().add(i, 'months').format('YYYY-MM'));
+  }
+  return months;
+};
 
 export const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({
   visible,
   title = 'Chọn khoảng thời gian',
-  startDate: initStartDate = '2026-08-27',
-  endDate: initEndDate = '2026-09-30',
+  mode = 'range',
+  startDate: initStartDate,
+  endDate: initEndDate,
   onClose,
   onConfirm,
 }) => {
   const insets = useSafeAreaInsets();
-  const [selectedStart, setSelectedStart] = useState<string | null>(initStartDate);
-  const [selectedEnd, setSelectedEnd] = useState<string | null>(initEndDate);
+  const [selectedStart, setSelectedStart] = useState<string | null>(initStartDate || null);
+  const [selectedEnd, setSelectedEnd] = useState<string | null>(initEndDate || null);
+
+  const monthsToRender = useMemo(
+    () => getMonthsToRender(initStartDate),
+    [initStartDate],
+  );
 
   React.useEffect(() => {
     if (visible) {
@@ -57,6 +65,11 @@ export const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({
   }, [visible, initStartDate, initEndDate]);
 
   const handleDayPress = (dateStr: string) => {
+    if (mode === 'single') {
+      setSelectedStart(dateStr);
+      setSelectedEnd(dateStr);
+      return;
+    }
     if (!selectedStart || (selectedStart && selectedEnd)) {
       // First click: select new start date
       setSelectedStart(dateStr);
@@ -73,6 +86,9 @@ export const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({
   };
 
   const displayFormattedText = useMemo(() => {
+    if (mode === 'single' && selectedStart) {
+      return moment(selectedStart).format('D [thg] M, YYYY');
+    }
     if (selectedStart && selectedEnd) {
       const s = moment(selectedStart);
       const e = moment(selectedEnd);
@@ -83,7 +99,7 @@ export const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({
       return `${s.format('D [thg] M')} - Chọn ngày kết thúc`;
     }
     return 'Chọn khoảng thời gian';
-  }, [selectedStart, selectedEnd]);
+  }, [selectedStart, selectedEnd, mode]);
 
   const handleConfirm = () => {
     if (!selectedStart) return;
@@ -167,7 +183,7 @@ export const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({
           ]}
           showsVerticalScrollIndicator={false}
         >
-          {MONTHS_TO_RENDER.map(monthStr => {
+          {monthsToRender.map(monthStr => {
             const m = moment(monthStr, 'YYYY-MM');
             const monthLabel = `Tháng ${m.format('M YYYY')}`;
             const daysInMonth = m.daysInMonth();

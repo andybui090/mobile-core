@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Alert,
   Linking,
@@ -8,13 +8,16 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { makeStyles, useTheme } from '@rneui/themed';
 import { useTranslation } from 'react-i18next';
-import { IconX, Wrapper } from '@/components';
+import moment from 'moment';
+import { IconX, Wrapper, hideLoading, showLoading } from '@/components';
 import { images } from '@/configs/image';
 import { CText } from '@/utils';
-import { rootRoute } from '@/constants';
+import { PAGINATION, STORAGEKEY, rootRoute } from '@/constants';
+import { getObjectData } from '@/storages';
+import ApiService, { getApiErrorMessage, isApiSuccess } from '@/services/api-base';
 import socketService from '@/socketio';
 import {
   MainTab,
@@ -28,61 +31,115 @@ import {
 
 export * from './components/types';
 
-const INITIAL_REQUESTS: WorkRequestItem[] = [
-  {
-    id: 'req-1',
-    customerName: 'Thiên Ân',
-    customerAvatar: images.common.avatar_thien_an,
-    customerPhone: '0901234567',
-    serviceTitle: 'Tắm bé - Massage',
-    autoCancelTime: '01:00',
-    note: 'Đến gọi trước, bé bị dị ứng xà bông .....',
-    date: 'Thứ 4, Ngày 25/01/2026',
-    time: '15:30 PM - 17:00 PM',
-    address: '44/7 Đường N4, P. Tân Hưng, Quận 7, TP. HCM',
-    amount: '219.000đ',
-    status: 'REQUEST',
+export enum StatusAppointment {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  ON_THE_WAY = 'ON_THE_WAY',
+  ARRIVED = 'ARRIVED',
+  COMPLETED = 'COMPLETED',
+  CANCELED = 'CANCELED',
+  REJECTED = 'REJECTED',
+}
+
+const TAB_CONFIG: Record<SubStatus, { fq: string; fqin?: string; sort: string }> = {
+  REQUEST: {
+    fq: 'status:PENDING,type:OFFLINE',
+    sort: 'date',
   },
-  {
-    id: 'req-2',
-    customerName: 'Thanh Thúy',
-    customerAvatar: images.common.img_default,
-    customerPhone: '0909876543',
-    serviceTitle: 'Tắm bé - Massage',
-    date: 'Thứ 4, Ngày 25/01/2026',
-    time: '15:30 PM - 17:00 PM',
-    address: '44/7 Đường N4, P. Tân Hưng, Quận 7, TP. HCM',
-    amount: '219.000đ',
-    status: 'REQUEST',
+  SCHEDULE: {
+    fq: 'type:OFFLINE',
+    fqin: 'status:CONFIRMED,ON_THE_WAY,ARRIVED',
+    sort: 'date',
   },
-  {
-    id: 'sch-1',
-    customerName: 'Thiên Ân',
-    customerAvatar: images.common.avatar_thien_an,
-    customerPhone: '0901234567',
-    serviceTitle: 'Tắm bé - Massage',
-    note: 'Đến gọi trước, bé bị dị ứng xà bông .....',
-    date: 'Thứ 4, Ngày 25/01/2026',
-    time: '15:30 PM - 17:00 PM',
-    address: '44/7 Đường N4, P. Tân Hưng, Quận 7, TP. HCM',
-    amount: '219.000đ',
-    status: 'SCHEDULE',
-    isMoving: true,
+  COMPLETED: {
+    fq: 'status:COMPLETED,type:OFFLINE',
+    sort: '-date',
   },
-  {
-    id: 'sch-2',
-    customerName: 'Thanh Thúy',
-    customerAvatar: images.common.img_default,
-    customerPhone: '0909876543',
-    serviceTitle: 'Tắm bé - Massage',
-    note: 'Đến nhà nhớ gọi trước',
-    date: 'Thứ 4, Ngày 25/01/2026',
-    time: '15:30 PM - 17:00 PM',
-    address: '44/7 Đường N4, P. Tân Hưng, Quận 7, TP. HCM',
-    amount: '219.000đ',
-    status: 'SCHEDULE',
+  CANCELLED: {
+    fq: 'type:OFFLINE',
+    fqin: 'status:CANCELED,REJECTED',
+    sort: '-date',
   },
-];
+};
+
+const formatVNDate = (isoString?: string) => {
+  if (!isoString) return '--/--/----';
+  const m = moment(isoString);
+  if (!m.isValid()) return '--/--/----';
+  const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+  return `${dayNames[m.day()]}, Ngày ${m.format('DD/MM/YYYY')}`;
+};
+
+const mapBookingToWorkItem = (item: any, currentTab: SubStatus): WorkRequestItem => {
+  const startM = item?.date ? moment(item.date) : moment();
+  const duration = Number(item?.duration) || 60;
+  const endM = startM.clone().add(duration, 'minutes');
+  const timeStr = `${startM.format('HH:mm')} - ${endM.format('HH:mm')}`;
+
+  const customer = item?.user || item?.customer || {};
+  const customerName =
+    customer.full_name || customer.name || item?.customer_name || 'Khách hàng';
+  const customerAvatar = customer.avatar || item?.customer_avatar;
+  const customerPhone = customer.phone || customer.phone_number || item?.phone || '';
+  const customerId = customer.id || customer._id || item?.user_id;
+
+  const serviceTitle =
+    item?.package?.name ||
+    item?.package_name ||
+    item?.name ||
+    item?.title ||
+    'Dịch vụ y tế';
+
+  const note = item?.note || item?.symptom_note || item?.notes || '';
+  const address =
+    item?.address ||
+    item?.customer_address ||
+    item?.user?.address ||
+    '';
+
+  const priceNum = Number(item?.price ?? item?.amount ?? item?.package?.price ?? 0);
+  const amount = priceNum > 0 ? `${priceNum.toLocaleString('vi-VN')}đ` : '0đ';
+
+  const appointmentStatus = String(item?.status || '').toUpperCase();
+  const isMoving = appointmentStatus === StatusAppointment.ON_THE_WAY;
+  const isArrived = appointmentStatus === StatusAppointment.ARRIVED;
+
+  return {
+    id: String(item?.id || item?._id || Math.random()),
+    rawItem: item,
+    customerId: String(customerId || ''),
+    customerName,
+    customerAvatar,
+    customerPhone,
+    serviceTitle,
+    note,
+    date: formatVNDate(item?.date),
+    time: timeStr,
+    address,
+    amount,
+    status: currentTab,
+    appointmentStatus,
+    cancelReason: item?.cancel_reason || item?.reject_reason,
+    isMoving,
+    isArrived,
+  };
+};
+
+interface TabState {
+  items: WorkRequestItem[];
+  loading: boolean;
+  refreshing: boolean;
+  offset: number;
+  hasLoaded: boolean;
+  finalLoad: boolean;
+}
+
+const initialTabsData: Record<SubStatus, TabState> = {
+  REQUEST: { items: [], loading: true, refreshing: false, offset: 0, hasLoaded: false, finalLoad: false },
+  SCHEDULE: { items: [], loading: true, refreshing: false, offset: 0, hasLoaded: false, finalLoad: false },
+  COMPLETED: { items: [], loading: true, refreshing: false, offset: 0, hasLoaded: false, finalLoad: false },
+  CANCELLED: { items: [], loading: true, refreshing: false, offset: 0, hasLoaded: false, finalLoad: false },
+};
 
 const useStyles = makeStyles(({ colors }) =>
   StyleSheet.create({
@@ -164,6 +221,7 @@ const useStyles = makeStyles(({ colors }) =>
       shadowOpacity: 0.15,
       shadowRadius: 4,
       elevation: 4,
+      zIndex: 999,
     },
     toastSuccess: {
       backgroundColor: '#039855',
@@ -191,7 +249,7 @@ export const PartnerWorkScreen: React.FC = () => {
 
   const [mainTab, setMainTab] = useState<MainTab>('INFO');
   const [subStatus, setSubStatus] = useState<SubStatus>('REQUEST');
-  const [requestsList, setRequestsList] = useState<WorkRequestItem[]>(INITIAL_REQUESTS);
+  const [tabsData, setTabsData] = useState<Record<SubStatus, TabState>>(initialTabsData);
 
   // Toast feedback state
   const [toastMessage, setToastMessage] = useState<{
@@ -212,7 +270,137 @@ export const PartnerWorkScreen: React.FC = () => {
     }, 3000);
   };
 
+  const fetchBookingsByTab = useCallback(
+    async (targetTab: SubStatus, offset = 0, isRefresh = false) => {
+      setTabsData(prev => {
+        const current = prev[targetTab] || initialTabsData[targetTab];
+        return {
+          ...prev,
+          [targetTab]: {
+            ...current,
+            loading: offset === 0 && !isRefresh && !current.hasLoaded,
+            refreshing: isRefresh,
+          },
+        };
+      });
+
+      try {
+        let header = ApiService.getAuthorizationHeader();
+        if (!header || header === 'Bearer ' || header === 'Bearer undefined') {
+          const jwtToken: any = await getObjectData(STORAGEKEY.JWT_TOKEN);
+          const token = jwtToken?.access_token || jwtToken?.accessToken;
+          if (token) {
+            ApiService.setAuthorizationHeader(token);
+          }
+        }
+
+        const cfg = TAB_CONFIG[targetTab];
+        const param: any = {
+          limit: PAGINATION.ITEMS_20 || 20,
+          offset,
+          fq: cfg.fq,
+          sort: cfg.sort,
+        };
+        if (cfg.fqin) {
+          param.fqin = cfg.fqin;
+        }
+
+        let res: any = await ApiService.getHistoryBookings(param);
+
+        if (!res?.ok && res?.status === 401) {
+          const jwtToken: any = await getObjectData(STORAGEKEY.JWT_TOKEN);
+          const token = jwtToken?.access_token || jwtToken?.accessToken;
+          if (token) {
+            ApiService.setAuthorizationHeader(token);
+            res = await ApiService.getHistoryBookings(param);
+          }
+        }
+
+        if (res?.ok) {
+          const rawItems: any[] =
+            res?.data?.items ||
+            res?.data?.result?.items ||
+            res?.data?.result?.item ||
+            (Array.isArray(res?.data) ? res.data : []) ||
+            [];
+
+          const mapped: WorkRequestItem[] = rawItems.map(item =>
+            mapBookingToWorkItem(item, targetTab),
+          );
+
+          const isEnd = mapped.length < (PAGINATION.ITEMS_20 || 20);
+
+          setTabsData(prev => {
+            const current = prev[targetTab] || initialTabsData[targetTab];
+            return {
+              ...prev,
+              [targetTab]: {
+                items: offset === 0 ? mapped : [...current.items, ...mapped],
+                finalLoad: isEnd,
+                offset,
+                hasLoaded: true,
+                loading: false,
+                refreshing: false,
+              },
+            };
+          });
+        } else {
+          setTabsData(prev => {
+            const current = prev[targetTab] || initialTabsData[targetTab];
+            return {
+              ...prev,
+              [targetTab]: {
+                ...current,
+                loading: false,
+                refreshing: false,
+                hasLoaded: true,
+              },
+            };
+          });
+        }
+      } catch (err) {
+        console.warn('[PartnerWorkScreen] fetchBookingsByTab error:', err);
+        setTabsData(prev => {
+          const current = prev[targetTab] || initialTabsData[targetTab];
+          return {
+            ...prev,
+            [targetTab]: {
+              ...current,
+              loading: false,
+              refreshing: false,
+              hasLoaded: true,
+            },
+          };
+        });
+      } finally {
+      }
+    },
+    [],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      hideLoading(true);
+      fetchBookingsByTab(subStatus, 0, false);
+    }, [subStatus, fetchBookingsByTab]),
+  );
+
+  const handleSelectSubStatus = (status: SubStatus) => {
+    setSubStatus(status);
+    if (!tabsData[status]?.hasLoaded) {
+      fetchBookingsByTab(status, 0, false);
+    }
+  };
+
+  const handleRefresh = () => {
+    fetchBookingsByTab(subStatus, 0, true);
+  };
+
   const handleCall = (phoneNumber: string) => {
+    if (!phoneNumber) {
+      Alert.alert(t('common.notice', 'Thông báo'), 'Không tìm thấy số điện thoại khách hàng.');
+      return;
+    }
     Linking.openURL(`tel:${phoneNumber}`).catch(() => {
       Alert.alert(
         t('common.notice', 'Thông báo'),
@@ -224,57 +412,116 @@ export const PartnerWorkScreen: React.FC = () => {
   const handleOpenChat = async (
     name: string,
     avatar?: any,
-    roomIdOrCustomerId?: string,
-    isNewChat?: boolean,
+    jobId?: string,
     toUserId?: string,
+    rawItem?: any,
   ) => {
-    try {
-      if (!isNewChat && roomIdOrCustomerId) {
-        navigation.navigate('PartnerChatScreen', {
-          roomId: roomIdOrCustomerId,
-          name: name,
-          customerName: name,
-          avatar: avatar,
-          customerAvatar: avatar,
-          toUserId: toUserId,
-        });
-        return;
-      }
+    const packageInfo = rawItem?.package || {};
+    const packageId = packageInfo?.id || packageInfo?._id || rawItem?.package_id;
+    const orderId = rawItem?.id || rawItem?._id || jobId;
+    const targetId = toUserId || rawItem?.user?.id || rawItem?.customer_id;
 
+    try {
       showToast(`${t('partnerWork.startChatWith', 'Đang mở đoạn chat với')} ${name}...`, 'success');
       const room = await socketService.createRoom1vs1(
         name,
-        toUserId || roomIdOrCustomerId || `cust_${Date.now()}`,
+        String(targetId || `cust_${Date.now()}`),
         avatar,
+        {
+          media: 'text',
+          is_premium: 1,
+          is_chat: 1,
+          package_id: packageId,
+          order_id: orderId,
+        },
       );
+
+      const roomId = room?.id || room?.room_id;
+
       navigation.navigate('PartnerChatScreen', {
-        roomId: room.id,
-        name: name,
+        roomId,
+        name,
         customerName: name,
-        avatar: avatar,
+        avatar,
         customerAvatar: avatar,
-        isNewChat: !!isNewChat,
-        toUserId: toUserId,
+        toUserId: targetId,
+        packageId,
+        orderId,
       });
     } catch (e) {
       navigation.navigate('PartnerChatScreen', {
-        name: name,
+        name,
         customerName: name,
-        avatar: avatar,
+        avatar,
         customerAvatar: avatar,
-        isNewChat: !!isNewChat,
-        toUserId: toUserId,
+        toUserId: targetId,
+        packageId,
+        orderId,
       });
     }
   };
 
+  // Update booking status via ApiService
+  const handleUpdateBookingStatus = async (
+    jobId: string,
+    newStatus: StatusAppointment,
+    successMsg?: string,
+    cancelReason?: string,
+  ) => {
+    showLoading();
+    try {
+      const payload: any = {
+        id: jobId,
+        status: newStatus,
+      };
+      if (cancelReason) {
+        payload.cancel_reason = cancelReason;
+      }
+
+      const res: any = await ApiService.updateBookingStatus(payload);
+
+      if (isApiSuccess(res)) {
+        if (successMsg) {
+          showToast(successMsg, 'success');
+        }
+        fetchBookingsByTab(subStatus, 0, true);
+        setTabsData(prev => {
+          const updated: any = { ...prev };
+          (['REQUEST', 'SCHEDULE', 'COMPLETED', 'CANCELLED'] as SubStatus[]).forEach(tab => {
+            if (tab !== subStatus && updated[tab]) {
+              updated[tab] = { ...updated[tab], hasLoaded: false };
+            }
+          });
+          return updated;
+        });
+      } else {
+        const err = getApiErrorMessage(res, 'Không thể cập nhật trạng thái');
+        showToast(err, 'danger');
+      }
+    } catch (e: any) {
+      showToast(e?.message || 'Có lỗi xảy ra, vui lòng thử lại', 'danger');
+    } finally {
+      hideLoading();
+    }
+  };
+
   const handleAcceptJob = (jobId: string) => {
-    setRequestsList(prev =>
-      prev.map(item =>
-        item.id === jobId ? { ...item, status: 'SCHEDULE' as SubStatus } : item,
-      ),
+    Alert.alert(
+      t('partnerWork.confirmAcceptTitle', 'Tiếp nhận yêu cầu'),
+      t('partnerWork.confirmAcceptMsg', 'Bạn có muốn tiếp nhận yêu cầu đặt lịch này không?'),
+      [
+        { text: t('common.cancel', 'Hủy'), style: 'cancel' },
+        {
+          text: t('partnerWork.btnAccept', 'Chấp nhận'),
+          onPress: () =>
+            handleUpdateBookingStatus(
+              jobId,
+              StatusAppointment.CONFIRMED,
+              t('partnerWork.acceptSuccessToast', 'Đã nhận ca thành công! Xem trong Lịch hẹn.'),
+            ),
+        },
+      ],
     );
-    showToast(t('partnerWork.acceptSuccessToast', 'Đã nhận ca thành công! Xem trong Lịch hẹn.'), 'success');
   };
 
   const handleOpenRejectModal = (jobId: string) => {
@@ -299,33 +546,54 @@ export const PartnerWorkScreen: React.FC = () => {
         : REJECT_REASONS[selectedReasonIndex];
 
     if (selectedRejectJobId) {
-      setRequestsList(prev =>
-        prev.map(item =>
-          item.id === selectedRejectJobId
-            ? { ...item, status: 'CANCELLED' as SubStatus, cancelReason: reason }
-            : item,
-        ),
+      handleUpdateBookingStatus(
+        selectedRejectJobId,
+        StatusAppointment.REJECTED,
+        t('partnerWork.cancelSuccessToast', 'Đã từ chối lịch hẹn thành công! Xem trong Huỷ'),
+        reason,
       );
     }
 
     setIsRejectModalVisible(false);
-    showToast(t('partnerWork.cancelSuccessToast', 'Đã huỷ bỏ lịch hẹn thành công! Xem trong Huỷ'), 'danger');
   };
 
   const handleStartMoving = (jobId: string) => {
-    setRequestsList(prev =>
-      prev.map(item =>
-        item.id === jobId ? { ...item, isMoving: true } : item,
-      ),
+    handleUpdateBookingStatus(
+      jobId,
+      StatusAppointment.ON_THE_WAY,
+      t('partnerWork.movingToast', 'Đang di chuyển đến nhà khách hàng!'),
     );
-    showToast(t('partnerWork.movingToast', 'Đang di chuyển đến nhà khách hàng!'), 'success');
   };
 
   const handleConfirmArrived = (jobId: string) => {
-    showToast(t('partnerWork.arrivedToast', 'Đã xác nhận đến điểm hẹn thành công! Bắt đầu dịch vụ.'), 'success');
+    handleUpdateBookingStatus(
+      jobId,
+      StatusAppointment.ARRIVED,
+      t('partnerWork.arrivedToast', 'Đã xác nhận đến điểm hẹn thành công!'),
+    );
+  };
+
+  const handleCompleteJob = (jobId: string) => {
+    Alert.alert(
+      t('partnerWork.confirmCompleteTitle', 'Xác nhận hoàn thành'),
+      t('partnerWork.confirmCompleteMsg', 'Đánh dấu lịch hẹn này đã hoàn thành dịch vụ?'),
+      [
+        { text: t('common.cancel', 'Hủy'), style: 'cancel' },
+        {
+          text: t('common.agree', 'Đồng ý'),
+          onPress: () =>
+            handleUpdateBookingStatus(
+              jobId,
+              StatusAppointment.COMPLETED,
+              t('partnerWork.completeSuccessToast', 'Đã hoàn thành dịch vụ thành công!'),
+            ),
+        },
+      ],
+    );
   };
 
   const handleOpenExternalMap = (addressText: string) => {
+    if (!addressText) return;
     const encoded = encodeURIComponent(addressText);
     const url = Platform.select({
       ios: `maps:0,0?q=${encoded}`,
@@ -350,6 +618,8 @@ export const PartnerWorkScreen: React.FC = () => {
     }
     navigation.navigate(rootRoute, { screen: 'HomeTab' });
   };
+
+  const currentTabData = tabsData[subStatus] || initialTabsData[subStatus];
 
   return (
     <Wrapper style={styles.container}>
@@ -413,20 +683,26 @@ export const PartnerWorkScreen: React.FC = () => {
       {mainTab === 'INFO' ? (
         <WorkInfoTab
           subStatus={subStatus}
-          onSelectSubStatus={setSubStatus}
-          requestsList={requestsList}
+          onSelectSubStatus={handleSelectSubStatus}
+          requestsList={currentTabData.items}
+          isLoading={currentTabData.loading}
+          isRefreshing={currentTabData.refreshing}
+          onRefresh={handleRefresh}
           onCall={handleCall}
-          onChat={(name, avatar, jobId) => handleOpenChat(name, avatar, jobId, true)}
+          onChat={(name, avatar, jobId, toUserId, rawItem) =>
+            handleOpenChat(name, avatar, jobId, toUserId, rawItem)
+          }
           onOpenRejectModal={handleOpenRejectModal}
           onAcceptJob={handleAcceptJob}
           onStartMoving={handleStartMoving}
           onConfirmArrived={handleConfirmArrived}
+          onCompleteJob={handleCompleteJob}
           onOpenMap={handleOpenExternalMap}
         />
       ) : (
         <WorkChatTab
           onOpenChat={(name, avatar, roomId, toUserId) =>
-            handleOpenChat(name, avatar, roomId, false, toUserId)
+            handleOpenChat(name, avatar, roomId, toUserId)
           }
         />
       )}

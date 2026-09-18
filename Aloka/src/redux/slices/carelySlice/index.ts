@@ -5,7 +5,7 @@ interface CarelyState {
   carelyServiceData: responseProps;
   // carelyChildServiceData: responseProps;
   carelySearchData: responseProps;
-  // carelyRatingData: responseProps;
+  carelyRatingData: responseProps;
   // carelyPackageData: responseProps;
   // carelyDataRefund: responseProps;
   // carelyReviewData: responseProps;
@@ -27,11 +27,11 @@ const initialState: CarelyState = {
     data: undefined,
     error: undefined,
   },
-  // carelyRatingData: {
-  //   loading: false,
-  //   data: undefined,
-  //   error: undefined,
-  // },
+  carelyRatingData: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
   // carelyPackageData: {
   //   loading: false,
   //   data: undefined,
@@ -80,15 +80,15 @@ const carelySlice = createSlice({
     //     carelyChildServiceData.data = data;
     //     carelyChildServiceData.error = error;
     //   },
-    //   ratingCarely: (state, _action) => {
-    //     state.carelyRatingData.loading = true;
-    //   },
-    //   ratingCarelyCallback: (state, { payload: { data, error } }) => {
-    //     const { carelyRatingData } = state;
-    //     carelyRatingData.loading = false;
-    //     carelyRatingData.data = data;
-    //     carelyRatingData.error = error;
-    //   },
+    ratingCarely: (state, _action) => {
+      state.carelyRatingData.loading = true;
+    },
+    ratingCarelyCallback: (state, { payload: { data, error } }) => {
+      const { carelyRatingData } = state;
+      carelyRatingData.loading = false;
+      carelyRatingData.data = data;
+      carelyRatingData.error = error;
+    },
     //   getDetailPkgCarely: (state, _action) => {
     //     state.carelyPackageData.loading = true;
     //   },
@@ -116,32 +116,16 @@ const carelySlice = createSlice({
     //     carelyReviewData.data = data;
     //     carelyReviewData.error = error;
     //   },
-    //   resetCarely: state => {
-    //     const {
-    //       carelyChildServiceData,
-    //       carelyRatingData,
-    //       carelyPackageData,
-    //       carelyDataRefund,
-    //     } = state;
-    //     carelyChildServiceData.loading = false;
-    //     carelyChildServiceData.data = undefined;
-    //     carelyChildServiceData.error = undefined;
-
-    //     carelyRatingData.loading = false;
-    //     carelyRatingData.data = undefined;
-    //     carelyRatingData.error = undefined;
-
-    //     carelyPackageData.loading = false;
-    //     carelyPackageData.data = undefined;
-    //     carelyPackageData.error = undefined;
-
-    //     carelyDataRefund.loading = false;
-    //     carelyDataRefund.data = undefined;
-    //     carelyDataRefund.error = undefined;
-    //   },
+    resetCarely: state => {
+      const { carelyRatingData } = state;
+      if (carelyRatingData) {
+        carelyRatingData.loading = false;
+        carelyRatingData.data = undefined;
+        carelyRatingData.error = undefined;
+      }
+    },
     //   resetCarelyRating: state => {
     //     const { carelyReviewData } = state;
-
     //     carelyReviewData.loading = false;
     //     carelyReviewData.data = undefined;
     //     carelyReviewData.error = undefined;
@@ -156,13 +140,13 @@ export const {
   getCarelySearchServicesCallback,
   // getCarelyChildServices,
   // getCarelyChildServicesCallback,
-  // ratingCarely,
-  // ratingCarelyCallback,
+  ratingCarely,
+  ratingCarelyCallback,
   // getDetailPkgCarely,
   // getDetailPkgCarelyCallback,
   // refundPkgCarely,
   // refundPkgCarelyCallback,
-  // resetCarely,
+  resetCarely,
   // getReviewCarely,
   // getReviewCarelyCallback,
   // resetCarelyRating,

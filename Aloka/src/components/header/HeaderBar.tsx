@@ -92,16 +92,6 @@ const HeaderBarCarely: React.FC<HeaderProps> = props => {
     navigation.navigate('NotificationScreen' as never);
   };
 
-  // const handleOpenProfile = () => {
-  //   if (userType == UserTypes.doctor) {
-  //     navigation.navigate(mainRoute.doctorAccountScreen as never);
-  //   } else if (userType == UserTypes.student) {
-  //     navigation.navigate(mainRoute.studentAccountScreen as never);
-  //   } else {
-  //     navigation.navigate(mainRoute.accountScreen as never);
-  //   }
-  // };
-
   //render
   const renderRightHead = () => (
     <View style={styles.rightWrapper}>

@@ -10,6 +10,7 @@ export default {
     "saved": "Saved",
     "retry": "Retry",
     "notice": "Notice",
+    "featureDeveloping": "Feature under development",
     "booking": "Booking",
     "filter": "Filter",
     "distance": "Distance",
@@ -134,7 +135,8 @@ export default {
     "otpTitle": "OTP Verification",
     "pleaseEnterOTP": "Please enter the OTP code sent to the phone number",
     "timeSenOTP": "Time to enter the code {{timerCount}}s",
-    "pleaseEnterOTPEmail": "Please enter the OTP code sent to the email"
+    "pleaseEnterOTPEmail": "Please enter the OTP code sent to the email",
+    "verifyingOTP": "Verifying OTP..."
   },
   "home": {
     "discovery": "Discovery",

@@ -17,13 +17,13 @@ import {
 import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import moment from 'moment';
-import { IconX, ImageHelper } from '@/components';
+import { IconX, ImageHelper, hideLoading, showLoading } from '@/components';
 import { formatMoneyVND } from '@/configs/common';
 import { images } from '@/configs/image';
 import { PAGINATION, STORAGEKEY } from '@/constants';
 import { AppContext } from '@/contexts';
 import { getObjectData } from '@/storages';
-import ApiService from '@/services/api-base';
+import ApiService, { getApiErrorMessage, isApiSuccess } from '@/services/api-base';
 import socketService from '@/socketio';
 import { navigate2 } from '@/navigation/RootNavigation';
 import { CText } from '@/utils';
@@ -237,12 +237,7 @@ const AppointmentScreen: React.FC<any> = () => {
       }
 
       if (res?.ok) {
-        let items: any[] =
-          res?.data?.items ||
-          res?.data?.result?.items ||
-          res?.data?.result?.item ||
-          (Array.isArray(res?.data) ? res.data : []) ||
-          [];
+        let items: any[] = res?.data?.items || [];
 
         const isEnd = items.length < (PAGINATION.ITEMS_20 || 20);
 
@@ -300,6 +295,7 @@ const AppointmentScreen: React.FC<any> = () => {
 
   useEffect(() => {
     if (isFocusScreen) {
+      hideLoading(true);
       // Tải song song tất cả các tab chưa có data (giống DoctorNetwork lazy={false})
       TABS.forEach((_, idx) => {
         if (!tabsData[idx]?.hasLoaded && !isLoadingTabRef.current[idx]) {
@@ -360,6 +356,7 @@ const AppointmentScreen: React.FC<any> = () => {
     newStatus: StatusAppointment,
     successMsg?: string,
   ) => {
+    showLoading();
     try {
       const id = item?.id || item?._id;
       const res: any = await ApiService.updateBookingStatus({
@@ -367,7 +364,7 @@ const AppointmentScreen: React.FC<any> = () => {
         status: newStatus,
       });
 
-      if (res?.ok || res?.status === 200 || res?.data) {
+      if (isApiSuccess(res)) {
         if (successMsg) {
           Alert.alert('Thành công', successMsg);
         }
@@ -383,12 +380,13 @@ const AppointmentScreen: React.FC<any> = () => {
           return updated;
         });
       } else {
-        const err =
-          res?.data?.message || res?.problem || 'Không thể cập nhật trạng thái';
+        const err = getApiErrorMessage(res, 'Không thể cập nhật trạng thái');
         Alert.alert('Thông báo', err);
       }
     } catch (e: any) {
       Alert.alert('Lỗi', e?.message || 'Có lỗi xảy ra, vui lòng thử lại');
+    } finally {
+      hideLoading();
     }
   };
 
@@ -660,67 +658,77 @@ const AppointmentScreen: React.FC<any> = () => {
   };
 
   const handleReschedule = async (item: any) => {
-    const packageInfo = item?.package || {};
-    const packageId = packageInfo?.id || packageInfo?._id || item?.package_id;
-    const channelId =
-      item?.channel_id ||
-      item?.doctor?.channel_id ||
-      item?.doctor?.id ||
-      packageInfo?.channel_id;
 
-    // Chuẩn bị dữ liệu dịch vụ từ API item
-    let serviceData: any = {
-      ...packageInfo,
-      ...item,
-      id: packageId || item?.package_id || item?.id,
-      name: packageInfo?.name || item?.name || item?.package_name,
-      price: packageInfo?.price ?? item?.price ?? 0,
-      thumbnail: packageInfo?.thumbnail || item?.thumbnail,
-      doctor: item?.doctor,
-      channel: item?.doctor || item?.channel,
-      address: item?.address,
-    };
+    console.log("🚀 ---------------------------------------------------🚀");
+    console.log("🚀 ~ index.tsx:663 ~ handleReschedule ~ item:", item);
+    console.log("🚀 ---------------------------------------------------🚀");
 
-    // Lấy chi tiết gói mới nhất từ API để đảm bảo không bị thiếu thông tin
-    if (packageId) {
-      try {
-        const res: any = await ApiService.getCarelyServices({
-          fq: `id:${packageId}`,
-        });
-        const found =
-          res?.data?.items?.[0] ||
-          res?.data?.result?.items?.[0] ||
-          (Array.isArray(res?.data) ? res.data[0] : null);
-        if (found) {
-          serviceData = {
-            ...serviceData,
-            ...found,
-            doctor: found.doctor || item?.doctor,
-            channel: found.channel || item?.doctor,
-          };
+    showLoading();
+    try {
+      const packageInfo = item?.package || {};
+      const packageId = packageInfo?.id || packageInfo?._id || item?.package_id;
+      const channelId =
+        item?.channel_id ||
+        item?.doctor?.channel_id ||
+        item?.doctor?.id ||
+        packageInfo?.channel_id;
+
+      // Chuẩn bị dữ liệu dịch vụ từ API item
+      let serviceData: any = {
+        ...packageInfo,
+        ...item,
+        id: packageId || item?.package_id || item?.id,
+        name: packageInfo?.name || item?.name || item?.package_name,
+        price: packageInfo?.price ?? item?.price ?? 0,
+        thumbnail: packageInfo?.thumbnail || item?.thumbnail,
+        doctor: item?.doctor,
+        channel: item?.doctor || item?.channel,
+        address: item?.address,
+      };
+
+      // Lấy chi tiết gói mới nhất từ API để đảm bảo không bị thiếu thông tin
+      if (packageId) {
+        try {
+          const res: any = await ApiService.getCarelyServices({
+            fq: `id:${packageId}`,
+          });
+          const found =
+            res?.data?.items?.[0] ||
+            res?.data?.result?.items?.[0] ||
+            (Array.isArray(res?.data) ? res.data[0] : null);
+          if (found) {
+            serviceData = {
+              ...serviceData,
+              ...found,
+              doctor: found.doctor || item?.doctor,
+              channel: found.channel || item?.doctor,
+            };
+          }
+        } catch (e) {
+          console.log('Error fetching package detail for reschedule:', e);
         }
-      } catch (e) {
-        console.log('Error fetching package detail for reschedule:', e);
       }
-    }
 
-    if (packageInfo || packageId) {
-      try {
-        navigation.navigate('CarelyServiceDetailScreen', {
-          channelId,
-          packageId,
-          service: serviceData,
-        });
-        return;
-      } catch (e) {
-        console.log('navigate to CarelyServiceDetailScreen error:', e);
+      if (packageInfo || packageId) {
+        try {
+          navigation.navigate('CarelyServiceDetailScreen', {
+            channelId,
+            packageId,
+            service: serviceData,
+          });
+          return;
+        } catch (e) {
+          console.log('navigate to CarelyServiceDetailScreen error:', e);
+        }
       }
-    }
 
-    if (navigation.canGoBack()) {
-      navigation.navigate('HomeTab');
-    } else {
-      navigation.navigate('HomeTab');
+      if (navigation.canGoBack()) {
+        navigation.navigate('HomeTab');
+      } else {
+        navigation.navigate('HomeTab');
+      }
+    } finally {
+      hideLoading();
     }
   };
 
@@ -757,16 +765,16 @@ const AppointmentScreen: React.FC<any> = () => {
 
     const isMatchDoctorId = Boolean(
       currentUserId &&
-        (String(item?.doctor_id) === String(currentUserId) ||
-          String(doctor?.id) === String(currentUserId) ||
-          String(doctor?._id) === String(currentUserId)),
+      (String(item?.doctor_id) === String(currentUserId) ||
+        String(doctor?.id) === String(currentUserId) ||
+        String(doctor?._id) === String(currentUserId)),
     );
 
     const isMatchUserId = Boolean(
       currentUserId &&
-        (String(customer?.id) === String(currentUserId) ||
-          String(customer?._id) === String(currentUserId) ||
-          String(item?.user_id) === String(currentUserId)),
+      (String(customer?.id) === String(currentUserId) ||
+        String(customer?._id) === String(currentUserId) ||
+        String(item?.user_id) === String(currentUserId)),
     );
 
     // Nếu ID trùng với doctor_id -> Xem với vai trò Bác sĩ/Điều dưỡng
@@ -775,8 +783,8 @@ const AppointmentScreen: React.FC<any> = () => {
     const isViewByDoctor = isMatchDoctorId
       ? true
       : isMatchUserId
-      ? false
-      : Boolean(isDoctorAccount);
+        ? false
+        : Boolean(isDoctorAccount);
 
     // Tên hiển thị: Nếu là Bác sĩ -> hiện tên Khách hàng; Nếu là Khách hàng -> hiện tên Bác sĩ/Điều dưỡng
     const nurseOrDoctorName = isViewByDoctor
@@ -808,17 +816,21 @@ const AppointmentScreen: React.FC<any> = () => {
     const isExplicitRebook =
       item?.is_rebook === true ||
       item?.type === 'completed_rebook' ||
-      (isCompletedTab && index > 0) ||
       confirmedCompletedIds[itemId] === true ||
       item?.is_confirmed_complete === true ||
+      item?.is_confirmed === true ||
+      item?.is_confirmed === 1 ||
       item?.user_confirmed === 1 ||
       item?.user_confirmed === true ||
       Boolean(item?.is_rating) ||
       Boolean(item?.is_rated) ||
       Boolean(item?.rated) ||
       Boolean(item?.rating_id) ||
+      Boolean(item?.order?.is_rating) ||
+      Boolean(item?.order?.rated) ||
       (typeof item?.rating === 'number' && item?.rating > 0) ||
-      (typeof item?.rate === 'number' && item?.rate > 0);
+      (typeof item?.rate === 'number' && item?.rate > 0) ||
+      (typeof item?.order?.rating === 'number' && item?.order?.rating > 0);
 
     const isPendingConfirm = !isExplicitRebook;
 
@@ -841,7 +853,11 @@ const AppointmentScreen: React.FC<any> = () => {
       <View style={styles.card}>
         <View style={styles.page1TopWrap}>
           {/* Top Section with Light Gray Background */}
-          <View style={styles.topWrap}>
+          <TouchableOpacity
+            style={styles.topWrap}
+            activeOpacity={0.8}
+            onPress={() => handleReschedule(item)}
+          >
             <View style={styles.serviceHeaderRow}>
               <View style={styles.thumn}>
                 <ImageHelper
@@ -885,7 +901,7 @@ const AppointmentScreen: React.FC<any> = () => {
                 ) : null}
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
 
           {/* Body Section with White Background */}
           <View style={styles.bodyWrap}>

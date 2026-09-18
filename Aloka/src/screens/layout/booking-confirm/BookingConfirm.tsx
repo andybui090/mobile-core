@@ -11,11 +11,11 @@ import {
   View,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { IconX, ImageHelper } from '@/components';
+import { IconX, ImageHelper, hideLoading, showLoading } from '@/components';
 import { formatMoneyVND } from '@/configs/common';
 import { images } from '@/configs/image';
 import { CText } from '@/utils';
-import ApiService from '@/services/api-base';
+import ApiService, { getApiErrorMessage, isApiSuccess } from '@/services/api-base';
 import { useCheckPaymentOnResume } from '@/hooks';
 import { BookingCancelPolicyModal } from './BookingCancelPolicyModal';
 
@@ -154,6 +154,7 @@ export const BookingConfirm: React.FC = () => {
       return;
     }
     setIsLoading(true);
+    showLoading();
     try {
       const packageId = service?._id || service?.id || String(service?.package_id || '');
 
@@ -226,12 +227,14 @@ export const BookingConfirm: React.FC = () => {
       Alert.alert('Lỗi', err?.message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
+      hideLoading();
     }
   };
 
   // ── Đặt lịch hẹn sau khi có order_id (POST /appointments) ─────────────────
   // Giống bookService() trong doctor-mobile-app
   const _bookAppointment = async (orderId: string) => {
+    showLoading();
     try {
       const channelId  = service?.channel_id || service?.channel?.id || '';
       const doctorId   = service?.user_id || service?.doctor?.id || service?.channel?.user_id || '';
@@ -259,7 +262,7 @@ export const BookingConfirm: React.FC = () => {
 
       const bookRes: any = await ApiService.updateBookingStatus(bookingPayload);
 
-      if (bookRes?.ok || bookRes?.status === 200 || bookRes?.status === 201) {
+      if (isApiSuccess(bookRes)) {
         Alert.alert(
           '🎉 Đặt lịch thành công',
           'Lịch hẹn của bạn đã được xác nhận. Bạn sẽ nhận được kết quả trong 12 giờ.',
@@ -275,11 +278,13 @@ export const BookingConfirm: React.FC = () => {
           ],
         );
       } else {
-        const msg = bookRes?.data?.message || 'Đặt lịch thất bại. Vui lòng thử lại.';
+        const msg = getApiErrorMessage(bookRes, 'Đặt lịch thất bại. Vui lòng thử lại.');
         Alert.alert('Lỗi đặt lịch', msg);
       }
     } catch (e: any) {
       Alert.alert('Lỗi', e?.message || 'Đặt lịch thất bại.');
+    } finally {
+      hideLoading();
     }
   };
 
@@ -410,12 +415,9 @@ export const BookingConfirm: React.FC = () => {
           onPress={handlePayNow}
           disabled={isLoading}
         >
-          {isLoading
-            ? <ActivityIndicator size="small" color="#FFFFFF" />
-            : <CText style={styles.payNowBtnText}>
-                {isFree ? 'Xác nhận đặt lịch' : 'Thanh toán ngay'}
-              </CText>
-          }
+          <CText style={styles.payNowBtnText}>
+            {isFree ? 'Xác nhận đặt lịch' : 'Thanh toán ngay'}
+          </CText>
         </TouchableOpacity>
       </View>
 

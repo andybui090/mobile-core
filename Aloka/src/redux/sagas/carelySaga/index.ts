@@ -5,8 +5,8 @@ import {
   getCarelySearchServicesCallback,
   // getCarelyChildServices,
   // getCarelyChildServicesCallback,
-  // ratingCarely,
-  // ratingCarelyCallback,
+  ratingCarely,
+  ratingCarelyCallback,
   // getDetailPkgCarely,
   // getDetailPkgCarelyCallback,
   // refundPkgCarely,
@@ -58,14 +58,13 @@ function* fetchCarelySearchService(action: actionGetCarelyService) {
 //   );
 // }
 
-// function* fetchRatingCarely(action: actionGetCarelyService) {
-//   yield* processAPISaga(
-//     ApiService.postRatingCarely,
-//     action.payload,
-//     ratingCarelyCallback,
-//     3,
-//   );
-// }
+function* fetchRatingCarely(action: any) {
+  yield* processAPISaga(
+    ApiService.postRatingCarely,
+    action.payload,
+    ratingCarelyCallback,
+  );
+}
 
 // function* fetchDetailPkgCarely(action: actionGetCarelyService) {
 //   yield* processAPISaga(
@@ -98,7 +97,7 @@ export default [
   takeLatest(getCarelyServices, fetchCarelyService),
   takeLatest(getCarelySearchServices, fetchCarelySearchService),
   // takeLatest(getCarelyChildServices, fetchCarelyChildServices),
-  // takeLatest(ratingCarely, fetchRatingCarely),
+  takeLatest(ratingCarely, fetchRatingCarely),
   // takeLatest(getDetailPkgCarely, fetchDetailPkgCarely),
   // takeLatest(refundPkgCarely, fetchRefundPkgCarely),
   // takeLatest(getReviewCarely, fetchCarelyReview),

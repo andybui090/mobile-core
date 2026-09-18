@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { IconX } from '@/components';
+import { IconX, hideLoading, showLoading } from '@/components';
 import { homeTabRoute } from '@/constants';
 import { CText } from '@/utils';
 import { useAppSelector } from '@/redux/store/customReduxHook';
@@ -208,15 +208,9 @@ export const BookingSchedule: React.FC = () => {
   const route = useRoute<any>();
   const service = route.params?.service ?? {};
 
-  const channelId: string = service?.channel_id || service?.channel?.id || service?.channel?._id || '';
-  const address = service?.address || service?.location?.address || service?.location_address || service?.provider?.address || '';
-  const addressDetail = service?.address_detail || service?.location?.district || service?.district || service?.location?.detail || '';
-  // time_package ưu tiên (đơn vị phút), fallback sang duration (có thể là giờ)
+  const channelId: string = service?.channel_id || '';
   const rawStep: number = Number(service?.time_package) || 0;
-  const rawDuration: number = Number(
-    service?.duration || service?.working_hours || service?.hours || service?.package?.duration || 0,
-  );
-  // Nếu rawDuration < 24 → đơn vị giờ → nhân 60 (giống BookingConfirm)
+  const rawDuration: number = Number(service?.duration || 0);
   const stepMins: number = rawStep > 0
     ? rawStep
     : rawDuration > 0
@@ -225,9 +219,9 @@ export const BookingSchedule: React.FC = () => {
   const brkMins: number = Number(service?.time_break) || 0;
   const durationLabel = fmtDuration(stepMins);
 
-  const price: number = Number(service?.price ?? service?.package?.price ?? 0);
+  const price: number = Number(service?.price ?? 0);
   const isFree: boolean = price === 0;
-  const packageId: string = service?._id || service?.id || String(service?.package_id || '');
+  const packageId: string = String(service?.id || '');
 
   const [loading, setLoading] = useState(true);
   const [isBooking, setIsBooking] = useState(false);
@@ -237,10 +231,10 @@ export const BookingSchedule: React.FC = () => {
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [bookedTimes, setBookedTimes] = useState<string[]>([]);
   const [schedule, setSchedule] = useState<ParsedSchedule | null>(null);
-  // User info & channel data - giong doctor-mobile-app
+
   const { profileData } = useAppSelector(state => state.profileReducer);
-  const userInfo = (profileData as any)?.data?.result || (profileData as any)?.data || {};
-  const [channelData, setChannelData] = useState<any>(route.params?.channelData || service?.channel || null);
+  const userInfo = (profileData as any)?.data?.result || {};
+  const [channelData, setChannelData] = useState<any>(route.params?.channelData || null);
 
   // Modals state - giong doctor-mobile-app (Anh 2 & Anh 3)
   const [agreePopup, setAgreePopup] = useState<{
@@ -254,11 +248,8 @@ export const BookingSchedule: React.FC = () => {
   });
   const [successModalVisible, setSuccessModalVisible] = useState(false);
 
-  // Address state - giong doctor-mobile-app
-  // Init default từ service.address (hiển thị ngay lần đầu vào)
-  const [bookingAddress, setBookingAddress] = useState<LocationItem | null>(
-    address ? { text: address } : null,
-  );
+  // Address state - de trong cho user chon
+  const [bookingAddress, setBookingAddress] = useState<LocationItem | null>(null);
   const [showAddress, setShowAddress] = useState(false);
 
   // Bước 1: fetch channel schedules + booked appointments (giống doctor-mobile-app)
@@ -324,19 +315,24 @@ export const BookingSchedule: React.FC = () => {
       Alert.alert('Thông báo', 'Vui lòng chọn ngày và giờ');
       return;
     }
+    if (!bookingAddress?.text) {
+      Alert.alert('Thông báo', 'Vui lòng chọn địa chỉ');
+      return;
+    }
     if (!isFree) {
       // Có phí → navigate sang BookingConfirm để thanh toán
       navigation.navigate(homeTabRoute.bookingConfirm, {
         service,
         selectedDay,
         selectedTimeSlot,
-        bookingAddress: bookingAddress?.text || address,
+        bookingAddress: bookingAddress.text,
       });
       return;
     }
     // Gói 0đ: xử lý thẳng như doctor-mobile-app
     if (isBooking) return;
     setIsBooking(true);
+    showLoading();
     try {
       // Bước 1: Mua gói → POST /orders/packages { package_id, payment: 'MoMo' }
       // Giống hệt doctor-mobile-app: postBuyPackageFreeChannel({ package_id: id, payment: PaymentTypes.momo })
@@ -349,20 +345,14 @@ export const BookingSchedule: React.FC = () => {
 
       const buyOk = buyRes?.ok || buyRes?.status === 200 || buyRes?.status === 201;
 
-      // Lỗi: parse errors[] array (giống logError trong doctor-mobile-app)
+      // Lỗi mua gói
       if (!buyOk) {
         const errorsArr: any[] = buyRes?.data?.errors || [];
-        const hasOrderIdErr =
-          errorsArr.some(
-            (e: any) =>
-              (e?.key === 'package_id' && (e?.msg?.includes('order_id') || e?.msg?.includes('đã tồn tại'))) ||
-              (typeof e?.msg === 'string' && (e.msg.includes('order_id') || e.msg.includes('đã tồn tại'))),
-          ) ||
-          JSON.stringify(buyRes?.data || '').includes('order_id đã tồn tại') ||
+        const isExisted =
+          errorsArr.some((e: any) => String(e?.msg).includes('đã tồn tại')) ||
           JSON.stringify(buyRes?.data || '').includes('đã tồn tại');
 
-        // "order_id đã tồn tại" → gói miễn phí chỉ áp dụng 1 lần (ảnh 2)
-        if (hasOrderIdErr) {
+        if (isExisted) {
           setAgreePopup({
             visible: true,
             title: 'Mua gói',
@@ -371,7 +361,7 @@ export const BookingSchedule: React.FC = () => {
           return;
         }
 
-        const firstMsg = errorsArr[0]?.msg || buyRes?.data?.message || 'Something error!!!';
+        const firstMsg = errorsArr[0]?.msg || buyRes?.data?.message || 'Có lỗi xảy ra!';
         setAgreePopup({
           visible: true,
           title: 'Mua gói',
@@ -380,35 +370,21 @@ export const BookingSchedule: React.FC = () => {
         return;
       }
 
-      let orderId: string =
+      const orderId: string =
         buyRes?.data?.result?.order_id ||
-        buyRes?.data?.msg?.result?.order_id ||  // doctor-mobile-app: data.msg.result.order_id
-        buyRes?.data?.result?._id ||
         buyRes?.data?.result?.id ||
         buyRes?.data?.order_id ||
-        buyRes?.data?._id ||
-        buyRes?.data?.id || '';
+        '';
 
-      // Parse date & time giống doctor-mobile-app
       const { h, m } = parseHM(selectedTimeSlot.time);
       const dt = new Date(selectedDay.dateObj);
       dt.setHours(h, m, 0, 0);
 
-      const channelIdVal = channelData?.id || channelId || service?.channel_id || service?.channel?.id || '';
-      const doctorId =
-        channelData?.ownerInfo?.id ||
-        channelData?.ownerInfo?._id ||
-        service?.user_id ||
-        service?.doctor?.id ||
-        service?.channel?.user_id ||
-        '';
-      const categoryId =
-        channelData?.categories?.[0]?.id ||
-        service?.category_id ||
-        (Array.isArray(service?.categories) && service.categories[0]?.id) ||
-        '';
+      const channelIdVal = channelData?.id || channelId;
+      const doctorId = channelData?.owner_id || service?.user_id || '';
+      const categoryId = channelData?.categories?.[0]?.id || service?.parent_id || '';
 
-      // Bước 2: Đặt lịch → POST /appointments (giống doctor-mobile-app postBookingCall)
+      // Bước 2: Đặt lịch → POST /appointments
       const bookRes: any = await ApiService.bookAppointment({
         package_id:  packageId,
         order_id:    orderId,
@@ -417,22 +393,21 @@ export const BookingSchedule: React.FC = () => {
         category_id: categoryId,
         date:        dt,
         duration:    stepMins,
-        full_name:   userInfo?.full_name || userInfo?.name || '',
+        full_name:   userInfo?.full_name || '',
         phone:       userInfo?.phone || '',
-        type:        service?.is_book_service == 0 ? 'ONLINE' : 'OFFLINE',
-        address:     bookingAddress?.text || address || '',
+        type:        service?.is_book_service === 0 ? 'ONLINE' : 'OFFLINE',
+        address:     bookingAddress.text,
         note:        '',
       });
 
       console.log('🚀 ~ bookAppointment result:', bookRes?.status, bookRes?.data);
 
       if (bookRes?.ok || bookRes?.status === 200 || bookRes?.status === 201) {
-        // Success alert giống ảnh 3 của doctor-mobile-app
         setSuccessModalVisible(true);
       } else {
         const errorsArr: any[] = bookRes?.data?.errors || [];
         const msg = errorsArr.map((e: any) => e.msg).join(', ')
-          || bookRes?.data?.message || 'Something error!!!';
+          || bookRes?.data?.message || 'Có lỗi xảy ra!';
         setAgreePopup({
           visible: true,
           title: 'Đặt lịch',
@@ -442,7 +417,7 @@ export const BookingSchedule: React.FC = () => {
     } catch (err: any) {
       console.log('❌ [handleConfirm] catch error:', err);
       const msg: string = err?.message || '';
-      if (msg.toLowerCase().includes('order_id') || msg.toLowerCase().includes('đã tồn tại')) {
+      if (msg.includes('đã tồn tại')) {
         setAgreePopup({
           visible: true,
           title: 'Mua gói',
@@ -451,12 +426,13 @@ export const BookingSchedule: React.FC = () => {
       } else {
         setAgreePopup({
           visible: true,
-          title: 'Mua gói',
-          msg: msg || 'Something error!!!',
+          title: 'Thông báo',
+          msg: msg || 'Không thể hoàn thành đặt lịch, vui lòng thử lại sau.',
         });
       }
     } finally {
       setIsBooking(false);
+      hideLoading();
     }
   };
 
@@ -480,7 +456,7 @@ export const BookingSchedule: React.FC = () => {
             {bookingAddress?.text ? (
               <CText style={styles.addressTitle} numberOfLines={2}>{bookingAddress.text}</CText>
             ) : (
-              <CText style={styles.addressLink}>Thêm địa chỉ</CText>
+              <CText style={styles.addressPlaceholder}>Chọn địa chỉ</CText>
             )}
           </View>
           <IconX type="ionicons" name="chevron-forward" size={20} color="#98A2B3" />
@@ -558,10 +534,7 @@ export const BookingSchedule: React.FC = () => {
           activeOpacity={0.8}
           disabled={isBooking}
           onPress={handleConfirm}>
-          {isBooking
-            ? <ActivityIndicator size="small" color="#FFFFFF" />
-            : <CText style={styles.confirmBtnText}>{isFree ? 'Xác nhận đặt lịch' : 'Tiếp tục'}</CText>
-          }
+          <CText style={styles.confirmBtnText}>{isFree ? 'Xác nhận đặt lịch' : 'Tiếp tục'}</CText>
         </TouchableOpacity>
       </View>
 
@@ -616,6 +589,7 @@ const styles = StyleSheet.create({
   addressTitle: { fontSize: 14, fontWeight: '700', color: '#101828' },
   addressSubTitle: { fontSize: 12.5, color: '#667085', marginTop: 2 },
   addressLink: { fontSize: 12.5, color: '#0D9488', fontWeight: '500' },
+  addressPlaceholder: { fontSize: 14, color: '#98A2B3', fontWeight: '400' },
   sectionDivider: { height: 8, backgroundColor: '#F8F9FA' },
   sectionBlock: { paddingHorizontal: 16, paddingVertical: 16, backgroundColor: '#FFFFFF' },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: '#101828', marginBottom: 12 },

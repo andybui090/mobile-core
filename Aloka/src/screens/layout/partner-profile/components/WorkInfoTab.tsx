@@ -1,6 +1,8 @@
 import React from 'react';
 import {
+  ActivityIndicator,
   Image,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -263,6 +265,20 @@ const useStyles = makeStyles(({ colors }) =>
       fontWeight: '600',
       color: colors.white,
     },
+    completeBtn: {
+      width: '100%',
+      paddingVertical: 12,
+      borderRadius: 8,
+      backgroundColor: '#039855',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 6,
+    },
+    completeBtnText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.white,
+    },
   })
 );
 
@@ -270,12 +286,16 @@ interface WorkInfoTabProps {
   subStatus: SubStatus;
   onSelectSubStatus: (status: SubStatus) => void;
   requestsList: WorkRequestItem[];
+  isLoading?: boolean;
+  isRefreshing?: boolean;
+  onRefresh?: () => void;
   onCall: (phone: string) => void;
-  onChat: (name: string, avatar?: any, jobId?: string) => void;
+  onChat: (name: string, avatar?: any, jobId?: string, toUserId?: string, rawItem?: any) => void;
   onOpenRejectModal: (jobId: string) => void;
   onAcceptJob: (jobId: string) => void;
   onStartMoving: (jobId: string) => void;
   onConfirmArrived: (jobId: string) => void;
+  onCompleteJob?: (jobId: string) => void;
   onOpenMap: (address: string) => void;
 }
 
@@ -283,12 +303,16 @@ export const WorkInfoTab: React.FC<WorkInfoTabProps> = ({
   subStatus,
   onSelectSubStatus,
   requestsList,
+  isLoading,
+  isRefreshing,
+  onRefresh,
   onCall,
   onChat,
   onOpenRejectModal,
   onAcceptJob,
   onStartMoving,
   onConfirmArrived,
+  onCompleteJob,
   onOpenMap,
 }) => {
   const styles = useStyles();
@@ -348,22 +372,39 @@ export const WorkInfoTab: React.FC<WorkInfoTabProps> = ({
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl refreshing={!!isRefreshing} onRefresh={onRefresh} />
+          ) : undefined
+        }
       >
-        {currentList.length === 0 ? (
+        {isLoading && !isRefreshing ? (
+          <View style={styles.emptyContainer}>
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
+        ) : currentList.length === 0 ? (
           <View style={styles.emptyContainer}>
             <IconX
               type="ionicons"
-              name="clipboard-outline"
+              name="calendar-outline"
               size={48}
-              color={colors.c98A2B3 || '#98A2B3'}
+              color={colors.cD0D5DD || '#D0D5DD'}
             />
-            <CText style={styles.emptyText}>{t('partnerWork.emptyJob', 'Chưa có công việc nào')}</CText>
+            <CText style={styles.emptyText}>
+              {subStatus === 'REQUEST'
+                ? t('partnerWork.emptyRequest', 'Chưa có yêu cầu nào đang chờ')
+                : subStatus === 'SCHEDULE'
+                ? t('partnerWork.emptySchedule', 'Chưa có lịch hẹn nào')
+                : subStatus === 'COMPLETED'
+                ? t('partnerWork.emptyCompleted', 'Chưa có lịch hoàn thành nào')
+                : t('partnerWork.emptyCancelled', 'Chưa có lịch bị huỷ nào')}
+            </CText>
           </View>
         ) : (
           currentList.map(job => (
             <React.Fragment key={job.id}>
               {/* Mini Map Preview khi ca đang di chuyển (isMoving) */}
-              {subStatus === 'SCHEDULE' && job.isMoving && (
+              {subStatus === 'SCHEDULE' && (job.isMoving || job.appointmentStatus === 'ON_THE_WAY') && (
                 <View style={styles.mapContainer}>
                   <Image
                     source={images.common.mini_map}
@@ -385,30 +426,44 @@ export const WorkInfoTab: React.FC<WorkInfoTabProps> = ({
                 <View style={styles.customerRow}>
                   <View style={styles.customerInfo}>
                     <Image
-                      source={job.customerAvatar || images.common.nurse_minh_hieu}
+                      source={
+                        typeof job.customerAvatar === 'string' && job.customerAvatar
+                          ? { uri: job.customerAvatar }
+                          : job.customerAvatar || images.common.nurse_minh_hieu
+                      }
                       style={styles.avatarImg}
                     />
                     <CText style={styles.customerName}>{job.customerName}</CText>
                   </View>
 
                   <View style={styles.customerActions}>
-                    <TouchableOpacity
-                      style={styles.circleIconBtn}
-                      activeOpacity={0.7}
-                      onPress={() => onCall(job.customerPhone)}
-                    >
-                      <IconX
-                        type="ionicons"
-                        name="call"
-                        size={17}
-                        color={colors.white}
-                      />
-                    </TouchableOpacity>
+                    {!!job.customerPhone && (
+                      <TouchableOpacity
+                        style={styles.circleIconBtn}
+                        activeOpacity={0.7}
+                        onPress={() => onCall(job.customerPhone)}
+                      >
+                        <IconX
+                          type="ionicons"
+                          name="call"
+                          size={17}
+                          color={colors.white}
+                        />
+                      </TouchableOpacity>
+                    )}
 
                     <TouchableOpacity
                       style={styles.circleIconBtn}
                       activeOpacity={0.7}
-                      onPress={() => onChat(job.customerName, job.customerAvatar, job.id)}
+                      onPress={() =>
+                        onChat(
+                          job.customerName,
+                          job.customerAvatar,
+                          job.id,
+                          job.customerId,
+                          job.rawItem,
+                        )
+                      }
                     >
                       <IconX
                         type="ionicons"
@@ -456,6 +511,21 @@ export const WorkInfoTab: React.FC<WorkInfoTabProps> = ({
                     </View>
                   ))}
 
+                {/* Cancel Reason Box if cancelled */}
+                {subStatus === 'CANCELLED' && !!job.cancelReason && (
+                  <View style={styles.customerNoteBox}>
+                    <IconX
+                      type="ionicons"
+                      name="alert-circle-outline"
+                      size={15}
+                      color="#F04438"
+                    />
+                    <CText style={styles.customerNoteText}>
+                      Lý do huỷ: {job.cancelReason}
+                    </CText>
+                  </View>
+                )}
+
                 {/* Job Details */}
                 <View style={styles.jobInfoRow}>
                   <IconX
@@ -487,15 +557,17 @@ export const WorkInfoTab: React.FC<WorkInfoTabProps> = ({
                   </CText>
                 </View>
 
-                <View style={styles.jobInfoRow}>
-                  <IconX
-                    type="ionicons"
-                    name="location-outline"
-                    size={15}
-                    color={colors.c344054 || '#344054'}
-                  />
-                  <CText style={styles.jobInfoText}>{job.address}</CText>
-                </View>
+                {Boolean(job.address) && (
+                  <View style={styles.jobInfoRow}>
+                    <IconX
+                      type="ionicons"
+                      name="location-outline"
+                      size={15}
+                      color={colors.c344054 || '#344054'}
+                    />
+                    <CText style={styles.jobInfoText}>{job.address}</CText>
+                  </View>
+                )}
 
                 {/* Amount Row */}
                 <View style={styles.amountRow}>
@@ -526,7 +598,17 @@ export const WorkInfoTab: React.FC<WorkInfoTabProps> = ({
 
                 {/* Action Buttons cho tab Lịch hẹn */}
                 {subStatus === 'SCHEDULE' &&
-                  (job.isMoving ? (
+                  (job.isArrived || job.appointmentStatus === 'ARRIVED' ? (
+                    <TouchableOpacity
+                      style={styles.completeBtn}
+                      activeOpacity={0.8}
+                      onPress={() => onCompleteJob ? onCompleteJob(job.id) : onConfirmArrived(job.id)}
+                    >
+                      <CText style={styles.completeBtnText}>
+                        {t('partnerWork.btnComplete', 'Hoàn thành dịch vụ')}
+                      </CText>
+                    </TouchableOpacity>
+                  ) : job.isMoving || job.appointmentStatus === 'ON_THE_WAY' ? (
                     <TouchableOpacity
                       style={styles.arriveBtn}
                       activeOpacity={0.8}

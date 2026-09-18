@@ -23,6 +23,8 @@ import {
 } from '@/redux/slices/notificationSlice';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { rootRoute } from '@/constants';
+import { navigationRef } from '@/navigation/RootNavigation';
 
 interface NotificationItem {
   id: string;
@@ -173,25 +175,113 @@ export const NotificationList: React.FC<NotificationListProps> = ({ onBack }) =>
       dispatch(getTotalNotifyUnread(null));
     }
 
-    // Navigate or trigger action if item has extra routing payload
+    // Extract payload from item.raw
     const rawData = item.raw?.data;
-    if (rawData) {
+    let parsed: any = null;
+    if (typeof rawData === 'string') {
       try {
-        const parsed = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-        if (
-          parsed?.type === 'booking' ||
-          parsed?.type === 'confirm_booking' ||
-          parsed?.type === 'next_booking' ||
-          parsed?.type === 'on_the_way_booking' ||
-          parsed?.type === 'arrived_booking' ||
-          parsed?.type === 'completed_booking' ||
-          parsed?.type === 'cancel_booking'
-        ) {
-          navigation.navigate('AppointmentTab' as never);
-        } else if (parsed?.link) {
-          Linking.openURL(parsed.link).catch(() => { });
+        parsed = JSON.parse(rawData);
+      } catch (e) {
+        parsed = null;
+      }
+    } else if (typeof rawData === 'object' && rawData !== null) {
+      parsed = rawData;
+    }
+
+    const type = parsed?.type || item.raw?.type || item.raw?.notify_type || '';
+    const link = parsed?.link || item.raw?.link || item.raw?.url;
+
+    // Handle web link
+    if (link) {
+      Linking.openURL(link).catch(() => {});
+      return;
+    }
+
+    // Handle Chat notification
+    if (type === 'chat' || type === 'friend') {
+      const roomId = parsed?.room_id || parsed?.roomId || item.raw?.room_id;
+      const toUserId = parsed?.to_user_id || parsed?.user_id || item.raw?.user_id;
+      if (roomId || toUserId) {
+        if (navigationRef.isReady()) {
+          try {
+            (navigationRef.current as any)?.navigate('BookingChat', {
+              roomId,
+              toUserId,
+              customerName: parsed?.name || item.raw?.name,
+            });
+            return;
+          } catch (e) {}
         }
-      } catch (e) { }
+      }
+    }
+
+    // Handle Appointment / Booking notification
+    const textContent = `${item.title || ''} ${item.message || ''} ${type}`.toLowerCase();
+    const isBookingNotify =
+      type === 'booking' ||
+      type === 'confirm_booking' ||
+      type === 'next_booking' ||
+      type === 'on_the_way_booking' ||
+      type === 'arrived_booking' ||
+      type === 'completed_booking' ||
+      type === 'cancel_booking' ||
+      textContent.includes('lịch hẹn') ||
+      textContent.includes('đặt lịch') ||
+      textContent.includes('booking');
+
+    if (isBookingNotify) {
+      let idxTab = 0; // 0: Sắp tới
+      if (
+        type === 'booking' ||
+        textContent.includes('đã đặt lịch') ||
+        textContent.includes('yêu cầu')
+      ) {
+        idxTab = 1; // 1: Yêu cầu
+      } else if (
+        type === 'completed_booking' ||
+        textContent.includes('hoàn thành')
+      ) {
+        idxTab = 2; // 2: Đã hoàn thành
+      } else if (
+        type === 'cancel_booking' ||
+        textContent.includes('huỷ') ||
+        textContent.includes('hủy')
+      ) {
+        idxTab = 3; // 3: Hủy
+      }
+
+      // Navigate to AppointmentTab inside root AppTabScreen
+      if (navigationRef.isReady()) {
+        try {
+          (navigationRef.current as any)?.navigate(rootRoute, {
+            screen: 'AppointmentTab',
+            params: { idxTab },
+          });
+          return;
+        } catch (e) {
+          console.warn('[NotificationList] navigationRef error:', e);
+        }
+      }
+
+      try {
+        navigation.navigate(rootRoute as any, {
+          screen: 'AppointmentTab',
+          params: { idxTab },
+        });
+      } catch (e1) {
+        try {
+          navigation.getParent()?.navigate(rootRoute as any, {
+            screen: 'AppointmentTab',
+            params: { idxTab },
+          });
+        } catch (e2) {
+          try {
+            navigation.navigate('AppointmentTab' as any, { idxTab });
+          } catch (e3) {
+            console.warn('[NotificationList] navigation error:', e3);
+          }
+        }
+      }
     }
   };
 

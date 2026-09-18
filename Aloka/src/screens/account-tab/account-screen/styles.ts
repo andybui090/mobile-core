@@ -43,6 +43,21 @@ const useStyles = makeStyles(({ colors }) => ({
     borderWidth: 1,
     ...screenStyles.rowCenter,
   },
+  btnRow: {
+    marginTop: 16,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+  },
+  actionBtn: {
+    flex: 1,
+    borderColor: '#2F80ED',
+    borderRadius: 8,
+    paddingVertical: 10,
+    borderWidth: 1,
+    backgroundColor: '#FFFFFF',
+    ...screenStyles.rowCenter,
+  },
 }));
 
 export default useStyles;

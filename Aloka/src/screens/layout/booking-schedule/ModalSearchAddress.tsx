@@ -27,7 +27,7 @@ interface Props {
   onChooseLocation: (item: LocationItem) => void;
 }
 
-const ModalSearchAddress: React.FC<Props> = ({ visible, onClose, onChooseLocation }) => {
+export const ModalSearchAddress: React.FC<Props> = ({ visible, onClose, onChooseLocation }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<LocationItem[]>([]);
   const [loading, setLoading] = useState(false);

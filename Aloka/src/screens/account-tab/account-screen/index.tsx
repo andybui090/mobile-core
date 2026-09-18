@@ -169,10 +169,26 @@ const AccountScreen: React.FC<any> = ({ navigation }: any) => {
     );
   };
 
+
   const renderProfileMenu = () => {
-    const { avatar } = currentUser?.personalization ?? {};
+    const personalization = currentUser?.personalization;
+    const avatar = personalization?.avatar || currentUser?.avatar;
     const { username, full_name, name } = currentUser ?? {};
-    const { total_following } = currentUser?.statistics ?? {};
+    const totalFollow = currentUser?.statistics?.total_follow ?? 0;
+    const totalFollowing = currentUser?.statistics?.total_following ?? 0;
+
+    let position = '';
+    const userType = personalization?.type?.toLowerCase() || currentUser?.type?.toLowerCase() || '';
+    if (userType === 'doctor') {
+      position = personalization?.position || 'Doctor';
+    } else if (userType === 'nurse') {
+      position = t('account.nurse', 'Nurse');
+    } else if (userType === 'student') {
+      position = t('account.student', 'Student');
+    } else if (personalization?.position) {
+      position = personalization.position;
+    }
+
 
     return (
       <View style={screenStyles.pH24}>
@@ -198,28 +214,60 @@ const AccountScreen: React.FC<any> = ({ navigation }: any) => {
             <CText h4 w600 color={colors.c101828}>
               {full_name || name || username || ''}
             </CText>
-            <Row start style={{ marginTop: 4 }}>
+            {Boolean(position) && (
+              <CText
+                h5
+                w400
+                color={colors.c98A2B3}
+                style={{ marginTop: 2 }}
+                numberOfLines={1}
+              >
+                {position}
+              </CText>
+            )}
+            <Row start style={{ marginTop: 6 }}>
               <Pressable
                 onPress={() => {
                   navigation.navigate(mainRoute.followingList);
                 }}
               >
-                <CText color={colors.black} h5>
-                  {total_following || 0}
+                <CText color={colors.c101828} h5>
+                  {totalFollowing}
                   <CText h5 color={colors.c98A2B3} style={screenStyles.mL5}>
-                    {` ${t('profile.followed')}`}
+                    {` ${t('profile.followed', 'Theo dõi')}`}
+                  </CText>
+                </CText>
+              </Pressable>
+              <View style={{ marginHorizontal: 6 }}>
+                <CText h5 color={colors.c98A2B3}>•</CText>
+              </View>
+              <Pressable
+                onPress={() => {
+                  navigation.navigate(mainRoute.followerList || 'FollowerList');
+                }}
+              >
+                <CText color={colors.c101828} h5>
+                  {totalFollow}
+                  <CText h5 color={colors.c98A2B3} style={screenStyles.mL5}>
+                    {` ${t('profile.followers', 'Người theo dõi')}`}
                   </CText>
                 </CText>
               </Pressable>
             </Row>
           </View>
         </Row>
-        <Pressable style={styles.btnWrap} onPress={handleEditDoctorProfile}>
-          <Image source={images.doctor.ic_edit} style={screenStyles.box16} />
-          <CText h5 w500 color={colors.primary} style={screenStyles.mL10}>
-            {t('profile.editProfile', 'Edit Profile')}
-          </CText>
-        </Pressable>
+        <View style={styles.btnRow}>
+          <Pressable style={styles.actionBtn} onPress={handleEditDoctorProfile}>
+            <Image
+              source={images.doctor.ic_edit}
+              style={{ width: 16, height: 16, tintColor: '#0080FF' }}
+              resizeMode="contain"
+            />
+            <CText h5 w500 color="#0080FF" style={screenStyles.mL8}>
+              {t('profile.editProfile', 'Chỉnh sửa hồ sơ')}
+            </CText>
+          </Pressable>
+        </View>
       </View>
     );
   };

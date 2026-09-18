@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useRef } from 'react';
 import {
   Alert,
   Dimensions,
@@ -10,14 +10,17 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { makeStyles, useTheme } from '@rneui/themed';
-import { IconX, ImageHelper, Wrapper } from '@/components';
+import { IconX, ImageHelper, Toast, Wrapper } from '@/components';
 import { images } from '@/configs/image';
-import { CText } from '@/utils';
+import { showToast } from '@/configs';
+import { CText, Row } from '@/utils';
 import { AppContext } from '@/contexts';
 import { rootRoute } from '@/constants';
+import { useAppDispatch, useAppSelector } from '@/redux/store/customReduxHook';
+import { getProfile } from '@/redux/slices/profileSlice';
 
 const { width } = Dimensions.get('window');
 
@@ -221,18 +224,41 @@ export const PartnerProfileScreen: React.FC = () => {
   const {
     theme: { colors },
   } = useTheme();
+  const toastEl = useRef<any>(null);
   const { user } = useContext<any>(AppContext) || {};
+  const isFocusScreen = useIsFocused();
+  const dispatch = useAppDispatch();
+  const { profileData } = useAppSelector(state => state.profileReducer);
+
+  useEffect(() => {
+    if (isFocusScreen && user?.username) {
+      dispatch(getProfile(null));
+    }
+  }, [isFocusScreen, user?.username]);
+
+  const currentUser =
+    (profileData as any)?.data?.result || (profileData as any)?.data || user || {};
+
   // Extract exact fields from user object
   const displayName =
-    user?.full_name ||
-    user?.personalization?.channel_name ||
-    user?.username ||
+    currentUser?.full_name ||
+    currentUser?.personalization?.channel_name ||
+    currentUser?.username ||
     '';
 
+  const userType = (
+    currentUser?.personalization?.type ||
+    currentUser?.type ||
+    user?.personalization?.type ||
+    user?.type ||
+    ''
+  ).toLowerCase();
+  const isDoctorType = userType === 'doctor';
+
   const position =
-    user?.personalization?.position || user?.personalization?.type || '';
-  const specializations = Array.isArray(user?.personalization?.specializations)
-    ? user.personalization.specializations
+    currentUser?.personalization?.position || currentUser?.personalization?.type || '';
+  const specializations = Array.isArray(currentUser?.personalization?.specializations)
+    ? currentUser.personalization.specializations
       .map((s: any) => s?.name)
       .filter(Boolean)
       .join(', ')
@@ -243,26 +269,61 @@ export const PartnerProfileScreen: React.FC = () => {
       ? `${position}  ·  ${specializations}`
       : position || specializations || '';
 
-  const displayPhone = user?.phone || '';
+  const displayPhone = currentUser?.phone || '';
 
-  const displayEmail = user?.email || '';
+  const displayEmail = currentUser?.email || '';
 
   const displayIntro =
-    user?.personalization?.description ||
-    user?.channels?.[0]?.description ||
-    user?.personalization?.channels?.[0]?.description ||
+    currentUser?.personalization?.description ||
+    currentUser?.channels?.[0]?.description ||
+    currentUser?.personalization?.channels?.[0]?.description ||
     '';
 
   const avatar =
-    user?.avatar ||
-    user?.personalization?.avatar ||
-    user?.channels?.[0]?.avatar;
+    currentUser?.avatar ||
+    currentUser?.personalization?.avatar ||
+    currentUser?.channels?.[0]?.avatar;
 
   const avatarSource = avatar
     ? typeof avatar === 'string'
       ? { uri: avatar }
       : avatar
     : images.common.img_default;
+
+  const renderKYCStatus = (status?: number) => {
+    if (!isDoctorType) return null;
+    let statusText = t('profile.verifying', 'Đang chờ xác thực');
+    let iconKYC = images.doctor.kyc_0;
+    let textColor = '#F79009';
+    const numStatus = status !== undefined && status !== null ? Number(status) : 0;
+    if (numStatus === 1) {
+      statusText = t('profile.verified', 'Đã xác thực');
+      iconKYC = images.doctor.kyc_1;
+      textColor = colors.primary || '#19A2A7';
+    } else if (numStatus === 2) {
+      statusText = t('profile.verifyingFailed', 'Xác thực thất bại');
+      iconKYC = images.doctor.kyc_2;
+      textColor = colors.error || '#F04438';
+    }
+    return (
+      <Row start style={{ marginTop: 4 }}>
+        <Image
+          source={iconKYC}
+          style={{ width: 14, height: 14 }}
+          resizeMode="contain"
+        />
+        <CText
+          h6
+          w400
+          color={textColor}
+          style={{ marginLeft: 4 }}
+          numberOfLines={2}
+        >
+          {statusText}
+        </CText>
+      </Row>
+    );
+  };
 
   const handleCall = (phoneNumber: string) => {
     Linking.openURL(`tel:${phoneNumber}`).catch(() => {
@@ -294,7 +355,8 @@ export const PartnerProfileScreen: React.FC = () => {
       iconType: 'ionicons',
       iconBgColor: colors.primary || '#19A2A7',
       onPress: () => {
-        navigation.navigate('WorkScheduleManageScreen');
+        const channelId = currentUser?.channel_id || user?.channel_id;
+        navigation.navigate('WorkScheduleManageScreen', { channelId });
       },
     },
     {
@@ -317,7 +379,7 @@ export const PartnerProfileScreen: React.FC = () => {
       iconType: 'ionicons',
       iconBgColor: '#F79009',
       onPress: () => {
-        navigation.navigate('IncomeManageScreen');
+        showToast(toastEl, t('common.featureDeveloping', 'Tính năng đang phát triển'));
       },
     },
     {
@@ -327,10 +389,7 @@ export const PartnerProfileScreen: React.FC = () => {
       iconType: 'ionicons',
       iconBgColor: '#9E77ED',
       onPress: () => {
-        Alert.alert(
-          t('partnerProfile.notice', 'Thông báo'),
-          t('partnerProfile.supportHotline', 'Tổng đài hỗ trợ đối tác: 1900 xxxx'),
-        );
+        navigation.navigate('FeedbackScreen');
       },
     },
   ];
@@ -426,6 +485,7 @@ export const PartnerProfileScreen: React.FC = () => {
               {!!displaySubtitle && (
                 <CText style={styles.profileSubtitle}>{displaySubtitle}</CText>
               )}
+              {isDoctorType && renderKYCStatus(currentUser?.personalization?.status)}
             </View>
           </View>
 
@@ -531,6 +591,7 @@ export const PartnerProfileScreen: React.FC = () => {
           ))}
         </View>
       </ScrollView>
+      <Toast ref={toastEl} position={'center'} />
     </Wrapper>
   );
 };

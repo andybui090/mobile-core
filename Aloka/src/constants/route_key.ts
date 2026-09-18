@@ -25,6 +25,7 @@ export const accountTabRoute = {
 };
 
 export const mainRoute = {
+  partnerProfileScreen: 'PartnerProfileScreen',
   notificationScreen: 'NotificationScreen',
   settingScreen: 'SettingScreen',
   aboutUsScreen: 'AboutUsScreen',

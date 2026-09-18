@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { IconX } from '@/components';
+import { useTranslation } from 'react-i18next';
+import { IconX, Toast } from '@/components';
 import { fonts } from '@/configs';
 import { CText } from '@/utils';
 import {
@@ -40,9 +41,23 @@ const TAB_CONFIG: Record<
   },
 };
 
-const PartnerTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
+const PartnerTabBar: React.FC<any> = ({ state, descriptors, navigation, toastRef }) => {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const bottomPadding = insets.bottom > 0 ? insets.bottom : 8;
+
+  const getLabel = (routeName: string, defaultLabel: string) => {
+    switch (routeName) {
+      case 'PartnerWorkTab':
+        return t('partnerWork.title', defaultLabel);
+      case 'PartnerProfileTab':
+        return t('partnerProfile.title', defaultLabel);
+      case 'PartnerWalletTab':
+        return t('partnerWallet.title', defaultLabel);
+      default:
+        return defaultLabel;
+    }
+  };
 
   return (
     <View style={[styles.tabBarContainer, { paddingBottom: bottomPadding }]}>
@@ -55,6 +70,12 @@ const PartnerTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
         };
 
         const onPress = () => {
+          if (route.name === 'PartnerWalletTab') {
+            const msg = t('common.featureDeveloping', 'Tính năng đang phát triển');
+            toastRef?.current?.show(msg, 2000);
+            return;
+          }
+
           const event = navigation.emit({
             type: 'tabPress',
             target: route.key,
@@ -92,7 +113,7 @@ const PartnerTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
                 },
               ]}
             >
-              {config.label}
+              {getLabel(route.name, config.label)}
             </CText>
           </TouchableOpacity>
         );
@@ -102,32 +123,37 @@ const PartnerTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
 };
 
 export const PartnerTabNavigator: React.FC = () => {
+  const toastRef = useRef<any>(null);
+
   return (
-    <Tab.Navigator
-      initialRouteName="PartnerProfileTab"
-      backBehavior="none"
-      screenOptions={{
-        headerShown: false,
-        lazy: true,
-      }}
-      tabBar={props => <PartnerTabBar {...props} />}
-    >
-      <Tab.Screen
-        name="PartnerWorkTab"
-        component={PartnerWorkScreen}
-        options={{ headerShown: false }}
-      />
-      <Tab.Screen
-        name="PartnerProfileTab"
-        component={PartnerProfileScreen}
-        options={{ headerShown: false }}
-      />
-      <Tab.Screen
-        name="PartnerWalletTab"
-        component={TotalIncomeWalletScreen}
-        options={{ headerShown: false }}
-      />
-    </Tab.Navigator>
+    <View style={{ flex: 1 }}>
+      <Tab.Navigator
+        initialRouteName="PartnerProfileTab"
+        backBehavior="none"
+        screenOptions={{
+          headerShown: false,
+          lazy: true,
+        }}
+        tabBar={props => <PartnerTabBar toastRef={toastRef} {...props} />}
+      >
+        <Tab.Screen
+          name="PartnerWorkTab"
+          component={PartnerWorkScreen}
+          options={{ headerShown: false }}
+        />
+        <Tab.Screen
+          name="PartnerProfileTab"
+          component={PartnerProfileScreen}
+          options={{ headerShown: false }}
+        />
+        <Tab.Screen
+          name="PartnerWalletTab"
+          component={TotalIncomeWalletScreen}
+          options={{ headerShown: false }}
+        />
+      </Tab.Navigator>
+      <Toast ref={toastRef} position="center" />
+    </View>
   );
 };
 

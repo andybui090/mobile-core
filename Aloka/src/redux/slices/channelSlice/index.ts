@@ -48,7 +48,11 @@ const channelSlice = createSlice({
       state.updateSchedule.data = data;
       state.updateSchedule.error = error;
       if (data && state.channelDetail.data) {
-        state.channelDetail.data = data;
+        const hasSchedules =
+          data?.result?.schedules || data?.schedules || data?.schedule;
+        if (hasSchedules) {
+          state.channelDetail.data = data;
+        }
       }
     },
     updateChannelSchedule: (

@@ -1,4 +1,4 @@
-// RF DONE
+import { GlobalAPILoading } from '@/components';
 import { RootNavigator } from '@/navigation';
 // import LottieSplashScreen from '@attarchi/react-native-lottie-splash-screen';
 // import notifee, {EventType} from '@notifee/react-native';
@@ -228,6 +228,7 @@ function App() {
       <RootNavigator onCompleteLoading={hideSlashScreen} />
       <FirebaseConfigProvider />
       <NetworkAwareProvider />
+      <GlobalAPILoading />
       {/*
       
       <Toast /> */}
