@@ -5,4 +5,5 @@ export const bottomTab = {
   appointment_active: require('../../assets/images/bottom-tab/appointment_active.png'),
   appointment_unactive: require('../../assets/images/bottom-tab/appointment_unactive.png'),
   account: require('../../assets/images/bottom-tab/account.png'),
+  account_active: require('../../assets/images/bottom-tab/account_active.png'),
 };

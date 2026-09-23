@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ReCaptcha, Wrapper } from '@/components';
+import { IconX, ReCaptcha, Wrapper } from '@/components';
 import { CText, Loader } from '@/utils';
 import { images, isIOS, logError, statusSuccess } from '@/configs';
 import { useAppDispatch, useAppSelector } from '@/redux/store/customReduxHook';
@@ -27,6 +27,7 @@ import {
 } from '@react-native-google-signin/google-signin';
 import { appleAuth } from '@invertase/react-native-apple-authentication';
 import { getDeviceId, getDeviceName } from 'react-native-device-info';
+import { ModalPhoneCode } from './components';
 
 type PhoneCode = {
   value: string;
@@ -46,7 +47,7 @@ interface SignInProps {
   onNext: () => void;
   closeModal: () => void;
   dataLogin: LoginData;
-  updateLoginData: (name: string, value: string) => void;
+  updateLoginData: (name: string, value: any) => void;
   onNextSocial: (result: any, socialType: string) => void;
   onRegister?: () => void;
 }
@@ -72,12 +73,18 @@ export const Signin: React.FC<SignInProps> = ({
 
   const [loading, setLoading] = useState(false);
   const [socialLoginType, setSocialLoginType] = useState('');
+  const [showModalPhoneCode, setShowModalPhoneCode] = useState<boolean>(false);
 
   const phoneEl = useRef<any>(null);
   const [errPhone, setErrPhone] = useState('');
 
   const [isGenRecapcha, setIsGenRecapcha] = useState<boolean>(false);
   const [capchaToken, setCapChaToken] = useState<string>('');
+
+  const handleUpdatePhoneCode = (item: any) => {
+    updateLoginData('phoneCode', item);
+    setShowModalPhoneCode(false);
+  };
 
   useEffect(() => {
     GoogleSignin.configure();
@@ -276,6 +283,25 @@ export const Signin: React.FC<SignInProps> = ({
               Boolean(errPhone) && styles.inputBoxError,
             ]}
           >
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setShowModalPhoneCode(true)}
+              style={styles.phoneCodeBtn}
+            >
+              <CText style={styles.phoneCodeText}>
+                {dataLogin.phoneCode?.value || '+84'}
+              </CText>
+              <IconX
+                type="ionicons"
+                name="chevron-down"
+                size={16}
+                color="#667085"
+                style={styles.phoneCodeIcon}
+              />
+            </TouchableOpacity>
+
+            <View style={styles.phoneCodeDivider} />
+
             <TextInput
               ref={phoneEl}
               value={dataLogin.phoneNumber}
@@ -390,6 +416,15 @@ export const Signin: React.FC<SignInProps> = ({
       {isGenRecapcha && <ReCaptcha onVerify={actionWithToken} />}
 
       <Loader visible={loading || isGenRecapcha} />
+
+      {showModalPhoneCode && (
+        <ModalPhoneCode
+          isVisible={showModalPhoneCode}
+          hideModal={() => setShowModalPhoneCode(false)}
+          choosePhoneCode={handleUpdatePhoneCode}
+          phoneCodeChoose={dataLogin.phoneCode}
+        />
+      )}
     </Wrapper>
   );
 };
@@ -429,13 +464,35 @@ const styles = StyleSheet.create({
     borderColor: '#D0D5DD',
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    justifyContent: 'center',
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  phoneCodeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 8,
+    height: '100%',
+  },
+  phoneCodeText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#101828',
+  },
+  phoneCodeIcon: {
+    marginLeft: 4,
+  },
+  phoneCodeDivider: {
+    width: 1,
+    height: 22,
+    backgroundColor: '#D0D5DD',
+    marginRight: 10,
   },
   inputBoxError: {
     borderColor: '#F04438',
   },
   textInput: {
+    flex: 1,
     fontSize: 15,
     color: '#101828',
     paddingVertical: 0,

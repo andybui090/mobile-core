@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Linking,
@@ -70,19 +70,19 @@ export const BookingConfirm: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
 
-  const service          = route.params?.service || {};
-  const selectedDay      = route.params?.selectedDay;
+  const service = route.params?.service || {};
+  const selectedDay = route.params?.selectedDay;
   const selectedTimeSlot = route.params?.selectedTimeSlot;
-  const bookingAddress   = route.params?.bookingAddress || service?.address || '';
+  const bookingAddress = route.params?.bookingAddress || service?.address || '';
 
   // ── Derived values ────────────────────────────────────────────────────────
   const serviceTitle = service?.name;
-  const nurseName    = service?.channel?.name || service?.doctor?.full_name;
-  const address      = service?.address || service?.doctor?.address;
-  const price        = Number(service?.price ?? service?.package?.price ?? 0);
-  const isFree       = price === 0;
+  const nurseName = service?.channel?.name || service?.doctor?.full_name;
+  const address = service?.address || service?.doctor?.address;
+  const price = Number(service?.price ?? service?.package?.price ?? 0);
+  const isFree = price === 0;
   const priceFormatted = isFree ? 'Miễn phí' : formatMoneyVND(price, '.');
-  const thumbnail    = service?.thumbnail
+  const thumbnail = service?.thumbnail
     ? { uri: service.thumbnail }
     : images.common.img_default;
 
@@ -102,17 +102,13 @@ export const BookingConfirm: React.FC = () => {
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [showPolicyModal, setShowPolicyModal] = useState(false);
-  const [isLoading, setIsLoading]             = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Lưu orderId để check khi user quay lại app từ MoMo
   const pendingOrderId = useRef<string | null>(null);
 
-  // ── useCheckPaymentOnResume ───────────────────────────────────────────────
-  // Khi user quay lại app sau khi mở MoMo, gọi API check trạng thái thanh toán
-  useCheckPaymentOnResume(async () => {
-    const orderId = pendingOrderId.current;
-    if (!orderId) return;
-
+  // ── Payment status check (Resume + DeepLink) ─────────────────────────────
+  const checkPaymentStatus = async (orderId: string) => {
     try {
       const res: any = await ApiService.getPaymentStatus(orderId);
       if (!res.ok) return;
@@ -142,7 +138,30 @@ export const BookingConfirm: React.FC = () => {
     } catch (_) {
       // Bỏ qua lỗi network khi check resume
     }
+  };
+
+  // 1. Khi user quay lại app sau khi mở MoMo
+  useCheckPaymentOnResume(async () => {
+    const orderId = pendingOrderId.current;
+    if (!orderId) return;
+    await checkPaymentStatus(orderId);
   });
+
+  // 2. Khi MoMo redirect trực tiếp về app qua URL Scheme aloka://
+  useEffect(() => {
+    const handleDeepLink = (event: { url: string }) => {
+      const url = event?.url;
+      if (url && url.startsWith('aloka://')) {
+        const orderId = pendingOrderId.current;
+        if (orderId) {
+          checkPaymentStatus(orderId);
+        }
+      }
+    };
+
+    const sub = Linking.addEventListener('url', handleDeepLink);
+    return () => sub.remove();
+  }, []);
 
   // ── Payment handler ───────────────────────────────────────────────────────
 
@@ -160,7 +179,7 @@ export const BookingConfirm: React.FC = () => {
       // ── Bước 1: Mua gói → POST /orders/packages ──────────────────────────
       const buyRes: any = await ApiService.buyPackageFree({
         package_id: packageId,
-        payment:    isFree ? 'free' : 'MoMo',
+        payment: isFree ? 'free' : 'MoMo',
       });
 
       // Debug: xem cấu trúc response thực tế
@@ -174,14 +193,14 @@ export const BookingConfirm: React.FC = () => {
       // Lấy resultData: server trả về data.msg.result (không phải data.result)
       const resultData: any =
         buyRes?.data?.msg?.result ??
-        buyRes?.data?.result      ??
-        buyRes?.data?.msg         ??
-        buyRes?.data              ?? {};
+        buyRes?.data?.result ??
+        buyRes?.data?.msg ??
+        buyRes?.data ?? {};
       const orderId: string = resultData?.order_id || resultData?._id || resultData?.id || '';
-      const payUrl:  string =
-        resultData?.payUrl   ||
+      const payUrl: string =
+        resultData?.payUrl ||
         resultData?.deeplink ||
-        resultData?.pay_url  ||
+        resultData?.pay_url ||
         resultData?.momo_url || '';
 
       console.log('🎯 orderId:', orderId, '| payUrl:', payUrl);
@@ -204,16 +223,16 @@ export const BookingConfirm: React.FC = () => {
       if (!orderId) throw new Error('Không nhận được mã đơn hàng từ server.');
       const momoRes: any = await ApiService.payWithMomo({
         order_id: orderId,
-        amount:   price,
+        amount: price,
       });
       if (!momoRes?.ok) {
         throw new Error(momoRes?.data?.message || 'Không thể kết nối MoMo. Vui lòng thử lại.');
       }
       const deeplink: string =
         momoRes?.data?.result?.deeplink ||
-        momoRes?.data?.result?.payUrl   ||
-        momoRes?.data?.deeplink         ||
-        momoRes?.data?.payUrl           || '';
+        momoRes?.data?.result?.payUrl ||
+        momoRes?.data?.deeplink ||
+        momoRes?.data?.payUrl || '';
       if (!deeplink) throw new Error('Không nhận được link thanh toán MoMo.');
 
       pendingOrderId.current = orderId;
@@ -231,8 +250,8 @@ export const BookingConfirm: React.FC = () => {
   const _bookAppointment = async (orderId: string) => {
     showLoading();
     try {
-      const channelId  = service?.channel_id || service?.channel?.id || '';
-      const doctorId   = service?.user_id || service?.doctor?.id || service?.channel?.user_id || '';
+      const channelId = service?.channel_id || service?.channel?.id || '';
+      const doctorId = service?.user_id || service?.doctor?.id || service?.channel?.user_id || '';
       const categoryId = service?.category_id ||
         (Array.isArray(service?.categories) && service.categories[0]?.id) || '';
 
@@ -243,16 +262,16 @@ export const BookingConfirm: React.FC = () => {
       const dt = new Date(year, (mm || 1) - 1, dd || 1, hh || 0, mnt || 0, 0, 0);
 
       const bookingPayload: any = {
-        package_id:  service?._id || service?.id || String(service?.package_id || ''),
-        order_id:    orderId,
-        channel_id:  channelId,
-        doctor_id:   doctorId,
+        package_id: service?._id || service?.id || String(service?.package_id || ''),
+        order_id: orderId,
+        channel_id: channelId,
+        doctor_id: doctorId,
         category_id: categoryId,
-        date:        dt,
-        duration:    Number(service?.time_package || service?.duration || 30),
-        type:        service?.is_book_service == 0 ? 'ONLINE' : 'OFFLINE',
-        address:     bookingAddress || service?.address || '',
-        note:        '',
+        date: dt,
+        duration: Number(service?.time_package || service?.duration || 30),
+        type: service?.is_book_service == 0 ? 'ONLINE' : 'OFFLINE',
+        address: bookingAddress || service?.address || '',
+        note: '',
       };
 
       const bookRes: any = await ApiService.bookAppointment(bookingPayload);
@@ -428,14 +447,14 @@ export const BookingConfirm: React.FC = () => {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: {
     height: 52, flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', paddingHorizontal: 16,
     backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#EAECF0',
   },
-  headerBtn:    { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
-  headerTitle:  { fontSize: 16, fontWeight: '700', color: '#101828' },
+  headerBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: '#101828' },
   scrollContent: { padding: 16, paddingBottom: 110 },
   sectionHeading: {
     fontSize: 15, fontWeight: '700', color: '#101828',
@@ -446,15 +465,15 @@ const styles = StyleSheet.create({
     padding: 14, marginBottom: 6,
     borderWidth: 1, borderColor: '#EAECF0',
   },
-  serviceRow:     { flexDirection: 'row' },
+  serviceRow: { flexDirection: 'row' },
   serviceThumbnail: { width: 54, height: 54, borderRadius: 8, backgroundColor: '#F2F4F7' },
   serviceDetails: { flex: 1, marginLeft: 12, justifyContent: 'center' },
-  serviceTitle:   { fontSize: 13.5, fontWeight: '600', color: '#101828', lineHeight: 19 },
-  nurseName:      { fontSize: 12, color: '#98A2B3', marginTop: 4 },
-  divider:        { height: 1, backgroundColor: '#F2F4F7', marginVertical: 12 },
-  infoMetaList:   { gap: 8 },
-  metaRow:        { flexDirection: 'row', alignItems: 'center' },
-  metaText:       { fontSize: 13, color: '#344054', marginLeft: 8, flex: 1 },
+  serviceTitle: { fontSize: 13.5, fontWeight: '600', color: '#101828', lineHeight: 19 },
+  nurseName: { fontSize: 12, color: '#98A2B3', marginTop: 4 },
+  divider: { height: 1, backgroundColor: '#F2F4F7', marginVertical: 12 },
+  infoMetaList: { gap: 8 },
+  metaRow: { flexDirection: 'row', alignItems: 'center' },
+  metaText: { fontSize: 13, color: '#344054', marginLeft: 8, flex: 1 },
   viewDetailsBtn: {
     borderWidth: 1.2, borderColor: '#14B8A6', borderRadius: 8,
     paddingVertical: 10, alignItems: 'center', marginTop: 14, backgroundColor: '#FFFFFF',
@@ -465,7 +484,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14,
     marginTop: 4, marginBottom: 6, borderWidth: 1, borderColor: '#EAECF0',
   },
-  actionCardLeft:  { flexDirection: 'row', alignItems: 'center' },
+  actionCardLeft: { flexDirection: 'row', alignItems: 'center' },
   actionCardTitle: { fontSize: 13.5, fontWeight: '500', color: '#101828', marginLeft: 10 },
   promoActionText: { fontSize: 13.5, color: '#14B8A6', fontWeight: '500' },
   paymentRow: {
@@ -482,7 +501,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF', fontSize: 10, fontWeight: '800',
     lineHeight: 11, textAlign: 'center',
   },
-  paymentName:      { fontSize: 14, color: '#344054', fontWeight: '500' },
+  paymentName: { fontSize: 14, color: '#344054', fontWeight: '500' },
   radioCircleActive: {
     width: 22, height: 22, borderRadius: 11,
     borderWidth: 2, borderColor: '#14B8A6',
@@ -495,8 +514,8 @@ const styles = StyleSheet.create({
   },
   receiptTotalLabel: { fontSize: 14, fontWeight: '500', color: '#101828' },
   receiptTotalValue: { fontSize: 15, fontWeight: '700', color: '#101828' },
-  receiptFreeValue:  { color: '#14B8A6' },
-  securityRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  receiptFreeValue: { color: '#14B8A6' },
+  securityRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
   securityText: { fontSize: 12, color: '#667085', flex: 1, lineHeight: 17 },
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,

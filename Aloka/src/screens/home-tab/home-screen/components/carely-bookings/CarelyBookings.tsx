@@ -45,6 +45,10 @@ const useStyles = makeStyles(({ colors }) =>
             borderWidth: 1,
             borderColor: colors.cEAECF0,
         },
+        thumbnailImage: {
+            width: '100%',
+            height: '100%',
+        },
     })
 );
 
@@ -74,7 +78,12 @@ const CarelyBookings = (props: any) => {
                 <View style={styles.topWrap}>
                     <Row start style={[{ alignItems: "flex-start" }]}>
                         <View style={styles.thumn}>
-                            <ImageHelper source={{ uri: packageInfo?.thumbnail || '' }} renderErrorImage={renderErrorImage} resizeMode={'cover'} />
+                            <ImageHelper
+                                source={{ uri: packageInfo?.thumbnail || '' }}
+                                style={styles.thumbnailImage}
+                                renderErrorImage={renderErrorImage}
+                                resizeMode={'cover'}
+                            />
                         </View>
                         <View style={screenStyles.mL10}>
                             {packageInfo?.name?.toString().trim() && <CText h4 w500 color={colors.c1D2939}>

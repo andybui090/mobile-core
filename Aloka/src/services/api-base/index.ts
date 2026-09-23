@@ -7,9 +7,7 @@ import i18n from 'i18next';
 import { getObjectData } from '@/storages';
 import { STORAGEKEY } from '@/constants';
 
-const BASE_API_FALLBACK_URL = 'https://staging.rf.api.doctornetwork.us/v1';
-
-const createApiClient = (baseURL = Config.BASE_API_URL || BASE_API_FALLBACK_URL) => {
+const createApiClient = (baseURL = Config.BASE_API_URL) => {
   const api = create({
     baseURL,
     headers: {
@@ -282,7 +280,6 @@ const createApiClient = (baseURL = Config.BASE_API_URL || BASE_API_FALLBACK_URL)
   const payWithMomo = (payload: {
     order_id: string;
     amount: number;
-    redirect_url?: string;
     ipn_url?: string;
     extra_data?: string;
   }) => {

@@ -207,6 +207,7 @@ const AccountScreen: React.FC<any> = ({ navigation }: any) => {
               source={{
                 uri: avatar || '',
               }}
+              style={styles.imgWrap}
               renderErrorImage={renderErrorImage}
             />
           </View>

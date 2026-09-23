@@ -39,6 +39,10 @@ const useStyles = makeStyles(({colors}) => ({
     borderWidth: 1,
     borderColor: colors.cF2F4F7,
   },
+  thumbnailImage: {
+    width: '100%' as const,
+    height: '100%' as const,
+  },
   content: {
     paddingVertical: 8,
   },
@@ -118,6 +122,8 @@ const CarelyServicesSearch = (props: any) => {
         <View style={styles.image}>
           <ImageHelper
             source={{uri: thumbnail}}
+            style={styles.thumbnailImage}
+            resizeMode="cover"
             renderErrorImage={renderErrorImage}
           />
         </View>

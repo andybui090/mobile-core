@@ -36,6 +36,16 @@
 				<string>com.googleusercontent.apps.453220095309-dbj5s39km5esbg3ec5ptkvj6608ketbl</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>aloka</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>aloka</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>

@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import Config from 'react-native-config';
 import ApiService from '@/services/api-base';
 import { getDeviceId } from '@/configs/common';
 import { getObjectData } from '@/storages';
@@ -19,8 +20,8 @@ export interface RoomDetail {
   is_online?: boolean;
 }
 
-// Định nghĩa URL gốc (Base URL), KHÔNG kèm theo /socket.io/ hay query params
-const SOCKET_BASE_URL = 'https://staging.rf.api.doctornetwork.us';
+// Lấy link Socket từ file .env (biến SOCKET_LINK)
+const SOCKET_BASE_URL = Config.SOCKET_LINK;
 
 let socket: Socket | undefined;
 

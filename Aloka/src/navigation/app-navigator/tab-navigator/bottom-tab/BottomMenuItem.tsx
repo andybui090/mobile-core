@@ -57,7 +57,7 @@ export const BottomMenuItem = ({ isFocused, index }: any) => {
     case 3:
       return isFocused
         ? renderItemActive(
-            images.bottomTab.account,
+            images.bottomTab.account_active,
             t('common.account', 'Account'),
           )
         : renderItemUnactive(

@@ -37,14 +37,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     return true
   }
 
-  // MARK: - Deep linking (FBSDK + GoogleSDK)
+  // MARK: - Deep linking (GoogleSDK + React Native Linking)
   func application(
     _ app: UIApplication,
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
-    return GIDSignIn.sharedInstance.handle(url)
-    
+    return GIDSignIn.sharedInstance.handle(url) || RCTLinkingManager.application(app, open: url, options: options)
+  }
+
+  func application(
+    _ application: UIApplication,
+    continue userActivity: NSUserActivity,
+    restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
+  ) -> Bool {
+    return RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)
   }
 }
 

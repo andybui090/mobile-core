@@ -394,10 +394,10 @@ export const WorkInfoTab: React.FC<WorkInfoTabProps> = ({
               {subStatus === 'REQUEST'
                 ? t('partnerWork.emptyRequest', 'Chưa có yêu cầu nào đang chờ')
                 : subStatus === 'SCHEDULE'
-                ? t('partnerWork.emptySchedule', 'Chưa có lịch hẹn nào')
-                : subStatus === 'COMPLETED'
-                ? t('partnerWork.emptyCompleted', 'Chưa có lịch hoàn thành nào')
-                : t('partnerWork.emptyCancelled', 'Chưa có lịch bị huỷ nào')}
+                  ? t('partnerWork.emptySchedule', 'Chưa có lịch hẹn nào')
+                  : subStatus === 'COMPLETED'
+                    ? t('partnerWork.emptyCompleted', 'Chưa có lịch hoàn thành nào')
+                    : t('partnerWork.emptyCancelled', 'Chưa có lịch bị huỷ nào')}
             </CText>
           </View>
         ) : (
@@ -407,7 +407,7 @@ export const WorkInfoTab: React.FC<WorkInfoTabProps> = ({
               {subStatus === 'SCHEDULE' && (job.isMoving || job.appointmentStatus === 'ON_THE_WAY') && (
                 <View style={styles.mapContainer}>
                   <Image
-                    source={images.common.mini_map}
+                    source={images.common.img_default}
                     style={styles.mapImage}
                     resizeMode="cover"
                   />
@@ -429,7 +429,7 @@ export const WorkInfoTab: React.FC<WorkInfoTabProps> = ({
                       source={
                         typeof job.customerAvatar === 'string' && job.customerAvatar
                           ? { uri: job.customerAvatar }
-                          : job.customerAvatar || images.common.nurse_minh_hieu
+                          : job.customerAvatar || images.common.img_default
                       }
                       style={styles.avatarImg}
                     />
