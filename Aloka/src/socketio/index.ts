@@ -21,7 +21,14 @@ export interface RoomDetail {
 }
 
 // Lấy link Socket từ file .env (biến SOCKET_LINK)
-const SOCKET_BASE_URL = Config.SOCKET_LINK;
+const getSocketUrl = () => {
+  const url = Config.SOCKET_LINK || '';
+  if (!url || url.includes(':9007')) {
+    return 'https://staging.rf.api.doctornetwork.us';
+  }
+  return url;
+};
+const SOCKET_BASE_URL = getSocketUrl();
 
 let socket: Socket | undefined;
 
@@ -57,7 +64,7 @@ class SocketService {
     if (!socket) {
       socket = io(SOCKET_BASE_URL, {
         path: '/socket.io/', // Mặc định là /socket.io/, socket.io-client sẽ tự lo EIO=4
-        transports: ['websocket'],
+        transports: ['websocket', 'polling'],
         autoConnect: false, // Để chủ động gọi socket.connect() có kiểm soát bên dưới
         auth: {
           token: jwtToken || '',

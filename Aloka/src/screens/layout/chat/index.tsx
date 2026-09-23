@@ -271,44 +271,17 @@ export const ChatScreen: React.FC = () => {
         },
       });
 
-      // Kiểm tra nếu API báo lỗi (400 hoặc không tìm thấy phòng chat do đã bị xóa)
+      // Nếu API báo lỗi hoặc chưa có tin nhắn (phòng mới) → để messages rỗng, không văng alert chặn user
       if (
         res?.status === 400 ||
         res?.status === 404 ||
         res?.data?.status === 'error' ||
         !res?.ok
       ) {
-        const errorMsg =
-          res?.data?.errors?.[0]?.msg ||
-          res?.data?.message ||
-          res?.problem ||
-          '';
-        const isNotFound =
-          errorMsg.includes('Không tìm thấy') ||
-          errorMsg.includes('not found') ||
-          res?.status === 400 ||
-          res?.status === 404;
-
-        if (isNotFound) {
-          console.log('[ChatScreen] Room not found or deleted on server:', roomId, errorMsg);
-          roomMessagesCache.delete(roomId);
-          socketService.emitDeleteRoom(roomId);
-          Alert.alert(
-            'Thông báo',
-            'Cuộc trò chuyện này đã bị xóa hoặc không tồn tại.',
-            [
-              {
-                text: 'Đồng ý',
-                onPress: () => {
-                  if (navigation.canGoBack()) {
-                    navigation.goBack();
-                  }
-                },
-              },
-            ],
-          );
-          return;
-        }
+        console.log('[ChatScreen] getListHistoryChat notice/empty:', roomId, res?.status, res?.data?.message);
+        setMessages([]);
+        setHasMore(false);
+        return;
       }
 
       const rawItems: any[] =

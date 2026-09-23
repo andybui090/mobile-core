@@ -688,7 +688,7 @@ export const SearchService: React.FC<SearchServiceProps> = ({ onBack, onFilterPr
         </View>
 
         {/* Gợi ý 1: Nút quét cơ sở gần tôi */}
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.suggestionBanner}
           activeOpacity={0.7}
           onPress={handleEnableLocationAndScan}
@@ -703,10 +703,10 @@ export const SearchService: React.FC<SearchServiceProps> = ({ onBack, onFilterPr
             </View>
           </View>
           <IconX type="ionicons" name="arrow-forward" size={18} color="#0D9488" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         {/* Gợi ý 2: Gói dịch vụ phổ biến / Hot */}
-        <View style={styles.suggestedSection}>
+        {/* <View style={styles.suggestedSection}>
           <View style={styles.suggestedSectionHeader}>
             <IconX type="ionicons" name="flame" size={18} color="#EF4444" />
             <CText style={styles.suggestedSectionTitle}>Gợi ý dịch vụ phổ biến:</CText>
@@ -741,7 +741,7 @@ export const SearchService: React.FC<SearchServiceProps> = ({ onBack, onFilterPr
               </View>
             </TouchableOpacity>
           ))}
-        </View>
+        </View> */}
       </View>
     );
   };
@@ -787,7 +787,7 @@ export const SearchService: React.FC<SearchServiceProps> = ({ onBack, onFilterPr
               <IconX type="ionicons" name="close-circle" size={18} color="#98A2B3" />
             </TouchableOpacity>
           )}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             activeOpacity={0.7}
             style={[styles.locateBtn, userCoords && styles.locateBtnActive]}
             onPress={handleEnableLocationAndScan}
@@ -803,7 +803,7 @@ export const SearchService: React.FC<SearchServiceProps> = ({ onBack, onFilterPr
                 color={userCoords ? '#0D9488' : '#64748B'}
               />
             )}
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           {/* <TouchableOpacity
             activeOpacity={0.7}
             style={styles.filterBtn}
@@ -821,10 +821,10 @@ export const SearchService: React.FC<SearchServiceProps> = ({ onBack, onFilterPr
       </View>
 
       {/* 3 Luồng phân loại: Gói dịch vụ - Bác sĩ/ĐD - Gần tôi */}
-      {renderFlowTabs()}
+      {/* {renderFlowTabs()} */}
 
       {/* Prompt tìm quanh đây */}
-      {renderNearbyPromptBanner()}
+      {/* {renderNearbyPromptBanner()} */}
 
       {/* Nội dung theo từng luồng */}
       {activeFlow === 'SERVICES' && (

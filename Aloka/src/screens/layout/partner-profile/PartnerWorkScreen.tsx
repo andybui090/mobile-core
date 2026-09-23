@@ -416,6 +416,19 @@ export const PartnerWorkScreen: React.FC = () => {
     toUserId?: string,
     rawItem?: any,
   ) => {
+    // Nếu đi từ danh sách tin nhắn (WorkChatTab) và đã có sẵn roomId hợp lệ
+    if (jobId && !rawItem) {
+      navigation.navigate('PartnerChatScreen', {
+        roomId: jobId,
+        name,
+        customerName: name,
+        avatar,
+        customerAvatar: avatar,
+        toUserId,
+      });
+      return;
+    }
+
     const packageInfo = rawItem?.package || {};
     const packageId = packageInfo?.id || packageInfo?._id || rawItem?.package_id;
     const orderId = rawItem?.id || rawItem?._id || jobId;
