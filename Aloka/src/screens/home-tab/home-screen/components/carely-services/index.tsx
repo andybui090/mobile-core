@@ -61,7 +61,6 @@ const CarelyServices = (props: any) => {
   } = props;
 
   const [listGroup, setListGroup] = useState<any>([]);
-
   // group 2 item / column
   const groupIntoColumns = (data: any, size = 2) => {
     const result = [];
@@ -91,6 +90,7 @@ const CarelyServices = (props: any) => {
   };
 
   const renderItem = ({ item, index }: any) => {
+
     return (
       <View style={styles.column}>
         {item.map((service: any) => (
@@ -101,7 +101,9 @@ const CarelyServices = (props: any) => {
           >
             <View style={styles.iconBox}>
               <ImageHelper
-                source={{ uri: service.thumbnail || '' }}
+                source={service.thumbnail ? { uri: service.thumbnail } : images.global.img_default}
+                style={{ width: 40, height: 40, borderRadius: 12 }}
+                resizeMode="cover"
                 renderErrorImage={renderErrorImage}
               />
             </View>

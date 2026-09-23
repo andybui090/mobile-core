@@ -16,7 +16,11 @@ export const SBImageItem: React.FC<Props> = ({style, item, index: _index, onView
   return (
     <TouchableOpacity onPress={onViewDetail} style={[screenStyles.flex1, style]}>
       <View style={styles.imageWrapper}>
-        <ImageHelper source={{uri: item?.image}} />
+        <ImageHelper
+          source={{ uri: item?.image }}
+          style={{ width: '100%', height: '100%' }}
+          resizeMode="cover"
+        />
       </View>
     </TouchableOpacity>
   );

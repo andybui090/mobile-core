@@ -804,7 +804,7 @@ export const SearchService: React.FC<SearchServiceProps> = ({ onBack, onFilterPr
               />
             )}
           </TouchableOpacity>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             activeOpacity={0.7}
             style={styles.filterBtn}
             onPress={() => {
@@ -816,7 +816,7 @@ export const SearchService: React.FC<SearchServiceProps> = ({ onBack, onFilterPr
             }}
           >
             <IconX type="ionicons" name="options-outline" size={18} color="#0D9488" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
 

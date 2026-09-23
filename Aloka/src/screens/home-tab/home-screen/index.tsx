@@ -160,8 +160,10 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
   useEffect(() => {
     const processAPITopBanner = () => {
       const { loading, data, error } = topBannerData;
+      console.log('🚀 ~ banner ~ loading:', loading, '| error:', error, '| data:', JSON.stringify(data));
       if (!loading) {
         if (data) {
+          console.log('🚀 ~ banner data.items:', JSON.stringify(data.items));
           if (!isEmptyArray(data.items)) {
             let arrClone = [...data.items];
             for (let i = 0; i < data.items.length; i++) {
@@ -393,7 +395,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
         <SlideShow
           DATABANNER={listBanner || []}
           onViewDetail={handleLinkBanner}
-          onChangeImgIndex={() => {}}
+          onChangeImgIndex={() => { }}
           page={'HomeScreen'}
         />
       );
