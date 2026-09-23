@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Linking,
   SafeAreaView,
@@ -108,7 +107,7 @@ export const BookingConfirm: React.FC = () => {
   // Lưu orderId để check khi user quay lại app từ MoMo
   const pendingOrderId = useRef<string | null>(null);
 
-  // ── useCheckPaymentOnResume (copy pattern từ drcarely) ────────────────────
+  // ── useCheckPaymentOnResume ───────────────────────────────────────────────
   // Khi user quay lại app sau khi mở MoMo, gọi API check trạng thái thanh toán
   useCheckPaymentOnResume(async () => {
     const orderId = pendingOrderId.current;
@@ -158,70 +157,67 @@ export const BookingConfirm: React.FC = () => {
     try {
       const packageId = service?._id || service?.id || String(service?.package_id || '');
 
-      // ── Bước 1: Mua gói → POST /orders/packages (giống doctor-mobile-app buyPackage) ──
-      const buyRes: any = await ApiService.createOrder({
-        package_id:     packageId,
-        payment:        'momo',    // doctor-mobile-app luôn gửi 'momo' kể cả gói 0đ
-        amount:         price,
+      // ── Bước 1: Mua gói → POST /orders/packages ──────────────────────────
+      const buyRes: any = await ApiService.buyPackageFree({
+        package_id: packageId,
+        payment:    isFree ? 'free' : 'MoMo',
       });
 
-      let orderId: string =
-        buyRes?.data?.result?.order_id ||
-        buyRes?.data?.result?._id      ||
-        buyRes?.data?.result?.id       ||
-        buyRes?.data?.order_id         ||
-        buyRes?.data?._id              ||
-        buyRes?.data?.id               || '';
+      // Debug: xem cấu trúc response thực tế
+      console.log('🚀 buyRes.ok:', buyRes?.ok, '| buyRes.data:', JSON.stringify(buyRes?.data));
 
-      // Lỗi: gói 0đ đã mua lần trước → message chứa order_id cũ
       if (!buyRes?.ok) {
         const errMsg: string = buyRes?.data?.message || buyRes?.data?.error || '';
-        const existingOrderId = errMsg.match(/order_id[:\s"]*([a-zA-Z0-9-]+)/)?.[1];
-
-        if (existingOrderId && isFree) {
-          // Dùng order_id cũ để đặt lịch tiếp (lần sau với gói 0đ)
-          orderId = existingOrderId;
-        } else {
-          throw new Error(errMsg || 'Không thể tạo đơn hàng. Vui lòng thử lại.');
-        }
+        throw new Error(errMsg || 'Không thể tạo đơn hàng. Vui lòng thử lại.');
       }
 
-      // ── Bước 2a (0đ): Đặt lịch thực sự → POST /appointments ──────────────
+      // Lấy resultData: server trả về data.msg.result (không phải data.result)
+      const resultData: any =
+        buyRes?.data?.msg?.result ??
+        buyRes?.data?.result      ??
+        buyRes?.data?.msg         ??
+        buyRes?.data              ?? {};
+      const orderId: string = resultData?.order_id || resultData?._id || resultData?.id || '';
+      const payUrl:  string =
+        resultData?.payUrl   ||
+        resultData?.deeplink ||
+        resultData?.pay_url  ||
+        resultData?.momo_url || '';
+
+      console.log('🎯 orderId:', orderId, '| payUrl:', payUrl);
+
+      // ── Bước 2a (0đ): Đặt lịch → POST /appointments ─────────────────────
       if (isFree) {
         await _bookAppointment(orderId);
         return;
       }
 
-      // ── Bước 2b (có phí): Gọi MoMo API → nhận deeplink ──────────────────
-      if (!orderId) throw new Error('Không nhận được mã đơn hàng từ server.');
+      // ── Bước 2b (có phí): Mở MoMo deeplink ──────────────────────────────
+      if (payUrl) {
+        // Server đã trả payUrl trong response → dùng luôn, không gọi thêm API
+        pendingOrderId.current = orderId;
+        await Linking.openURL(payUrl);
+        return;
+      }
 
+      // Fallback: server không trả payUrl → gọi riêng /payments/momo
+      if (!orderId) throw new Error('Không nhận được mã đơn hàng từ server.');
       const momoRes: any = await ApiService.payWithMomo({
         order_id: orderId,
         amount:   price,
       });
-
       if (!momoRes?.ok) {
         throw new Error(momoRes?.data?.message || 'Không thể kết nối MoMo. Vui lòng thử lại.');
       }
-
       const deeplink: string =
-        momoRes.data?.result?.deeplink  ||
-        momoRes.data?.result?.payUrl    ||
-        momoRes.data?.deeplink          ||
-        momoRes.data?.payUrl            || '';
-
-      const webUrl: string =
-        momoRes.data?.result?.qrCodeUrl ||
-        momoRes.data?.result?.shortLink ||
-        deeplink;
-
+        momoRes?.data?.result?.deeplink ||
+        momoRes?.data?.result?.payUrl   ||
+        momoRes?.data?.deeplink         ||
+        momoRes?.data?.payUrl           || '';
       if (!deeplink) throw new Error('Không nhận được link thanh toán MoMo.');
 
-      // Lưu orderId → useCheckPaymentOnResume dùng sau khi quay lại từ MoMo
       pendingOrderId.current = orderId;
-
-      const canOpen = await Linking.canOpenURL(deeplink);
-      await Linking.openURL(canOpen ? deeplink : webUrl);
+      await Linking.openURL(deeplink);
 
     } catch (err: any) {
       Alert.alert('Lỗi', err?.message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
@@ -232,7 +228,6 @@ export const BookingConfirm: React.FC = () => {
   };
 
   // ── Đặt lịch hẹn sau khi có order_id (POST /appointments) ─────────────────
-  // Giống bookService() trong doctor-mobile-app
   const _bookAppointment = async (orderId: string) => {
     showLoading();
     try {
@@ -260,7 +255,7 @@ export const BookingConfirm: React.FC = () => {
         note:        '',
       };
 
-      const bookRes: any = await ApiService.updateBookingStatus(bookingPayload);
+      const bookRes: any = await ApiService.bookAppointment(bookingPayload);
 
       if (isApiSuccess(bookRes)) {
         Alert.alert(

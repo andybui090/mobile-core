@@ -949,7 +949,7 @@ export const WorkingHoursScreen: React.FC = () => {
                 !dateRangeText && { color: '#98A2B3', fontWeight: '400' },
               ]}
             >
-              {dateRangeText || 'Chọn khoảng thời gian (DD/MM/YYYY - DD/MM/YYYY)'}
+              {dateRangeText || 'Chọn khoảng thời gian'}
             </CText>
             <IconX type="ionicons" name="chevron-down" size={18} color="#667085" />
           </TouchableOpacity>

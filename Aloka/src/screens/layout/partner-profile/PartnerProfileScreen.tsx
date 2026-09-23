@@ -253,7 +253,7 @@ export const PartnerProfileScreen: React.FC = () => {
     user?.type ||
     ''
   ).toLowerCase();
-  const isDoctorType = userType === 'doctor';
+  const isDoctorType = userType === 'doctor' || userType === 'nurse';
 
   const position =
     currentUser?.personalization?.position || currentUser?.personalization?.type || '';
@@ -273,16 +273,16 @@ export const PartnerProfileScreen: React.FC = () => {
 
   const displayEmail = currentUser?.email || '';
 
-  const displayIntro =
-    currentUser?.personalization?.description ||
-    currentUser?.channels?.[0]?.description ||
-    currentUser?.personalization?.channels?.[0]?.description ||
-    '';
+  const medicalLicenseNumber = currentUser?.medical_license_number || '';
 
-  const avatar =
-    currentUser?.avatar ||
-    currentUser?.personalization?.avatar ||
-    currentUser?.channels?.[0]?.avatar;
+  console.log("🚀 ------------------------------------------------------------------------------------🚀");
+  console.log("🚀 ~ PartnerProfileScreen.tsx:278 ~ PartnerProfileScreen ~ currentUser:", currentUser);
+  console.log("🚀 ------------------------------------------------------------------------------------🚀");
+
+
+  const displayIntro = currentUser?.personalization?.description || '';
+
+  const avatar = currentUser?.avatar;
 
   const avatarSource = avatar
     ? typeof avatar === 'string'
@@ -520,6 +520,22 @@ export const PartnerProfileScreen: React.FC = () => {
                     color={colors.c98A2B3 || '#98A2B3'}
                   />
                   <CText style={styles.contactText}>{displayEmail}</CText>
+                </TouchableOpacity>
+              )}
+
+              {!!medicalLicenseNumber && (
+                <TouchableOpacity
+                  style={styles.contactItem}
+                  activeOpacity={0.7}
+                  onPress={() => { }}
+                >
+                  <IconX
+                    type="ionicons"
+                    name="briefcase-outline"
+                    size={15}
+                    color={colors.c98A2B3 || '#98A2B3'}
+                  />
+                  <CText style={styles.contactText}>{medicalLicenseNumber}</CText>
                 </TouchableOpacity>
               )}
             </View>

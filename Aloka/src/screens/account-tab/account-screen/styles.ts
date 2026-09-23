@@ -51,7 +51,7 @@ const useStyles = makeStyles(({ colors }) => ({
   },
   actionBtn: {
     flex: 1,
-    borderColor: '#2F80ED',
+    borderColor: '#19A2A7',
     borderRadius: 8,
     paddingVertical: 10,
     borderWidth: 1,

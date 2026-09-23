@@ -54,11 +54,17 @@ export const ModalSearchAddress: React.FC<Props> = ({ visible, onClose, onChoose
       try {
         const res: any = await ApiService.searchLocation(text.trim());
         if (res?.ok) {
-          const items: LocationItem[] = (res.data?.result?.items || res.data?.items || []).map((item: any) => ({
-            text: item.text || item.description || item.name || '',
-            geometry: item.geometry,
-            place_id: item.place_id || item.id,
-          }));
+          const items: LocationItem[] = (res.data?.result?.items || res.data?.items || []).map((item: any) => {
+            const loc =
+              item?.geometry?.location ||
+              item?.location ||
+              (item?.lat && item?.lng ? { lat: Number(item.lat), lng: Number(item.lng) } : undefined);
+            return {
+              text: item.text || item.description || item.address || item.name || '',
+              geometry: loc ? { location: loc } : item.geometry,
+              place_id: item.place_id || item.id,
+            };
+          });
           setResults(items);
         }
       } catch {}

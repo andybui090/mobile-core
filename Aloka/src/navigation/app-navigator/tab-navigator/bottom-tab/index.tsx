@@ -39,10 +39,13 @@ export const TabBar = ({ state, descriptors, navigation }: any) => {
         return;
       }
       if (route.name === 'AccountTab') {
+        const userType = user?.personalization?.type;
+        // Nếu profile chưa load xong (type undefined) → chưa biết loại user, bỏ qua
+        if (!userType) return;
         const isUserType =
-          user?.personalization?.type === 'User' ||
-          user?.personalization?.type === 'user' ||
-          user?.personalization?.type?.toLowerCase() === 'user';
+          userType === 'User' ||
+          userType === 'user' ||
+          userType?.toLowerCase() === 'user';
         if (isUserType) {
           if (!isFocused) {
             navigation.navigate('AccountTab');

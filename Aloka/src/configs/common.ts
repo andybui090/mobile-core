@@ -74,7 +74,7 @@ export const statusSuccess = (status: string) => {
 
 export const logError = (err: any, key?: string, isOnlyMsg?: boolean) => {
   let msg = 'Something error!!!';
-  if (err.errors) {
+  if (err && err.errors) {
     const { errors } = err;
     if (!isEmptyArray(errors)) {
       if (isOnlyMsg) {

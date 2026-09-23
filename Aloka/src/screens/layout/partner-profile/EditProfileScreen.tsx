@@ -15,7 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { makeStyles, useTheme } from '@rneui/themed';
@@ -25,6 +25,7 @@ import {
   CKeyboardAvoidingView,
   IconX,
   ImageHelper,
+  ModalCountry,
   ModalGender,
   Wrapper,
   hideLoading,
@@ -111,7 +112,7 @@ const useStyles = makeStyles(({ colors }) =>
       marginTop: 8,
       fontSize: 14,
       fontWeight: '500',
-      color: '#0080FF',
+      color: '#19A2A7',
     },
     formGroup: {
       marginBottom: 16,
@@ -340,16 +341,37 @@ const useStyles = makeStyles(({ colors }) =>
   })
 );
 
+const formatBytes = (bytes?: number | null, decimals = 1) => {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+};
+
 export const EditProfileScreen: React.FC = () => {
   const styles = useStyles();
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
   const { user } = useContext<any>(AppContext) || {};
 
+  const userType = (
+    route?.params?.type ||
+    user?.personalization?.type ||
+    user?.type ||
+    'user'
+  ).toLowerCase();
+
+  const isUserType = userType === 'user';
+
   // Form State initialized from user context (no hardcoded fallback values)
   const [fullName, setFullName] = useState<string>(user?.full_name || '');
+  const [country, setCountry] = useState<string>(user?.country || 'Vietnam');
+  const [showCountryModal, setShowCountryModal] = useState<boolean>(false);
 
   const getInitialGender = () => {
     const raw = user?.gender;
@@ -403,28 +425,50 @@ export const EditProfileScreen: React.FC = () => {
     specializationsInitial || ''
   );
 
-  const existingCertificate: any = '';
-
   // Chứng chỉ hành nghề attachment (Document picker)
   const [certificateFile, setCertificateFile] = useState<{
     name: string;
     size: string;
     uri?: string;
     type?: string;
+    base64?: string;
+    id?: number | string;
   } | null>(() => {
-    if (existingCertificate && typeof existingCertificate === 'string') {
-      const parts = existingCertificate.split('/');
+    const userAttachments =
+      user?.personalization?.kyc_changes?.attachments ||
+      user?.personalization?.attachments;
+    if (Array.isArray(userAttachments) && userAttachments.length > 0) {
+      const firstAtt = userAttachments[0];
+      const fileName =
+        firstAtt.name ||
+        firstAtt.fileName ||
+        firstAtt.file?.split('/').pop() ||
+        'chung_chi_hanh_nghe.pdf';
       return {
-        name: parts[parts.length - 1] || 'chung_chi_hanh_nghe.pdf',
+        id: firstAtt.id,
+        name: fileName,
+        size: firstAtt.size ? formatBytes(firstAtt.size) : '',
+        uri: firstAtt.file || '',
+      };
+    }
+    if (user?.personalization?.certificate_file) {
+      const fileUrl = user.personalization.certificate_file;
+      const fileName = fileUrl.split('/').pop() || 'chung_chi_hanh_nghe.pdf';
+      return {
+        name: fileName,
         size: '',
-        uri: existingCertificate,
+        uri: fileUrl,
       };
     }
     return null;
   });
 
   const [certificateNumber, setCertificateNumber] = useState<string>(
-    user?.personalization?.certificate_number || user?.certificate_number || ''
+    user?.personalization?.medical_license_number ||
+    user?.medical_license_number ||
+    user?.personalization?.certificate_number ||
+    user?.certificate_number ||
+    ''
   );
 
   const [experience, setExperience] = useState<string>(
@@ -443,6 +487,9 @@ export const EditProfileScreen: React.FC = () => {
 
   const [errors, setErrors] = useState<{
     fullName?: string;
+    country?: string;
+    gender?: string;
+    dob?: string;
     certificateNumber?: string;
     certificateFile?: string;
     workingArea?: string;
@@ -461,18 +508,25 @@ export const EditProfileScreen: React.FC = () => {
     inputHeight: 90,
   });
 
-  const isFormValid = Boolean(
-    fullName.trim() &&
-    certificateFile &&
-    certificateNumber.trim() &&
-    workingArea &&
-    workingArea.trim()
-  );
+  const isFormValid = isUserType
+    ? Boolean(
+      fullName.trim() &&
+      country.trim() &&
+      (gender?.value || gender?.name || (typeof gender === 'string' && gender)) &&
+      dob
+    )
+    : Boolean(
+      fullName.trim() &&
+      certificateFile &&
+      certificateNumber.trim() &&
+      workingArea &&
+      workingArea.trim()
+    );
 
   const [movingRadius, setMovingRadius] = useState<string>(
     user?.personalization?.moving_radius
       ? `${user.personalization.moving_radius} Km`
-      : ''
+      : '10 Km'
   );
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -557,13 +611,20 @@ export const EditProfileScreen: React.FC = () => {
     }, 200);
   };
 
-  const formatBytes = (bytes?: number | null, decimals = 1) => {
-    if (!bytes || bytes === 0) return '0 B';
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+
+  const readFileAsBase64 = async (uri: string): Promise<string> => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+        resolve(base64);
+      };
+      reader.readAsDataURL(blob);
+    });
   };
 
   const handlePickCertificate = async () => {
@@ -594,11 +655,21 @@ export const EditProfileScreen: React.FC = () => {
         }
       }
 
+      let base64 = '';
+      if (document.uri) {
+        try {
+          base64 = await readFileAsBase64(document.uri);
+        } catch (readErr) {
+          console.log('Failed to convert certificate file to base64:', readErr);
+        }
+      }
+
       setCertificateFile({
         name: document.name || 'chung_chi_hanh_nghe.pdf',
         size: formatBytes(document.size),
         uri: document.uri,
         type: document.type || undefined,
+        base64,
       });
       setErrors(prev => ({ ...prev, certificateFile: undefined }));
     } catch (err: any) {
@@ -618,44 +689,74 @@ export const EditProfileScreen: React.FC = () => {
   const handleUpdateProfile = async () => {
     const newErrors: typeof errors = {};
 
-    if (!fullName.trim()) {
-      newErrors.fullName = t('partnerEditProfile.errorFullName', 'Vui lòng nhập họ và tên');
-    }
-
-    if (!certificateFile) {
-      newErrors.certificateFile = t('partnerEditProfile.errorCertificateFile', 'Vui lòng tải lên chứng chỉ hành nghề');
-    }
-
-    if (!certificateNumber.trim()) {
-      newErrors.certificateNumber = t('partnerEditProfile.errorCertificateNumber', 'Vui lòng bổ sung số CCHN');
-    }
-
-    if (!workingArea || !workingArea.trim()) {
-      newErrors.workingArea = t('partnerEditProfile.errorWorkingArea', 'Vui lòng chọn khu vực làm việc');
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-
-      const firstError =
-        newErrors.fullName ||
-        newErrors.certificateFile ||
-        newErrors.certificateNumber ||
-        newErrors.workingArea;
-
-      Alert.alert(
-        t('partnerProfile.notice', 'Thông báo'),
-        firstError || t('partnerEditProfile.errorRequiredFields', 'Vui lòng điền đầy đủ các trường bắt buộc (*)'),
-      );
-
-      if (newErrors.fullName) {
-        scrollToField('fullName', 50, true);
-      } else if (newErrors.certificateFile || newErrors.certificateNumber) {
-        scrollToField('certificateNumber', 50, true);
-      } else if (newErrors.workingArea) {
-        scrollToField('movingRadius', 50, true);
+    if (isUserType) {
+      if (!fullName.trim()) {
+        newErrors.fullName = t('partnerEditProfile.errorFullName', 'Vui lòng nhập họ và tên');
       }
-      return;
+      if (!country || !country.trim()) {
+        newErrors.country = t('onboarding.errorCountry', 'Vui lòng chọn quốc gia');
+      }
+      if (!gender?.value && !gender?.name && (!gender || typeof gender !== 'string')) {
+        newErrors.gender = t('partnerEditProfile.errorGender', 'Vui lòng chọn giới tính');
+      }
+      if (!dob || dob === 'Invalid date') {
+        newErrors.dob = t('partnerEditProfile.errorDob', 'Vui lòng chọn ngày sinh');
+      }
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        const firstError =
+          newErrors.fullName ||
+          newErrors.country ||
+          newErrors.gender ||
+          newErrors.dob;
+
+        Alert.alert(
+          t('partnerProfile.notice', 'Thông báo'),
+          firstError || t('partnerEditProfile.errorRequiredFields', 'Vui lòng điền đầy đủ các trường bắt buộc (*)'),
+        );
+        return;
+      }
+    } else {
+      if (!fullName.trim()) {
+        newErrors.fullName = t('partnerEditProfile.errorFullName', 'Vui lòng nhập họ và tên');
+      }
+
+      if (!certificateFile) {
+        newErrors.certificateFile = t('partnerEditProfile.errorCertificateFile', 'Vui lòng tải lên chứng chỉ hành nghề');
+      }
+
+      if (!certificateNumber.trim()) {
+        newErrors.certificateNumber = t('partnerEditProfile.errorCertificateNumber', 'Vui lòng bổ sung số CCHN');
+      }
+
+      if (!workingArea || !workingArea.trim()) {
+        newErrors.workingArea = t('partnerEditProfile.errorWorkingArea', 'Vui lòng chọn khu vực làm việc');
+      }
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+
+        const firstError =
+          newErrors.fullName ||
+          newErrors.certificateFile ||
+          newErrors.certificateNumber ||
+          newErrors.workingArea;
+
+        Alert.alert(
+          t('partnerProfile.notice', 'Thông báo'),
+          firstError || t('partnerEditProfile.errorRequiredFields', 'Vui lòng điền đầy đủ các trường bắt buộc (*)'),
+        );
+
+        if (newErrors.fullName) {
+          scrollToField('fullName', 50, true);
+        } else if (newErrors.certificateFile || newErrors.certificateNumber) {
+          scrollToField('certificateNumber', 50, true);
+        } else if (newErrors.workingArea) {
+          scrollToField('movingRadius', 50, true);
+        }
+        return;
+      }
     }
 
     setErrors({});
@@ -675,48 +776,97 @@ export const EditProfileScreen: React.FC = () => {
         else if (lower === 'undisclosed' || lower === 'khác') genderVal = 'Undisclosed';
       }
 
-      const payload: any = {
-        fullName: fullName.trim(),
-        phone: phone.trim(),
-        email: email.trim(),
-        position: position.trim(),
-        specialization: specialization.trim(),
-        certificateNumber: certificateNumber.trim(),
-        experience: experience.trim(),
-        workplace: workplace.trim(),
-        workingArea: (workingArea || workingAreaLocation?.text || '').trim(),
-        working_area: (workingArea || workingAreaLocation?.text || '').trim(),
-      };
+      let payload: any = {};
 
-      if (workingAreaLocation?.geometry?.location) {
-        payload.latitude = workingAreaLocation.geometry.location.lat;
-        payload.longitude = workingAreaLocation.geometry.location.lng;
-      }
-      if (workingAreaLocation?.text) {
-        payload.address = workingAreaLocation.text;
-        payload.full_address = workingAreaLocation.text;
-      }
+      if (isUserType) {
+        payload = {
+          fullName: fullName.trim(),
+          country: country.trim() || 'Vietnam',
+          gender: genderVal,
+          phone: phone.trim(),
+          email: email.trim(),
+        };
 
-      if (genderVal) {
-        payload.gender = genderVal; // 'Male', 'Female', or 'Undisclosed'
-      }
+        if (formattedDob && formattedDob !== 'Invalid date') {
+          payload.dob = formattedDob;
+        }
 
-      if (formattedDob && formattedDob !== 'Invalid date') {
-        payload.dob = formattedDob;
-      }
+        if (selectedAvatar?.base64) {
+          payload.avatar = selectedAvatar.base64.replace(/^data:image\/[a-z]+;base64,/, '');
+        }
+      } else {
+        // Prepare certificate base64 for attachments array (following doctor-mobile-app API spec)
+        let certBase64 = certificateFile?.base64;
+        if (
+          !certBase64 &&
+          certificateFile?.uri &&
+          (certificateFile.uri.startsWith('file://') ||
+            certificateFile.uri.startsWith('content://') ||
+            certificateFile.uri.startsWith('/'))
+        ) {
+          try {
+            certBase64 = await readFileAsBase64(certificateFile.uri);
+          } catch (e) {
+            console.log('Error reading certificate file as base64 on submit:', e);
+          }
+        }
 
-      if (certificateFile?.name) {
-        payload.certificateFile = certificateFile.name;
-      }
+        payload = {
+          fullName: fullName.trim(),
+          phone: phone.trim(),
+          email: email.trim(),
+          position: position.trim(),
+          specialization: specialization.trim(),
+          medical_license_number: certificateNumber.trim(),
+          certificate_number: certificateNumber.trim(),
+          certificateNumber: certificateNumber.trim(),
+          experience: experience.trim(),
+          workplace: workplace.trim(),
+          workingArea: (workingArea || workingAreaLocation?.text || '').trim(),
+          working_area: (workingArea || workingAreaLocation?.text || '').trim(),
+        };
 
-      const radiusNumber = parseFloat(movingRadius.replace(/[^0-9.]/g, ''));
-      if (!isNaN(radiusNumber)) {
+        if (workingAreaLocation?.geometry?.location) {
+          payload.latitude = workingAreaLocation.geometry.location.lat;
+          payload.longitude = workingAreaLocation.geometry.location.lng;
+        }
+        if (workingAreaLocation?.text) {
+          payload.address = workingAreaLocation.text;
+          payload.full_address = workingAreaLocation.text;
+        }
+
+        if (genderVal) {
+          payload.gender = genderVal; // 'Male', 'Female', or 'Undisclosed'
+        }
+
+        if (formattedDob && formattedDob !== 'Invalid date') {
+          payload.dob = formattedDob;
+        }
+
+        // Attachments array with base64 encoded certificate (as in doctor-mobile-app doctor-edit-screen)
+        if (certBase64) {
+          payload.attachments = [
+            {
+              file: certBase64,
+              name: (certificateFile?.name || 'chung_chi_hanh_nghe.pdf').toLowerCase(),
+            },
+          ];
+        }
+
+        if (certificateFile?.name) {
+          payload.certificateFile = certificateFile.name;
+          payload.certificate_file = certificateFile.name;
+        }
+
+        const radiusNumber = parseFloat(movingRadius.replace(/[^0-9.]/g, '')) || 10;
         payload.movingRadius = radiusNumber;
-      }
+        payload.moving_radius = radiusNumber;
+        payload.radius = radiusNumber;
 
-      // Backend expects raw/pure Base64 string without data:image/...;base64, prefix
-      if (selectedAvatar?.base64) {
-        payload.avatar = selectedAvatar.base64.replace(/^data:image\/[a-z]+;base64,/, '');
+        // Backend expects raw/pure Base64 string without data:image/...;base64, prefix
+        if (selectedAvatar?.base64) {
+          payload.avatar = selectedAvatar.base64.replace(/^data:image\/[a-z]+;base64,/, '');
+        }
       }
 
       console.log('🚀 ~ handleUpdateProfile ~ payload:', payload);
@@ -730,10 +880,12 @@ export const EditProfileScreen: React.FC = () => {
 
         Alert.alert(
           t('profile.editProfileScreen.updateSuccessTitle', 'Thành công'),
-          t(
-            'profile.editProfileScreen.updateKYCMessage',
-            'Thông tin đã được cập nhật. Vui lòng chờ chúng tôi xét duyệt.',
-          ),
+          isUserType
+            ? t('partnerEditProfile.updateSuccess', 'Cập nhật hồ sơ cá nhân thành công!')
+            : t(
+              'profile.editProfileScreen.updateKYCMessage',
+              'Thông tin đã được cập nhật. Vui lòng chờ chúng tôi xét duyệt.',
+            ),
           [
             {
               text: t('partnerEditProfile.btnAgree', 'Đồng ý'),
@@ -770,7 +922,7 @@ export const EditProfileScreen: React.FC = () => {
       Alert.alert(
         t('error.hasOccured', 'Thất bại'),
         error?.message ||
-          t('partnerEditProfile.unknownError', 'Có lỗi xảy ra khi cập nhật hồ sơ cá nhân. Vui lòng thử lại!'),
+        t('partnerEditProfile.unknownError', 'Có lỗi xảy ra khi cập nhật hồ sơ cá nhân. Vui lòng thử lại!'),
       );
     } finally {
       setIsSubmitting(false);
@@ -795,7 +947,11 @@ export const EditProfileScreen: React.FC = () => {
           />
         </TouchableOpacity>
 
-        <CText style={styles.headerTitle}>{t('partnerEditProfile.title', 'Sửa hồ sơ cá nhân')}</CText>
+        <CText style={styles.headerTitle}>
+          {isUserType
+            ? t('profile.editProfile', 'Chỉnh sửa hồ sơ')
+            : t('partnerEditProfile.title', 'Sửa hồ sơ cá nhân')}
+        </CText>
 
         <View style={styles.headerRightPlaceholder} />
       </View>
@@ -827,256 +983,393 @@ export const EditProfileScreen: React.FC = () => {
               />
             </TouchableOpacity>
             <TouchableOpacity activeOpacity={0.7} onPress={handlePickAvatar}>
-              <CText style={styles.editAvatarText}>{t('partnerEditProfile.editAvatar', 'Chỉnh sửa đại diện')}</CText>
-            </TouchableOpacity>
-          </View>
-
-          {/* 1. Họ và tên */}
-          <CInput
-            label={t('partnerEditProfile.fullName', 'Họ và tên')}
-            placeHolder={t('partnerEditProfile.fullNamePlaceholder', 'Nhập họ và tên')}
-            value={fullName}
-            onChange={val => {
-              setFullName(val);
-              if (errors.fullName) {
-                setErrors(prev => ({ ...prev, fullName: undefined }));
-              }
-            }}
-            errorText={errors.fullName}
-            autoCapitalize="words"
-            isRequire
-            {...registerInput('fullName')}
-          />
-
-          {/* 2. Giới tính */}
-          <View style={styles.formGroup}>
-            <View style={styles.labelRow}>
-              <CText style={styles.label}>{t('partnerEditProfile.gender', 'Giới tính')}</CText>
-            </View>
-            <TouchableOpacity
-              style={styles.selectBox}
-              activeOpacity={0.7}
-              onPress={() => setShowGenderModal(true)}
-            >
-              <CText
-                style={
-                  (gender?.name || (typeof gender === 'string' && gender))
-                    ? styles.selectText
-                    : styles.placeholderText
-                }
-              >
-                {gender?.name || (typeof gender === 'string' ? gender : '') || t('partnerEditProfile.genderPlaceholder', 'Chọn giới tính')}
+              <CText style={styles.editAvatarText}>
+                {isUserType
+                  ? t('onboarding.addProfilePicture', 'Thêm Ảnh Hồ sơ')
+                  : t('partnerEditProfile.editAvatar', 'Chỉnh sửa đại diện')}
               </CText>
-              <IconX
-                type="ionicons"
-                name="chevron-down"
-                size={18}
-                color="#667085"
-              />
             </TouchableOpacity>
           </View>
 
-          {/* 3. Ngày sinh */}
-          <View style={styles.formGroup}>
-            <View style={styles.labelRow}>
-              <CText style={styles.label}>{t('partnerEditProfile.dob', 'Ngày sinh')}</CText>
-            </View>
-            <TouchableOpacity
-              style={styles.selectBox}
-              activeOpacity={0.7}
-              onPress={() => setShowDobModal(true)}
-            >
-              <CText style={dob ? styles.selectText : styles.placeholderText}>
-                {dob || t('partnerEditProfile.dobPlaceholder', 'Chọn ngày sinh')}
-              </CText>
-              <IconX
-                type="ionicons"
-                name="calendar-outline"
-                size={18}
-                color="#667085"
+          {isUserType ? (
+            <>
+              {/* 1. Họ và Tên * */}
+              <CInput
+                label={t('partnerEditProfile.fullName', 'Họ và Tên')}
+                placeHolder={t('partnerEditProfile.fullNamePlaceholder', 'Nhập họ và tên')}
+                value={fullName}
+                onChange={val => {
+                  setFullName(val);
+                  if (errors.fullName) {
+                    setErrors(prev => ({ ...prev, fullName: undefined }));
+                  }
+                }}
+                errorText={errors.fullName}
+                autoCapitalize="words"
+                isRequire
+                {...registerInput('fullName')}
               />
-            </TouchableOpacity>
-          </View>
 
-          {/* 4. Số điện thoại */}
-          <CInput
-            label={t('partnerEditProfile.phone', 'Số điện thoại')}
-            placeHolder={t('partnerEditProfile.phonePlaceholder', 'Nhập số điện thoại')}
-            value={phone}
-            onChange={setPhone}
-            keyboardType="phone-pad"
-            maxLength={15}
-            {...registerInput('phone')}
-          />
-
-          {/* 5. Email */}
-          <CInput
-            label={t('partnerEditProfile.email', 'Email')}
-            placeHolder={t('partnerEditProfile.emailPlaceholder', 'Nhập email')}
-            value={email}
-            onChange={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            {...registerInput('email')}
-          />
-
-          {/* 6. Học hàm / Chức vị */}
-          <CInput
-            label={t('partnerEditProfile.position', 'Học hàm / Chức vị')}
-            placeHolder={t('partnerEditProfile.positionPlaceholder', 'Nhập học hàm / chức vị')}
-            value={position}
-            onChange={setPosition}
-            {...registerInput('position')}
-          />
-
-          {/* 7. Chuyên khoa */}
-          <CInput
-            label={t('partnerEditProfile.specialization', 'Chuyên khoa')}
-            placeHolder={t('partnerEditProfile.specializationPlaceholder', 'Nhập chuyên khoa')}
-            value={specialization}
-            onChange={setSpecialization}
-            {...registerInput('specialization')}
-          />
-
-          {/* 8. Chứng chỉ Hành Nghề * */}
-          <View style={styles.formGroup}>
-            <View style={styles.labelRow}>
-              <CText style={styles.label}>{t('partnerEditProfile.practiceCertificate', 'Chứng chỉ Hành Nghề')}</CText>
-              <CText style={styles.requiredMark}>*</CText>
-            </View>
-            {certificateFile ? (
-              <View style={styles.attachmentCard}>
-                <View style={styles.attachmentLeft}>
+              {/* 2. Quốc gia * */}
+              <View style={styles.formGroup}>
+                <View style={styles.labelRow}>
+                  <CText style={styles.label}>{t('partnerEditProfile.country', 'Quốc gia')}</CText>
+                  <CText style={styles.requiredMark}>*</CText>
+                </View>
+                <TouchableOpacity
+                  style={styles.selectBox}
+                  activeOpacity={0.7}
+                  onPress={() => setShowCountryModal(true)}
+                >
+                  <CText style={country ? styles.selectText : styles.placeholderText}>
+                    {country || t('partnerEditProfile.countryPlaceholder', 'Chọn quốc gia')}
+                  </CText>
                   <IconX
                     type="ionicons"
-                    name="document-text-outline"
+                    name="chevron-down"
                     size={18}
                     color="#667085"
                   />
-                  <CText style={styles.attachmentName} numberOfLines={1}>
-                    {certificateFile.name} ({certificateFile.size})
-                  </CText>
+                </TouchableOpacity>
+                {errors.country ? (
+                  <CText style={styles.errorHelperText}>{errors.country}</CText>
+                ) : null}
+              </View>
+
+              {/* 3. Giới tính * */}
+              <View style={styles.formGroup}>
+                <View style={styles.labelRow}>
+                  <CText style={styles.label}>{t('partnerEditProfile.gender', 'Giới tính')}</CText>
+                  <CText style={styles.requiredMark}>*</CText>
                 </View>
                 <TouchableOpacity
-                  style={styles.removeAttachmentBtn}
+                  style={styles.selectBox}
                   activeOpacity={0.7}
-                  onPress={() => setCertificateFile(null)}
+                  onPress={() => setShowGenderModal(true)}
                 >
+                  <CText
+                    style={
+                      (gender?.name || (typeof gender === 'string' && gender))
+                        ? styles.selectText
+                        : styles.placeholderText
+                    }
+                  >
+                    {gender?.name || (typeof gender === 'string' ? gender : '') || t('partnerEditProfile.genderPlaceholder', 'Chọn giới tính')}
+                  </CText>
                   <IconX
                     type="ionicons"
-                    name="close-outline"
-                    size={20}
+                    name="chevron-down"
+                    size={18}
+                    color="#667085"
+                  />
+                </TouchableOpacity>
+                {errors.gender ? (
+                  <CText style={styles.errorHelperText}>{errors.gender}</CText>
+                ) : null}
+              </View>
+
+              {/* 4. Ngày sinh * */}
+              <View style={styles.formGroup}>
+                <View style={styles.labelRow}>
+                  <CText style={styles.label}>{t('partnerEditProfile.dob', 'Ngày sinh')}</CText>
+                  <CText style={styles.requiredMark}>*</CText>
+                </View>
+                <TouchableOpacity
+                  style={styles.selectBox}
+                  activeOpacity={0.7}
+                  onPress={() => setShowDobModal(true)}
+                >
+                  <CText style={dob ? styles.selectText : styles.placeholderText}>
+                    {dob || t('partnerEditProfile.dobPlaceholder', 'Chọn ngày sinh')}
+                  </CText>
+                  <IconX
+                    type="ionicons"
+                    name="calendar-outline"
+                    size={18}
+                    color="#667085"
+                  />
+                </TouchableOpacity>
+                {errors.dob ? (
+                  <CText style={styles.errorHelperText}>{errors.dob}</CText>
+                ) : null}
+              </View>
+
+              {/* 5. Số điện thoại * */}
+              <CInput
+                label={t('partnerEditProfile.phone', 'Số điện thoại')}
+                placeHolder={t('partnerEditProfile.phonePlaceholder', 'Nhập số điện thoại')}
+                value={phone}
+                onChange={setPhone}
+                keyboardType="phone-pad"
+                maxLength={15}
+                editable={false}
+                isRequire
+                {...registerInput('phone')}
+              />
+
+              {/* 6. Email */}
+              <CInput
+                label={t('partnerEditProfile.email', 'Email')}
+                placeHolder="Email"
+                value={email}
+                onChange={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                {...registerInput('email')}
+              />
+            </>
+          ) : (
+            <>
+              {/* 1. Họ và tên */}
+              <CInput
+                label={t('partnerEditProfile.fullName', 'Họ và tên')}
+                placeHolder={t('partnerEditProfile.fullNamePlaceholder', 'Nhập họ và tên')}
+                value={fullName}
+                onChange={val => {
+                  setFullName(val);
+                  if (errors.fullName) {
+                    setErrors(prev => ({ ...prev, fullName: undefined }));
+                  }
+                }}
+                errorText={errors.fullName}
+                autoCapitalize="words"
+                isRequire
+                {...registerInput('fullName')}
+              />
+
+              {/* 2. Giới tính */}
+              <View style={styles.formGroup}>
+                <View style={styles.labelRow}>
+                  <CText style={styles.label}>{t('partnerEditProfile.gender', 'Giới tính')}</CText>
+                </View>
+                <TouchableOpacity
+                  style={styles.selectBox}
+                  activeOpacity={0.7}
+                  onPress={() => setShowGenderModal(true)}
+                >
+                  <CText
+                    style={
+                      (gender?.name || (typeof gender === 'string' && gender))
+                        ? styles.selectText
+                        : styles.placeholderText
+                    }
+                  >
+                    {gender?.name || (typeof gender === 'string' ? gender : '') || t('partnerEditProfile.genderPlaceholder', 'Chọn giới tính')}
+                  </CText>
+                  <IconX
+                    type="ionicons"
+                    name="chevron-down"
+                    size={18}
                     color="#667085"
                   />
                 </TouchableOpacity>
               </View>
-            ) : (
-              <TouchableOpacity
-                style={[
-                  styles.uploadEmptyCard,
-                  errors.certificateFile ? styles.borderError : null,
-                ]}
-                activeOpacity={0.7}
-                onPress={handlePickCertificate}
-              >
-                <IconX
-                  type="ionicons"
-                  name="cloud-upload-outline"
-                  size={19}
-                  color={errors.certificateFile ? '#F04438' : '#19A2A7'}
-                />
-                <CText
-                  style={[
-                    styles.uploadEmptyText,
-                    errors.certificateFile && { color: '#F04438' },
-                  ]}
+
+              {/* 3. Ngày sinh */}
+              <View style={styles.formGroup}>
+                <View style={styles.labelRow}>
+                  <CText style={styles.label}>{t('partnerEditProfile.dob', 'Ngày sinh')}</CText>
+                </View>
+                <TouchableOpacity
+                  style={styles.selectBox}
+                  activeOpacity={0.7}
+                  onPress={() => setShowDobModal(true)}
                 >
-                  {t('partnerEditProfile.uploadCertificatePrompt', 'Tải lên chứng chỉ hành nghề (PNG, JPG, PDF)')}
-                </CText>
-              </TouchableOpacity>
-            )}
-            {errors.certificateFile ? (
-              <CText style={styles.errorHelperText}>
-                {errors.certificateFile}
-              </CText>
-            ) : null}
-          </View>
+                  <CText style={dob ? styles.selectText : styles.placeholderText}>
+                    {dob || t('partnerEditProfile.dobPlaceholder', 'Chọn ngày sinh')}
+                  </CText>
+                  <IconX
+                    type="ionicons"
+                    name="calendar-outline"
+                    size={18}
+                    color="#667085"
+                  />
+                </TouchableOpacity>
+              </View>
 
-          {/* 9. Số chứng chỉ Hành Nghề * */}
-          <CInput
-            label={t('partnerEditProfile.certificateNumber', 'Số chứng chỉ Hành Nghề')}
-            placeHolder={t('partnerEditProfile.certificateNumberPlaceholder', 'Bổ sung số CCHN')}
-            value={certificateNumber}
-            onChange={val => {
-              setCertificateNumber(val);
-              if (errors.certificateNumber) {
-                setErrors(prev => ({ ...prev, certificateNumber: undefined }));
-              }
-            }}
-            errorText={errors.certificateNumber}
-            isRequire
-            {...registerInput('certificateNumber')}
-          />
-
-          {/* 10. Kinh nghiệm làm việc */}
-          <CInput
-            label={t('partnerEditProfile.experience', 'Kinh nghiệm làm việc')}
-            placeHolder={t('partnerEditProfile.experiencePlaceholder', 'Nhập kinh nghiệm làm việc (ví dụ: 2 năm)')}
-            value={experience}
-            onChange={setExperience}
-            {...registerInput('experience')}
-          />
-
-          {/* 11. Nơi công tác */}
-          <CInput
-            label={t('partnerEditProfile.workplace', 'Nơi công tác')}
-            placeHolder={t('partnerEditProfile.workplacePlaceholder', 'Nhập nơi công tác')}
-            value={workplace}
-            onChange={setWorkplace}
-            {...registerInput('workplace')}
-          />
-
-          {/* 12. Khu vực làm việc * */}
-          <View style={styles.formGroup}>
-            <View style={styles.labelRow}>
-              <CText style={styles.label}>{t('partnerEditProfile.workingArea', 'Khu vực làm việc')}</CText>
-              <CText style={styles.requiredMark}>*</CText>
-            </View>
-            <TouchableOpacity
-              style={[
-                styles.selectBox,
-                errors.workingArea ? styles.borderError : null,
-              ]}
-              activeOpacity={0.7}
-              onPress={() => setShowAreaModal(true)}
-            >
-              <CText
-                style={workingArea ? styles.selectText : styles.placeholderText}
-              >
-                {workingArea || t('partnerEditProfile.workingAreaPlaceholder', 'Chọn khu vực làm việc')}
-              </CText>
-              <IconX
-                type="ionicons"
-                name="chevron-down"
-                size={18}
-                color="#667085"
+              {/* 4. Số điện thoại */}
+              <CInput
+                label={t('partnerEditProfile.phone', 'Số điện thoại')}
+                placeHolder={t('partnerEditProfile.phonePlaceholder', 'Nhập số điện thoại')}
+                value={phone}
+                onChange={setPhone}
+                keyboardType="phone-pad"
+                maxLength={15}
+                {...registerInput('phone')}
               />
-            </TouchableOpacity>
-            {errors.workingArea ? (
-              <CText style={styles.errorHelperText}>
-                {errors.workingArea}
-              </CText>
-            ) : null}
-          </View>
 
-          {/* 13. Bán kính sẵn sàng di chuyển (phục vụ) */}
-          <CInput
-            label={t('partnerEditProfile.movingRadius', 'Bán kính sẵn sàng di chuyển (phục vụ)')}
-            placeHolder={t('partnerEditProfile.movingRadiusPlaceholder', 'Nhập bán kính (ví dụ: 8 Km)')}
-            value={movingRadius}
-            onChange={setMovingRadius}
-            {...registerInput('movingRadius')}
-          />
+              {/* 5. Email */}
+              <CInput
+                label={t('partnerEditProfile.email', 'Email')}
+                placeHolder={t('partnerEditProfile.emailPlaceholder', 'Nhập email')}
+                value={email}
+                onChange={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                {...registerInput('email')}
+              />
+
+              {/* 6. Học hàm / Chức vị */}
+              <CInput
+                label={t('partnerEditProfile.position', 'Học hàm / Chức vị')}
+                placeHolder={t('partnerEditProfile.positionPlaceholder', 'Nhập học hàm / chức vị')}
+                value={position}
+                onChange={setPosition}
+                {...registerInput('position')}
+              />
+
+              {/* 7. Chuyên khoa */}
+              <CInput
+                label={t('partnerEditProfile.specialization', 'Chuyên khoa')}
+                placeHolder={t('partnerEditProfile.specializationPlaceholder', 'Nhập chuyên khoa')}
+                value={specialization}
+                onChange={setSpecialization}
+                {...registerInput('specialization')}
+              />
+
+              {/* 8. Chứng chỉ Hành Nghề * */}
+              <View style={styles.formGroup}>
+                <View style={styles.labelRow}>
+                  <CText style={styles.label}>{t('partnerEditProfile.practiceCertificate', 'Chứng chỉ Hành Nghề')}</CText>
+                  <CText style={styles.requiredMark}>*</CText>
+                </View>
+                {certificateFile ? (
+                  <View style={styles.attachmentCard}>
+                    <View style={styles.attachmentLeft}>
+                      <IconX
+                        type="ionicons"
+                        name="document-text-outline"
+                        size={18}
+                        color="#667085"
+                      />
+                      <CText style={styles.attachmentName} numberOfLines={1}>
+                        {certificateFile.name} ({certificateFile.size})
+                      </CText>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.removeAttachmentBtn}
+                      activeOpacity={0.7}
+                      onPress={() => setCertificateFile(null)}
+                    >
+                      <IconX
+                        type="ionicons"
+                        name="close-outline"
+                        size={20}
+                        color="#667085"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={[
+                      styles.uploadEmptyCard,
+                      errors.certificateFile ? styles.borderError : null,
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={handlePickCertificate}
+                  >
+                    <IconX
+                      type="ionicons"
+                      name="cloud-upload-outline"
+                      size={19}
+                      color={errors.certificateFile ? '#F04438' : '#19A2A7'}
+                    />
+                    <CText
+                      style={[
+                        styles.uploadEmptyText,
+                        errors.certificateFile && { color: '#F04438' },
+                      ]}
+                    >
+                      {t('partnerEditProfile.uploadCertificatePlaceholder', 'Tải lên chứng chỉ hành nghề')}
+                    </CText>
+                  </TouchableOpacity>
+                )}
+                {errors.certificateFile ? (
+                  <CText style={styles.errorHelperText}>
+                    {errors.certificateFile}
+                  </CText>
+                ) : null}
+              </View>
+
+              {/* 9. Số chứng chỉ hành nghề * */}
+              <CInput
+                label={t('partnerEditProfile.certificateNumber', 'Số chứng chỉ hành nghề')}
+                placeHolder={t('partnerEditProfile.certificateNumberPlaceholder', 'Nhập số chứng chỉ hành nghề')}
+                value={certificateNumber}
+                onChange={val => {
+                  setCertificateNumber(val);
+                  if (errors.certificateNumber) {
+                    setErrors(prev => ({ ...prev, certificateNumber: undefined }));
+                  }
+                }}
+                errorText={errors.certificateNumber}
+                isRequire
+                {...registerInput('certificateNumber')}
+              />
+
+              {/* 10. Kinh nghiệm làm việc */}
+              <CInput
+                label={t('partnerEditProfile.experience', 'Kinh nghiệm làm việc')}
+                placeHolder={t('partnerEditProfile.experiencePlaceholder', 'Nhập số năm kinh nghiệm')}
+                value={experience}
+                onChange={setExperience}
+                keyboardType="numeric"
+                {...registerInput('experience')}
+              />
+
+              {/* 11. Nơi công tác */}
+              <CInput
+                label={t('partnerEditProfile.workplace', 'Nơi công tác')}
+                placeHolder={t('partnerEditProfile.workplacePlaceholder', 'Nhập nơi công tác')}
+                value={workplace}
+                onChange={setWorkplace}
+                {...registerInput('workplace')}
+              />
+
+              {/* 12. Khu vực làm việc * */}
+              <View style={styles.formGroup}>
+                <View style={styles.labelRow}>
+                  <CText style={styles.label}>{t('partnerEditProfile.workingArea', 'Khu vực làm việc')}</CText>
+                  <CText style={styles.requiredMark}>*</CText>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.selectBox,
+                    errors.workingArea ? styles.borderError : null,
+                  ]}
+                  activeOpacity={0.7}
+                  onPress={() => setShowAreaModal(true)}
+                >
+                  <CText
+                    style={workingArea ? styles.selectText : styles.placeholderText}
+                    numberOfLines={1}
+                  >
+                    {workingArea || t('partnerEditProfile.workingAreaPlaceholder', 'Chọn khu vực làm việc')}
+                  </CText>
+                  <IconX
+                    type="ionicons"
+                    name="chevron-down"
+                    size={18}
+                    color="#667085"
+                  />
+                </TouchableOpacity>
+                {errors.workingArea ? (
+                  <CText style={styles.errorHelperText}>
+                    {errors.workingArea}
+                  </CText>
+                ) : null}
+              </View>
+
+              {/* 13. Bán kính sẵn sàng di chuyển (phục vụ) */}
+              <CInput
+                label={t('partnerEditProfile.movingRadius', 'Bán kính sẵn sàng di chuyển (phục vụ)')}
+                placeHolder={t('partnerEditProfile.movingRadiusPlaceholder', 'Nhập bán kính (ví dụ: 8 Km)')}
+                value={movingRadius}
+                onChange={setMovingRadius}
+                {...registerInput('movingRadius')}
+              />
+            </>
+          )}
         </ScrollView>
 
         {/* Fixed Bottom Action Bar */}
@@ -1099,9 +1392,11 @@ export const EditProfileScreen: React.FC = () => {
             ]}
             activeOpacity={0.8}
             onPress={handleUpdateProfile}
-            disabled={isSubmitting}
+            disabled={!isFormValid || isSubmitting}
           >
-            <CText style={styles.submitButtonText}>{t('partnerEditProfile.btnUpdate', 'Cập nhật')}</CText>
+            <CText style={styles.submitButtonText}>
+              {isUserType ? t('common.save', 'Lưu') : t('partnerEditProfile.btnUpdate', 'Cập nhật')}
+            </CText>
           </TouchableOpacity>
         </View>
       </CKeyboardAvoidingView>
@@ -1115,6 +1410,23 @@ export const EditProfileScreen: React.FC = () => {
             setGender(selected);
           }}
           genderChoose={gender}
+        />
+      )}
+
+      {/* Country Selection Modal */}
+      {showCountryModal && (
+        <ModalCountry
+          isVisible={showCountryModal}
+          hideModal={() => setShowCountryModal(false)}
+          chooseCountry={(selected: any) => {
+            setCountry(
+              selected?.name || selected?.label || selected?.value || selected || '',
+            );
+            if (errors.country) {
+              setErrors(prev => ({ ...prev, country: undefined }));
+            }
+          }}
+          countryChoose={country}
         />
       )}
 

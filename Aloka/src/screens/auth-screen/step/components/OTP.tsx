@@ -1,4 +1,4 @@
-import { ActionSheet, CHeader, IconX, ReCaptcha, Wrapper } from '@/components';
+import { APILoading, ActionSheet, CHeader, IconX, ReCaptcha, Wrapper } from '@/components';
 import { OTPType } from '@/components/modal-otp';
 import {
   ScreenWidth,
@@ -86,6 +86,13 @@ const OTP = ({
 
   //EFFECT
   useEffect(() => {
+    dispatch(resetOTP(null));
+    return () => {
+      dispatch(resetOTP(null));
+    };
+  }, []);
+
+  useEffect(() => {
     const OTPTimer = setInterval(() => {
       setTimer(lastTimerCount => {
         if (lastTimerCount <= 1) {
@@ -101,21 +108,26 @@ const OTP = ({
 
   useEffect(() => {
     const processVerifyOTP = () => {
+
       if (!otpVerify.loading) {
         if (otpVerify.data) {
           const { status, result }: any = otpVerify.data;
-          if (result?.id || result?.username || statusSuccess(status)) {
+          console.log('🚀 ~ processVerifyOTP ~ result:', result);
+          const hasUsername = Boolean(result?.username);
+          if (hasUsername) {
             login(result || {});
             closeModal();
           } else {
-            // Onboard
+            // Unregistered user -> Go to Onboarding
             updateLoginData('otpCode', '');
-            gotoOnboard(result);
+            gotoOnboard(result || {});
           }
           dispatch(resetAuth());
           dispatch(resetOTP(null));
         } else if (otpVerify.error) {
           setErrorOTP(logError(otpVerify.error, '', true));
+          updateLoginData('otpCode', '');
+          otpRef.current?.clear?.();
           dispatch(resetOTP(null));
         }
       }
@@ -167,11 +179,13 @@ const OTP = ({
     requestResendOTP();
   }, [capchaToken]);
 
+  const isVerifyingRef = useRef(false);
+
   useEffect(() => {
-    if (dataLogin.otpCode.length === 6) {
-      handleConfirmOTP(dataLogin.otpCode);
+    if (!otpVerify.loading) {
+      isVerifyingRef.current = false;
     }
-  }, [dataLogin.otpCode]);
+  }, [otpVerify.loading]);
 
   const handleChooseSupport = (index: number) => {
     try {
@@ -180,32 +194,42 @@ const OTP = ({
       } else if (index == 1) {
         Linking.openURL(`mailto:info@mcv.com.vn`);
       }
-    } catch (error) {}
+    } catch (error) { }
   };
 
   //ACTION
-  const handleConfirmOTP = async (valueOTP: string) => {
-    if (otpVerify.loading) return;
-    const deviceId = await getDeviceId();
-    const bodyData = {
-      phone: dataLogin.phoneCode.value + dataLogin.phoneNumber,
-      deviceId,
-      otp: valueOTP,
-      type: OTPType.register,
-    };
-    console.log('🚀 ~ handleConfirmOTP ~ bodyData:', bodyData);
-    dispatch(verifyOTP(bodyData));
+  const handleConfirmOTP = async (valueOTP?: string) => {
+    const code = valueOTP || dataLogin.otpCode;
+    if (!code || code.length < 6) return;
+    if (isVerifyingRef.current || otpVerify.loading) {
+      console.log('⚠️ [OTP screen] Skip duplicate handleConfirmOTP');
+      return;
+    }
+    isVerifyingRef.current = true;
+    try {
+      const deviceId = await getDeviceId();
+      const bodyData = {
+        phone: dataLogin.phoneCode.value + dataLogin.phoneNumber,
+        deviceId,
+        otp: code,
+        type: OTPType.register,
+      };
+      console.log('🚀 ~ [OTP screen] handleConfirmOTP ~ bodyData:', bodyData);
+      dispatch(verifyOTP(bodyData));
+    } catch (e) {
+      isVerifyingRef.current = false;
+    }
   };
 
-  const onValueChange = async (value: string, { isFulfilled }: any) => {
-    if (otpVerify.loading) return;
+  const onValueChange = async (value: string, meta?: any) => {
     if (errOTP) {
       setErrorOTP('');
     }
-    if (isFulfilled) {
-      Keyboard.dismiss();
-    }
     updateLoginData('otpCode', value);
+    if (value.length === 6 || meta?.isFulfilled) {
+      Keyboard.dismiss();
+      handleConfirmOTP(value);
+    }
   };
 
   const handleResendOTP = () => {
@@ -390,6 +414,9 @@ const OTP = ({
         destructiveButtonIndex={2}
         onPress={handleChooseSupport}
       />
+      {otpVerify.loading || otpResend.loading ? (
+        <APILoading showAlert={true} isLoadingAPI={true} />
+      ) : null}
     </Wrapper>
   );
 };

@@ -1,5 +1,6 @@
 import { IconX, ReCaptcha } from '@/components';
-import { getDeviceId, logError, screenStyles } from '@/configs';
+import { getDeviceId, logError, screenStyles, statusSuccess } from '@/configs';
+import { STORAGEKEY } from '@/constants';
 import {
   resendOTP,
   resetAuth,
@@ -12,6 +13,7 @@ import { useTheme } from '@rneui/themed';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  ActivityIndicator,
   Alert,
   Keyboard,
   Modal,
@@ -55,7 +57,7 @@ export const ModalOTP = ({
   const otpRef = useRef<any>(null);
   const [otpCode, setOTPCode] = useState('');
   const [errOTP, setErrorOTP] = useState('');
-  const [timerCount, setTimer] = useState(DELAY_TIME); //3ph
+  const [timerCount, setTimer] = useState(DELAY_TIME);
   const [resetTimer, setResetTimer] = useState(false);
   const [isGenRecapcha, setIsGenRecapcha] = useState<boolean>(false);
   const [capchaToken, setCapChaToken] = useState<string>('');
@@ -63,12 +65,33 @@ export const ModalOTP = ({
   const dispatch = useAppDispatch();
   const { otpVerify, otpResend } = useAppSelector(state => state.authReducer);
 
+  const isVerifyingRef = useRef(false);
+
   useEffect(() => {
     // goi lan dau de gui otp
+    isVerifyingRef.current = false;
+    dispatch(resetOTP(null));
+    setErrorOTP('');
+    setOTPCode('');
     setIsGenRecapcha(true);
+    return () => {
+      isVerifyingRef.current = false;
+      dispatch(resetOTP(null));
+    };
   }, []);
 
-  //EFFECT
+  useEffect(() => {
+    if (isVisible) {
+      isVerifyingRef.current = false;
+      dispatch(resetOTP(null));
+      setOTPCode('');
+      setErrorOTP('');
+      setTimer(DELAY_TIME);
+      setResetTimer(prev => !prev);
+    }
+  }, [isVisible]);
+
+  // Resend OTP listener
   useEffect(() => {
     const processResendOTP = () => {
       if (!otpResend.loading) {
@@ -83,25 +106,29 @@ export const ModalOTP = ({
     processResendOTP();
   }, [otpResend]);
 
+  // Verify OTP listener
   useEffect(() => {
     const processVerifyOTP = () => {
       if (!otpVerify.loading) {
+        isVerifyingRef.current = false;
         if (otpVerify.data) {
-          const { status }: any = otpVerify.data;
-          if (status == 'success') {
+          const { status, result }: any = otpVerify.data;
+          console.log('🚀 ~ [ModalOTP] processVerifyOTP success data:', otpVerify.data);
+          const isSuccess =
+            status === 'success' || Boolean(result) || statusSuccess(status);
+          if (isSuccess) {
+            hideModalOTP();
             callBackVerifySuccess();
           }
           dispatch(resetAuth());
           dispatch(resetOTP(null));
-          dispatch(resetOTP(null));
         } else if (otpVerify.error) {
-          console.log(
-            '🚀 ~ processVerifyOTP ~ otpVerify.error:',
-            JSON.stringify(otpVerify.error),
-          );
-          setErrorOTP(logError(otpVerify.error, '', true));
+          console.log('🚀 ~ [ModalOTP] processVerifyOTP error:', otpVerify.error);
+          const err: any = otpVerify.error;
+          setErrorOTP(err);
+          setOTPCode('');
+          otpRef.current?.clear?.();
           dispatch(resetAuth());
-          dispatch(resetOTP(null));
           dispatch(resetOTP(null));
         }
       }
@@ -118,7 +145,7 @@ export const ModalOTP = ({
     setIsGenRecapcha(false);
   }, []);
 
-  // Buoc 1 chay vo day de gui otp
+  // Request send/resend OTP
   useEffect(() => {
     const requestResendOTP = async () => {
       if (capchaToken !== '') {
@@ -133,7 +160,7 @@ export const ModalOTP = ({
         } else if (email != '') {
           bodyData.email = email;
         }
-        // console.log("🚀 ~ requestResendOTP ~ bodyData:", bodyData)
+        console.log('🚀 ~ [ModalOTP] requestResendOTP bodyData:', bodyData);
         dispatch(resendOTP(bodyData));
         setErrorOTP('');
         setOTPCode('');
@@ -155,30 +182,48 @@ export const ModalOTP = ({
         }
         return lastTimerCount - 1;
       });
-    }, 1000); //each count
+    }, 1000);
     return () => clearInterval(OTPTimer);
   }, [resetTimer]);
 
-  const handleConfirmOTP = async (valueOTP: string) => {
-    const deviceId = await getDeviceId();
-    const bodyData = {
-      phone: phone ? phone : email,
-      deviceId,
-      otp: valueOTP,
-    };
-    console.log('🚀 ~ handleConfirmOTP ~ bodyData:', bodyData);
-    dispatch(verifyOTP(bodyData));
+  const handleConfirmOTP = async (valueOTP?: string) => {
+    const code = (valueOTP || otpCode || '').trim();
+    if (!code || code.length < 6) return;
+    if (otpResend.loading) {
+      console.log('⚠️ [ModalOTP] OTP is still being sent, please wait');
+      return;
+    }
+    if (isVerifyingRef.current || otpVerify.loading) {
+      console.log('⚠️ [ModalOTP] Skip duplicate verifyOTP call');
+      return;
+    }
+    isVerifyingRef.current = true;
+    setErrorOTP('');
+    try {
+      const deviceId = await getDeviceId();
+      const target = (phone ? phone : email).trim();
+      const bodyData = {
+        phone: target,
+        deviceId,
+        otp: code,
+        type: OTPType.register,
+      };
+      console.log('🚀 ~ [ModalOTP] dispatch(verifyOTP(bodyData)):', bodyData);
+      dispatch(verifyOTP(bodyData));
+    } catch (e) {
+      isVerifyingRef.current = false;
+    }
   };
 
-  const onValueChange = async (value: string, { isFulfilled }: any) => {
+  const onValueChange = (value: string, meta?: any) => {
     if (errOTP) {
       setErrorOTP('');
     }
-    if (isFulfilled) {
+    setOTPCode(value);
+    if (value.length === 6 || meta?.isFulfilled) {
       Keyboard.dismiss();
       handleConfirmOTP(value);
     }
-    setOTPCode(value);
   };
 
   const handleResendOTP = () => {
@@ -187,6 +232,8 @@ export const ModalOTP = ({
 
   const onResendOTP = () => {
     setErrorOTP('');
+    setOTPCode('');
+    otpRef.current?.clear?.();
     setTimer(DELAY_TIME);
     setResetTimer(!resetTimer);
     handleResendOTP();
@@ -222,7 +269,7 @@ export const ModalOTP = ({
         </View>
         {errOTP ? (
           <Row>
-            <CText h5 w400 color={colors.error}>
+            <CText h5 w400 color={colors.error} style={{ textAlign: 'center', marginTop: 4 }}>
               {errOTP}
             </CText>
           </Row>
@@ -240,13 +287,42 @@ export const ModalOTP = ({
           </CText>
         </Row>
         <Row style={screenStyles.mT5}>
-          <CText h5 color={colors.primary}>
+          <CText h5 color={colors.primary} style={{ fontWeight: '600' }}>
             {phone != '' ? phone : email}
           </CText>
         </Row>
+        {otpResend.loading && (
+          <Row style={{ marginTop: 6, alignItems: 'center', justifyContent: 'center' }}>
+            <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 6 }} />
+            <CText h5 color={colors.c667085}>
+              {t('auth.sendingOTP', 'Đang gửi mã xác thực...')}
+            </CText>
+          </Row>
+        )}
         {renderOTPCustom()}
-        <Row>
-          <CText h5 w400 color={colors.c1D2939} style={screenStyles.mT10}>
+
+        {/* Nút Xác nhận */}
+        <TouchableOpacity
+          onPress={() => handleConfirmOTP(otpCode)}
+          disabled={otpCode.length < 6 || otpVerify.loading || otpResend.loading}
+          activeOpacity={0.8}
+          style={[
+            styles.btnConfirm,
+            { backgroundColor: colors.primary },
+            (otpCode.length < 6 || otpVerify.loading || otpResend.loading) && { opacity: 0.5 },
+          ]}
+        >
+          {otpVerify.loading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <CText h5 w600 color="#FFFFFF">
+              {t('common.confirm', 'Xác nhận')}
+            </CText>
+          )}
+        </TouchableOpacity>
+
+        <Row style={screenStyles.mT15}>
+          <CText h5 w400 color={colors.c1D2939}>
             {`${t('auth.timeSenOTP', {
               timerCount,
             })}`}
@@ -254,13 +330,13 @@ export const ModalOTP = ({
         </Row>
         <TouchableOpacity
           onPress={onResendOTP}
-          disabled={timerCount !== 0}
+          disabled={timerCount !== 0 || otpVerify.loading}
           style={[
             screenStyles.centerWrap,
-            timerCount !== 0 && { opacity: 0.5 },
+            (timerCount !== 0 || otpVerify.loading) && { opacity: 0.5 },
           ]}
         >
-          <CText h5 w600 color={colors.primary} style={screenStyles.mT15}>
+          <CText h5 w600 color={colors.primary} style={screenStyles.mT10}>
             {t('common.resendOTP', 'Resend OTP')}
           </CText>
         </TouchableOpacity>
@@ -288,7 +364,7 @@ export const ModalOTP = ({
             <CText h2 w600 color={colors.c101828}>
               {t('auth.otpTitle', 'OTP Verification')}
             </CText>
-            <Pressable onPress={hideModalOTP}>
+            <Pressable onPress={hideModalOTP} disabled={otpVerify.loading}>
               <IconX
                 name="close"
                 type="antdesign"
@@ -317,13 +393,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     paddingVertical: 20,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 70,
   },
   otpCustomWrapper: {
     ...screenStyles.centerWrap,
     marginTop: 20,
-    marginBottom: 15,
+    marginBottom: 10,
+  },
+  btnConfirm: {
+    width: '100%',
+    height: 48,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 15,
   },
 });
 

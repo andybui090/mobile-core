@@ -5,7 +5,9 @@ export const GLOBAL = {
   GET_TUTORIAL: '/tutorials',
   GET_LAGUAGES: '/languages',
   GET_PROVINCE: '/states',
+  GET_COUNTRY: '/countries',
   SEARCH_LOCATION: '/places',
+  GET_CATEGORIES: '/categories',
 };
 
 export const HOME = {
@@ -75,4 +77,12 @@ export const COMMUNITY = {
   GET_LISTROOM: '/rooms',
   GET_LISTHISTORYCHAT: '/rooms',
   POST_MESSAGE_SEEN: '/messages/seen',
+};
+
+export const ONBOARD = {
+  GET_MEDICAL_TYPE: '/medicaltypes',
+  SIGN_UP: '/personalizations',
+  DOCTOR_REGISTER: '/personalizations',
+  GET_SPECIALIZATIONS: '/specializations',
+  GET_TITLE_INFORMATION: '/titleInfomations',
 };

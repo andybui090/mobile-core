@@ -260,10 +260,10 @@ const AccountScreen: React.FC<any> = ({ navigation }: any) => {
           <Pressable style={styles.actionBtn} onPress={handleEditDoctorProfile}>
             <Image
               source={images.doctor.ic_edit}
-              style={{ width: 16, height: 16, tintColor: '#0080FF' }}
+              style={{ width: 16, height: 16, tintColor: '#19A2A7' }}
               resizeMode="contain"
             />
-            <CText h5 w500 color="#0080FF" style={screenStyles.mL8}>
+            <CText h5 w500 color="#19A2A7" style={screenStyles.mL8}>
               {t('profile.editProfile', 'Chỉnh sửa hồ sơ')}
             </CText>
           </Pressable>

@@ -6,6 +6,7 @@ import authSaga from './authSaga';
 import homeSaga from './homeSaga';
 import carelySaga from './carelySaga';
 import notifySaga from './notifySaga';
+import onboardSaga from './onboardSaga';
 
 export default function* rootSaga() {
   yield all([
@@ -16,6 +17,7 @@ export default function* rootSaga() {
     ...homeSaga,
     ...carelySaga,
     ...notifySaga,
+    ...onboardSaga,
   ]);
 }
 

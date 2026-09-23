@@ -2,12 +2,14 @@ import { create } from 'apisauce';
 
 import Config from 'react-native-config';
 import apiMonitor from './monitor';
-import { GLOBAL, HOME, SETTINGS, PROFILE, CARELY, NOTIFICATION, COMMUNITY, ORDER, PAYMENT, SCHEDULE, CHANNEL } from './uris';
+import { GLOBAL, HOME, SETTINGS, PROFILE, CARELY, NOTIFICATION, COMMUNITY, ORDER, PAYMENT, SCHEDULE, CHANNEL, ONBOARD } from './uris';
 import i18n from 'i18next';
 import { getObjectData } from '@/storages';
 import { STORAGEKEY } from '@/constants';
 
-const createApiClient = (baseURL = Config.BASE_API_URL) => {
+const BASE_API_FALLBACK_URL = 'https://staging.rf.api.doctornetwork.us/v1';
+
+const createApiClient = (baseURL = Config.BASE_API_URL || BASE_API_FALLBACK_URL) => {
   const api = create({
     baseURL,
     headers: {
@@ -79,6 +81,10 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     return api.get(GLOBAL.GET_PROVINCE, payload);
   };
 
+  const getCountries = (payload?: object) => {
+    return api.get(GLOBAL.GET_COUNTRY, payload || {});
+  };
+
   const searchLocation = (input: string) => {
     return api.get(GLOBAL.SEARCH_LOCATION, { input });
   };
@@ -101,6 +107,32 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   */
   const getSettingsOnboarding = (payload: object) => {
     return api.get(SETTINGS.GET_SETTINGS, payload);
+  };
+
+  /*
+    GLOBAL
+  */
+  const getCategories = (payload?: any) => {
+    return api.get(GLOBAL.GET_CATEGORIES, payload || {});
+  };
+
+  /*
+    ONBOARD
+  */
+  const getMedicaltypes = (payload?: object) => {
+    return api.get(ONBOARD.GET_MEDICAL_TYPE, payload || {});
+  };
+  const signupUser = (payload: object) => {
+    return api.post(ONBOARD.SIGN_UP, payload);
+  };
+  const doctorRegister = (payload: object) => {
+    return api.post(ONBOARD.DOCTOR_REGISTER, payload);
+  };
+  const getSpecializations = (payload?: object) => {
+    return api.get(ONBOARD.GET_SPECIALIZATIONS, payload || {});
+  };
+  const getTitleInfomations = (payload?: object) => {
+    return api.get(ONBOARD.GET_TITLE_INFORMATION, payload || {});
   };
 
   /*
@@ -367,6 +399,16 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     */
     getListRoom,
     getListHistoryChat,
+    /*
+      ONBOARD
+    */
+    getMedicaltypes,
+    signupUser,
+    doctorRegister,
+    getSpecializations,
+    getTitleInfomations,
+    getCategories,
+    getCountries,
   };
 };
 

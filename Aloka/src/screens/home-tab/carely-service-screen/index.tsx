@@ -98,13 +98,13 @@ const CarelyServiceScreen: React.FC<any> = () => {
       item?.distance != null
         ? Number(item.distance)
         : currentLocation?.latitude && lat
-        ? calculateDistance(
+          ? calculateDistance(
             currentLocation.latitude,
             currentLocation.longitude,
             lat,
             lng,
           )
-        : null;
+          : null;
 
     const hasRating = numRating > 0;
     const hasDistance = distanceKm != null && distanceKm > 0;
@@ -167,17 +167,7 @@ const CarelyServiceScreen: React.FC<any> = () => {
           size={52}
           color="#D0D5DD"
         />
-        <CText style={styles.emptyTitle}>Chưa có dịch vụ con</CText>
-        <CText style={styles.emptySub}>
-          Nhấn bên dưới để xem thông tin chi tiết gói dịch vụ này
-        </CText>
-        <TouchableOpacity
-          style={styles.viewParentBtn}
-          activeOpacity={0.8}
-          onPress={() => handlePressDetail(parentService)}
-        >
-          <CText style={styles.viewParentBtnText}>Xem chi tiết dịch vụ</CText>
-        </TouchableOpacity>
+        <CText style={styles.emptyTitle}>Chưa có dịch vụ</CText>
       </View>
     );
   };
@@ -370,20 +360,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#101828',
     marginTop: 14,
-  },
-  emptySub: {
-    fontSize: 13,
-    color: '#667085',
-    textAlign: 'center',
-    marginTop: 6,
-    marginBottom: 20,
-    lineHeight: 18,
-  },
-  viewParentBtn: {
-    backgroundColor: '#14B8A6',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
   },
   viewParentBtnText: {
     color: '#FFFFFF',

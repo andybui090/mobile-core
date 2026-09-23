@@ -313,10 +313,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
         if (userInfo) {
           rootDispatch({
             type: TYPES.SET_USER,
-            payload: {
-              ...userInfo,
-              username: userInfo.username || userInfo.phone || userInfo.id || 'user',
-            },
+            payload: userInfo,
           });
         }
         initSocketIO();
@@ -434,7 +431,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
         // return <AuthScreen />;
         const userTemp: any = stateRoot.user;
         if (
-          (userTemp?.username || userTemp?.id || userTemp?.phone) &&
+          userTemp?.username &&
           !waitingRegisterComplete
         ) {
           return <MainNavigator />;

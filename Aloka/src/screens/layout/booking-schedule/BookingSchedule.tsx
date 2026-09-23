@@ -386,18 +386,18 @@ export const BookingSchedule: React.FC = () => {
 
       // Bước 2: Đặt lịch → POST /appointments
       const bookRes: any = await ApiService.bookAppointment({
-        package_id:  packageId,
-        order_id:    orderId,
-        channel_id:  channelIdVal,
-        doctor_id:   doctorId,
+        package_id: packageId,
+        order_id: orderId,
+        channel_id: channelIdVal,
+        doctor_id: doctorId,
         category_id: categoryId,
-        date:        dt,
-        duration:    stepMins,
-        full_name:   userInfo?.full_name || '',
-        phone:       userInfo?.phone || '',
-        type:        service?.is_book_service === 0 ? 'ONLINE' : 'OFFLINE',
-        address:     bookingAddress.text,
-        note:        '',
+        date: dt,
+        duration: stepMins,
+        full_name: userInfo?.full_name || '',
+        phone: userInfo?.phone || '',
+        type: service?.is_book_service === 0 ? 'ONLINE' : 'OFFLINE',
+        address: bookingAddress.text,
+        note: '',
       });
 
       console.log('🚀 ~ bookAppointment result:', bookRes?.status, bookRes?.data);
