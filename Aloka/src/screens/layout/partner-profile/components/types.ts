@@ -11,6 +11,9 @@ export interface ConversationItem {
   unreadCount?: number;
   isOnline?: boolean;
   toUserId?: string;
+  isPin_local?: boolean;
+  is_pin?: number;
+  isMuted?: boolean;
 }
 
 export interface WorkRequestItem {

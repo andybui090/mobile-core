@@ -115,7 +115,13 @@ const RemoteImage = ({
         source={source}
         resizeMode={resizeMode}
         style={styles.image as any}
-        fallback={Platform.OS === 'android'} // optimize android
+        fallback={
+          Platform.OS === 'android' ||
+          (typeof source === 'object' &&
+            source !== null &&
+            typeof (source as any).uri === 'string' &&
+            (source as any).uri.startsWith('file://'))
+        }
         onError={() => {
           setLoading(false);
           setIsError(true);

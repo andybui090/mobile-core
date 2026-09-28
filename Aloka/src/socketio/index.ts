@@ -34,6 +34,15 @@ let socket: Socket | undefined;
 
 class SocketService {
   private listeners: Map<string, Set<(data: any) => void>> = new Map();
+  private currentRoomId?: string;
+
+  setCurrentRoomId(roomId?: string) {
+    this.currentRoomId = roomId ? String(roomId) : undefined;
+  }
+
+  getCurrentRoomId(): string | undefined {
+    return this.currentRoomId;
+  }
 
   isConnected(): boolean {
     return !!socket?.connected;
@@ -143,6 +152,10 @@ class SocketService {
 
     socket.on('connect', () => {
       console.log('==== Connect SocketIo Success ====');
+      this.emitRejoinRoom();
+      if (this.currentRoomId) {
+        this.emitJoinSocket(this.currentRoomId, 1);
+      }
       this.notifyListeners('connect', null);
     });
 
@@ -156,9 +169,34 @@ class SocketService {
       this.notifyListeners('connect_error', err);
     });
 
+    socket.on('errors', (err: any) => {
+      console.log('==== [socket.on errors] ====', err);
+      this.notifyListeners('errors', err);
+    });
+
+    socket.on('error', (err: any) => {
+      console.log('==== [socket.on error] ====', err);
+      this.notifyListeners('error', err);
+    });
+
     socket.on('createRoom', (data: any) => {
       console.log('==== Socket createRoom Event ====', data);
       this.notifyListeners('createRoom', data);
+    });
+
+    socket.on('joinRoom', (data: any) => {
+      console.log('==== [socket.on joinRoom] ====', data);
+      this.notifyListeners('joinRoom', data);
+    });
+
+    socket.on('leaveRoom', (data: any) => {
+      console.log('==== [socket.on leaveRoom] ====', data);
+      this.notifyListeners('leaveRoom', data);
+    });
+
+    socket.on('rejoinRoom', (data: any) => {
+      console.log('==== [socket.on rejoinRoom] ====', data);
+      this.notifyListeners('rejoinRoom', data);
     });
 
     socket.on('message', (data: any) => {
@@ -179,6 +217,16 @@ class SocketService {
     socket.on('deleteMessage', (data: any) => {
       console.log('==== [socket.on deleteMessage] ====', data);
       this.notifyListeners('deleteMessage', data);
+    });
+
+    socket.on('recallMessage', (data: any) => {
+      console.log('==== [socket.on recallMessage] ====', data);
+      this.notifyListeners('recallMessage', data);
+    });
+
+    socket.on('upload', (data: any) => {
+      console.log('==== [socket.on upload] ====', data);
+      this.notifyListeners('upload', data);
     });
 
     socket.on('users', (data: any) => {
@@ -219,39 +267,62 @@ class SocketService {
   }
 
   /**
-   * Tạo room chat 1-1 giống DoctorNetwork
-   * socket?.emit('room:create', { title, to: user, type: '1-1' })
+   * Tạo room chat 1-1 chuẩn theo DoctorNetwork
+   * socket?.emit('room:create', _data)
+   */
+  /**
+   * Tạo room chat 1-1 chuẩn theo DoctorNetwork
+   * socket?.emit('room:create', _data)
    */
   emitCreateSocketUser(
     title: string,
     toUserId: string,
-    mediaOrExtra?: any,
+    media?: any,
     isPremium?: any,
     is_chat?: any,
     packageId?: any,
-    orderId?: any,
-    expiredChat?: any,
+    _orderId?: any,
+    _expiredChat?: any,
   ) {
     try {
-      let payload: any = {
+      let _data: any = {
         title,
         to: toUserId,
-        type: '1-1',
-        created_at: Date.now(),
+        is_chat: 1, // Khi tạo phòng is_chat luôn là 1
       };
-      if (typeof mediaOrExtra === 'object' && mediaOrExtra !== null) {
-        payload = { ...payload, ...mediaOrExtra };
+
+      // Hỗ trợ truyền param dạng object extraData hoặc các param riêng lẻ
+      if (typeof media === 'object' && media !== null) {
+        const extra = media;
+        if (extra.media) _data.media = extra.media;
+        if (extra.is_premium === 1) {
+          _data.is_premium = 1;
+          if (extra.package_id || extra.packageId) {
+            _data.package_id = extra.package_id || extra.packageId;
+          }
+        }
+        _data.is_chat = 1;
+        // LƯU Ý: order_id tuyệt đối KHÔNG gửi qua socket room:create (chuẩn DoctorNetwork comment out // _data.order_id = orderId;)
       } else {
-        if (mediaOrExtra) payload.media = mediaOrExtra;
-        if (isPremium) payload.is_premium = isPremium;
-        if (is_chat) payload.is_chat = is_chat;
-        if (packageId) payload.package_id = packageId;
-        if (orderId) payload.order_id = orderId;
-        if (expiredChat) payload.expired_chat = expiredChat;
+        if (media) _data.media = media;
+        if (isPremium === 1) {
+          _data.is_premium = 1;
+          if (packageId) _data.package_id = packageId;
+        }
+        _data.is_chat = 1;
+        // LƯU Ý: order_id tuyệt đối KHÔNG gửi qua socket room:create
       }
-      console.log('Socket emit room:create:', payload);
+
+      console.log('[Socket] emit room:create:', _data);
       if (socket?.connected) {
-        socket.emit('room:create', payload);
+        socket.emit('room:create', _data);
+      } else {
+        console.warn('[Socket] socket not connected when emit room:create, reconnecting...');
+        this.connect().then(connected => {
+          if (connected && socket?.connected) {
+            socket.emit('room:create', _data);
+          }
+        });
       }
     } catch (error) {
       console.warn('emitCreateSocketUser error:', error);
@@ -267,25 +338,108 @@ class SocketService {
     customerAvatar?: any,
     extraData?: any,
   ): Promise<RoomDetail> {
-    // Đảm bảo socket đã kết nối
+    // 0. Nếu đã có roomId sẵn trong extraData (ví dụ từ booking item), trả về ngay
+    const directRoomId = extraData?.roomId || extraData?.room_id;
+    if (directRoomId && String(directRoomId).trim() && String(directRoomId) !== String(toUserId)) {
+      console.log('[Socket] Using direct roomId provided:', directRoomId);
+      return {
+        id: String(directRoomId),
+        room_id: String(directRoomId),
+        title: customerName,
+        to: toUserId,
+        thumbnail: customerAvatar,
+        type: '1-1',
+      };
+    }
+
+    // 1. Kiểm tra phòng chat đã tồn tại qua API /rooms trước khi phát socket tạo mới
+    if (toUserId) {
+      try {
+        const res: any = await ApiService.getListRoom({
+          limit: 50,
+          offset: 0,
+          fq: 'type:1-1',
+        });
+        const items: any[] =
+          res?.data?.items ||
+          res?.data?.result?.items ||
+          (Array.isArray(res?.data) ? res.data : []) ||
+          [];
+        const matched = items.find((r: any) => {
+          const rTo = String(r?.to || r?.to_user?.id || r?.to_user?._id || '');
+          const rFrom = String(r?.from || r?.user?.id || r?.user?._id || '');
+          const rMembers = (r?.members || r?.users || []).map((m: any) =>
+            String(m?.id || m?._id || m),
+          );
+          return (
+            rTo === String(toUserId) ||
+            rFrom === String(toUserId) ||
+            rMembers.includes(String(toUserId))
+          );
+        });
+        if (matched) {
+          const existingRoomId = matched.id || matched.room_id || matched._id;
+          if (existingRoomId && String(existingRoomId) !== String(toUserId)) {
+            console.log(
+              '[Socket] Found existing room in /rooms for toUserId:',
+              toUserId,
+              existingRoomId,
+            );
+            return {
+              id: String(existingRoomId),
+              room_id: String(existingRoomId),
+              title: matched.title || customerName,
+              to: toUserId,
+              thumbnail: customerAvatar,
+              type: '1-1',
+            };
+          }
+        }
+      } catch (err) {
+        console.warn('[Socket] Lookup existing room from API warning:', err);
+      }
+    }
+
+    // 2. Đảm bảo socket đã kết nối
     if (!socket?.connected) {
       await this.connect();
     }
 
     return new Promise(resolve => {
-      const fallbackRoomId = `room_1v1_${toUserId || Date.now()}`;
       let resolved = false;
 
+      const cleanup = () => {
+        this.off('createRoom', handleRoomCreated);
+        this.off('errors', handleErrors);
+        this.off('error', handleErrors);
+      };
+
       const handleRoomCreated = (res: any) => {
-        if (resolved) return;
         const data = res?.data || res;
-        // Kiểm tra đúng phòng chat 1-1 vừa tạo
-        if (data?.room_id || data?.id) {
+        console.log('[Socket] createRoom response:', data);
+        if (resolved) return;
+
+        // Backend Socket DoctorNetwork trả về data.room_id là id phòng chat thật sự
+        const realRoomId =
+          data?.room_id ||
+          (data?.type === '1-1' && data?.id && String(data?.id) !== String(toUserId)
+            ? data?.id
+            : undefined);
+
+        // Khớp cuộc trò chuyện 1-1
+        const isTargetMatch =
+          !toUserId ||
+          String(data?.to) === String(toUserId) ||
+          data?.title === customerName ||
+          !data?.to;
+
+        if (realRoomId && isTargetMatch) {
           resolved = true;
-          this.off('createRoom', handleRoomCreated);
+          cleanup();
+          console.log('[Socket] Successfully resolved real room_id:', realRoomId);
           resolve({
-            id: data.room_id || data.id,
-            room_id: data.room_id || data.id,
+            id: String(realRoomId),
+            room_id: String(realRoomId),
             title: data.title || customerName,
             to: toUserId,
             thumbnail: customerAvatar,
@@ -294,50 +448,246 @@ class SocketService {
         }
       };
 
-      // Đăng ký lắng nghe sự kiện createRoom từ socket
+      const handleErrors = (err: any) => {
+        console.warn('[Socket] createRoom received errors from server:', err);
+      };
+
+      // Đăng ký lắng nghe sự kiện createRoom và errors từ socket
       this.on('createRoom', handleRoomCreated);
+      this.on('errors', handleErrors);
+      this.on('error', handleErrors);
 
-      // Phát sự kiện tạo phòng
-      this.emitCreateSocketUser(customerName, toUserId, {
-        thumbnail: customerAvatar,
-        media: 'text',
-        is_chat: 1,
-        ...extraData,
-      });
+      // Phát sự kiện tạo phòng chuẩn DoctorNetwork (title, to, media, is_chat)
+      // KHÔNG gửi order_id hoặc package_id không hợp lệ để tránh lỗi { key: "room_id", msg: "Not Found" }
+      this.emitCreateSocketUser(
+        customerName,
+        toUserId,
+        extraData?.media || 'text',
+        extraData?.is_premium,
+        1,
+        extraData?.package_id,
+      );
 
-      // Timeout dự phòng sau 1.5 giây nếu socket chưa phản hồi kịp
+      // Timeout dự phòng sau 3 giây: KHÔNG gán toUserId vào roomId để tránh lỗi 400 "Không tìm thấy"
       setTimeout(() => {
         if (!resolved) {
           resolved = true;
-          this.off('createRoom', handleRoomCreated);
+          cleanup();
+          console.warn('[Socket] createRoom timeout, entering chat state without roomId');
           resolve({
-            id: fallbackRoomId,
-            room_id: fallbackRoomId,
+            id: '',
+            room_id: '',
             title: customerName,
             to: toUserId,
             thumbnail: customerAvatar,
             type: '1-1',
           });
         }
-      }, 1500);
+      }, 3000);
     });
   }
 
-  // Gửi tin nhắn
+  // Chấp nhận / tham gia room chat (chuẩn DoctorNetwork: socket.emit('room:join', { room: id, status }))
+  emitJoinSocket(id: any, status: any = 1) {
+    if (!id) return;
+    const roomIdStr = String(id);
+    this.currentRoomId = roomIdStr;
+    console.log('[Socket] emitJoinSocket:', roomIdStr, status);
+    if (socket?.connected) {
+      socket.emit('room:join', { room: roomIdStr, status });
+    } else {
+      this.connect().then(connected => {
+        if (connected && socket?.connected) {
+          socket.emit('room:join', { room: roomIdStr, status });
+        }
+      });
+    }
+  }
+
+  // Tự động tham gia room chat ngầm (chuẩn DoctorNetwork: socket.emit('room:join', { room: id, status, autojoin: true }))
+  emitJoinSocketAuto(id: any, status: any = 1) {
+    if (!id) return;
+    const roomIdStr = String(id);
+    if (socket?.connected) {
+      socket.emit('room:join', { room: roomIdStr, status, autojoin: true });
+    } else {
+      this.connect().then(connected => {
+        if (connected && socket?.connected) {
+          socket.emit('room:join', { room: roomIdStr, status, autojoin: true });
+        }
+      });
+    }
+  }
+
+  // Rời khỏi phòng chat (chuẩn DoctorNetwork: socket.emit('room:leave', { room: id }))
+  emitLeaveSocket(id: any) {
+    if (!id) return;
+    const roomIdStr = String(id);
+    if (this.currentRoomId === roomIdStr) {
+      this.currentRoomId = undefined;
+    }
+    console.log('[Socket] emitLeaveSocket:', roomIdStr);
+    if (socket?.connected) {
+      socket.emit('room:leave', { room: roomIdStr });
+    }
+  }
+
+  // Khôi phục tất cả các room đang hoạt động (chuẩn DoctorNetwork: socket.emit('room:rejoin', 'room'))
+  emitRejoinRoom() {
+    if (socket?.connected) {
+      socket.emit('room:rejoin', 'room');
+    } else {
+      this.connect().then(connected => {
+        if (connected && socket?.connected) {
+          socket.emit('room:rejoin', 'room');
+        }
+      });
+    }
+  }
+
+  // Gửi tin nhắn đa phương tiện (text, image, video, file, media) chuẩn DoctorNetwork
   emitSendMessage(
-    content: string,
-    type: 'text' | 'image' | 'media',
+    content: any,
+    type: 'text' | 'image' | 'video' | 'media' | 'file',
     room: string,
     toUserId: string,
     clientMsgId?: string,
+    replyId?: string,
   ) {
+    const formattedContent =
+      typeof content === 'string' ? content : JSON.stringify(content);
+    let finalClientMsgId = String(clientMsgId || Date.now());
+    const suffix = `.${type || 'text'}`;
+    if (!finalClientMsgId.endsWith(suffix) && !finalClientMsgId.includes('.')) {
+      finalClientMsgId = `${finalClientMsgId}${suffix}`;
+    }
+    const targetTo = room || toUserId;
+    const payload: any = {
+      content: formattedContent,
+      type: type || 'text',
+      room,
+      to: targetTo,
+      clientMsgId: finalClientMsgId,
+    };
+    if (replyId) {
+      payload.reply_id = replyId;
+    }
+    console.log('[Socket] emitSendMessage:', payload, 'connected:', socket?.connected);
     if (socket?.connected) {
-      socket.emit('message', {
-        content,
-        type,
-        room,
-        to: toUserId,
-        clientMsgId: clientMsgId || `${Date.now()}_${Math.random()}`,
+      socket.emit('message', payload);
+    } else {
+      console.warn('[Socket] socket not connected when sending message, reconnecting...');
+      this.connect().then(connected => {
+        if (connected && socket?.connected) {
+          socket.emit('message', payload);
+        }
+      });
+    }
+  }
+
+  // Gửi tin nhắn Trả lời (Reply) 1-1 chuẩn DoctorNetwork
+  emitMessageSocketReply(
+    content: any,
+    type: any = 'text',
+    room: any,
+    userId: any,
+    clientMsgId: any,
+    msgIdReply: any,
+  ) {
+    let finalClientMsgId = String(clientMsgId || Date.now());
+    const suffix = `.${type || 'text'}`;
+    if (!finalClientMsgId.endsWith(suffix) && !finalClientMsgId.includes('.')) {
+      finalClientMsgId = `${finalClientMsgId}${suffix}`;
+    }
+    const payload = {
+      content: typeof content === 'string' ? content : JSON.stringify(content),
+      type: type || 'text',
+      room: room,
+      to: room || userId,
+      clientMsgId: finalClientMsgId,
+      reply_id: msgIdReply,
+    };
+    console.log('[Socket] emitMessageSocketReply:', payload);
+    if (socket?.connected) {
+      socket.emit('message', payload);
+    } else {
+      this.connect().then(connected => {
+        if (connected && socket?.connected) {
+          socket.emit('message', payload);
+        }
+      });
+    }
+  }
+
+  // Gửi tin nhắn Ảnh 1-1 chuẩn DoctorNetwork
+  emitMessageSocketImage(
+    content: any,
+    type: any = 'image',
+    room: any,
+    userId: any,
+    clientMsgId: any,
+  ) {
+    let finalClientMsgId = String(clientMsgId || Date.now());
+    const suffix = `.${type || 'image'}`;
+    if (!finalClientMsgId.endsWith(suffix) && !finalClientMsgId.includes('.')) {
+      finalClientMsgId = `${finalClientMsgId}${suffix}`;
+    }
+    const payload = {
+      content: typeof content === 'string' ? content : JSON.stringify(content),
+      type: type || 'image',
+      room,
+      to: room || userId,
+      clientMsgId: finalClientMsgId,
+    };
+    console.log('[Socket] emitMessageSocketImage:', payload);
+    if (socket?.connected) {
+      socket.emit('message', payload);
+    } else {
+      this.connect().then(connected => {
+        if (connected && socket?.connected) {
+          socket.emit('message', payload);
+        }
+      });
+    }
+  }
+
+  // Gửi tin nhắn Video 1-1 chuẩn DoctorNetwork
+  emitMessageSocketVideo(
+    content: any,
+    type: any = 'video',
+    room: any,
+    userId: any,
+    clientMsgId: any,
+  ) {
+    let finalClientMsgId = String(clientMsgId || Date.now());
+    const suffix = `.${type || 'video'}`;
+    if (!finalClientMsgId.endsWith(suffix) && !finalClientMsgId.includes('.')) {
+      finalClientMsgId = `${finalClientMsgId}${suffix}`;
+    }
+    const payload = {
+      content: typeof content === 'string' ? content : JSON.stringify(content),
+      type: type || 'video',
+      room,
+      to: room || userId,
+      clientMsgId: finalClientMsgId,
+    };
+    console.log('[Socket] emitMessageSocketVideo:', payload);
+    if (socket?.connected) {
+      socket.emit('message', payload);
+    } else {
+      this.connect().then(connected => {
+        if (connected && socket?.connected) {
+          socket.emit('message', payload);
+        }
+      });
+    }
+  }
+
+  // Upload file qua socket chuẩn DoctorNetwork
+  emitUploadFile(resources: any) {
+    if (socket?.connected) {
+      socket.emit('upload', {
+        resources: typeof resources === 'string' ? resources : JSON.stringify(resources),
       });
     }
   }
@@ -410,29 +760,97 @@ class SocketService {
   }
 
   /**
-   * Xóa / thu hồi tin nhắn qua Socket
+   * Xóa tin nhắn (phía tôi) chuẩn DoctorNetwork
+   * socket.emit('message:delete', { room, id })
    */
-  emitDeleteMessage(messageId: string, roomId?: string) {
-    if (!messageId) return;
-    try {
-      if (socket?.connected) {
-        socket.emit('deleteMessage', {
-          id: messageId,
-          messageId,
-          room: roomId,
-          roomId,
-        });
-      }
-    } catch (e) {
-      console.warn('emitDeleteMessage error:', e);
+  emitMessageSocketDelete(room: any, id: any) {
+    const payload = { room: room, id: id };
+    console.log('=== delete message ===', room, id);
+    if (socket?.connected) {
+      socket.emit('message:delete', payload);
+    } else {
+      this.connect().then(connected => {
+        if (connected && socket?.connected) {
+          socket.emit('message:delete', payload);
+        }
+      });
     }
-    // Thông báo cho các listeners local cập nhật UI ngay lập tức
-    this.notifyListeners('deleteMessage', {
-      id: messageId,
-      messageId,
-      room: roomId,
-      roomId,
-    });
+    this.notifyListeners('deleteMessage', payload);
+  }
+
+  /**
+   * Owner xóa tin nhắn (cả 2 phía / all) chuẩn DoctorNetwork
+   * socket.emit('message:delete', { room, id, all: true })
+   */
+  emitMessageSocketOwnerDelete(room: any, id: any) {
+    const payload = { room: room, id: id, all: true };
+    console.log('=== delete message owner ===', room, id);
+    if (socket?.connected) {
+      socket.emit('message:delete', payload);
+    } else {
+      this.connect().then(connected => {
+        if (connected && socket?.connected) {
+          socket.emit('message:delete', payload);
+        }
+      });
+    }
+    this.notifyListeners('deleteMessage', payload);
+  }
+
+  /**
+   * Xóa lịch sử trò chuyện 1-1 chuẩn DoctorNetwork
+   * socket.emit('message:delete', { room, id, history: true })
+   */
+  emitMessageSocketDeleteHistory(room: any, id?: any) {
+    const payload = { room: room, id: id || room, history: true };
+    console.log('=== delete message history ===', room, id);
+    if (socket?.connected) {
+      socket.emit('message:delete', payload);
+    } else {
+      this.connect().then(connected => {
+        if (connected && socket?.connected) {
+          socket.emit('message:delete', payload);
+        }
+      });
+    }
+  }
+
+  /**
+   * Thu hồi tin nhắn chuẩn DoctorNetwork
+   * socket.emit('message:recall', { room, id })
+   */
+  emitMessageSocketRecall(room: any, id: any) {
+    const payload = { room: room, id: id };
+    console.log('=== recall message ===', room, id);
+    if (socket?.connected) {
+      socket.emit('message:recall', payload);
+    } else {
+      this.connect().then(connected => {
+        if (connected && socket?.connected) {
+          socket.emit('message:recall', payload);
+        }
+      });
+    }
+    this.notifyListeners('recallMessage', payload);
+  }
+
+  /**
+   * Xóa lịch sử trò chuyện (alias theo DoctorNetwork)
+   */
+  emitDeleteSocketHistory(room: any, id?: any) {
+    this.emitMessageSocketDeleteHistory(room, id);
+  }
+
+  /**
+   * Xóa / thu hồi tin nhắn qua Socket (wrapper tương thích ngược)
+   */
+  emitDeleteMessage(messageId: string, roomId?: string, all: boolean = false) {
+    if (!messageId) return;
+    if (all) {
+      this.emitMessageSocketOwnerDelete(roomId, messageId);
+    } else {
+      this.emitMessageSocketDelete(roomId, messageId);
+    }
   }
 }
 

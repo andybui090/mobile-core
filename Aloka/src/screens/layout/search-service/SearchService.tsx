@@ -787,7 +787,7 @@ export const SearchService: React.FC<SearchServiceProps> = ({ onBack, onFilterPr
               <IconX type="ionicons" name="close-circle" size={18} color="#98A2B3" />
             </TouchableOpacity>
           )}
-          {/* <TouchableOpacity
+          <TouchableOpacity
             activeOpacity={0.7}
             style={[styles.locateBtn, userCoords && styles.locateBtnActive]}
             onPress={handleEnableLocationAndScan}
@@ -803,7 +803,7 @@ export const SearchService: React.FC<SearchServiceProps> = ({ onBack, onFilterPr
                 color={userCoords ? '#0D9488' : '#64748B'}
               />
             )}
-          </TouchableOpacity> */}
+          </TouchableOpacity>
           {/* <TouchableOpacity
             activeOpacity={0.7}
             style={styles.filterBtn}
@@ -821,10 +821,10 @@ export const SearchService: React.FC<SearchServiceProps> = ({ onBack, onFilterPr
       </View>
 
       {/* 3 Luồng phân loại: Gói dịch vụ - Bác sĩ/ĐD - Gần tôi */}
-      {/* {renderFlowTabs()} */}
+      {renderFlowTabs()}
 
       {/* Prompt tìm quanh đây */}
-      {/* {renderNearbyPromptBanner()} */}
+      {renderNearbyPromptBanner()}
 
       {/* Nội dung theo từng luồng */}
       {activeFlow === 'SERVICES' && (

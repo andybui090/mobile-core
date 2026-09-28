@@ -579,7 +579,10 @@ const AppointmentScreen: React.FC<any> = () => {
     const targetId =
       targetPerson.id ||
       targetPerson._id ||
-      (isDoctor ? item?.user_id || item?.customer_id : item?.doctor_id);
+      targetPerson.user_id ||
+      (isDoctor
+        ? item?.user_id || item?.customer_id
+        : item?.doctor_id || item?.doctor?.user_id || item?.partner_id);
 
     const targetAvatar = targetPerson.avatar;
 
@@ -587,73 +590,37 @@ const AppointmentScreen: React.FC<any> = () => {
     const packageId = packageInfo?.id || packageInfo?._id || item?.package_id;
     const orderId = item?.id || item?._id;
 
-    if (chatLoadingId) return;
-    const currentLoadingKey = String(orderId || targetId || Date.now());
-    setChatLoadingId(currentLoadingKey);
+    const existingRoomId = item?.room_id || item?.room?.id || item?.chat_room_id || '';
+    if (existingRoomId) {
+      socketService.emitJoinSocket(String(existingRoomId), 1);
+    }
+
+    // ⚡ Chuẩn bị params và điều hướng NGAY LẬP TỨC (0ms)
+    const chatParams = {
+      roomId: existingRoomId,
+      name: targetName,
+      customerName: targetName,
+      avatar: targetAvatar,
+      customerAvatar: targetAvatar,
+      toUserId: targetId,
+      packageId,
+      orderId,
+      item: {
+        id: existingRoomId,
+        room_id: existingRoomId,
+        title: targetName,
+        thumbnail: targetAvatar,
+        to: targetId,
+        package_id: packageId,
+        order_id: orderId,
+        media: 'text',
+      },
+    };
 
     try {
-      // 1. Gọi Socket IO tạo hoặc join room 1-1 giống logic mobile-doctor-app
-      const room = await socketService.createRoom1vs1(
-        targetName,
-        String(targetId || ''),
-        targetAvatar,
-        {
-          media: 'text',
-          is_premium: 1,
-          is_chat: 1,
-          package_id: packageId,
-          order_id: orderId,
-        },
-      );
-
-      const roomId = room?.id || room?.room_id;
-
-      // 2. Chuẩn bị params đầy đủ cho ChatScreen
-      const chatParams = {
-        roomId,
-        name: targetName,
-        customerName: targetName,
-        avatar: targetAvatar,
-        customerAvatar: targetAvatar,
-        toUserId: targetId,
-        packageId,
-        orderId,
-        item: {
-          id: roomId,
-          room_id: roomId,
-          title: targetName,
-          thumbnail: targetAvatar,
-          to: targetId,
-          package_id: packageId,
-          order_id: orderId,
-          media: 'text',
-        },
-      };
-
-      // 3. Điều hướng an toàn: ưu tiên local navigator, fallback sang RootNavigation
-      try {
-        navigation.navigate('BookingChat', chatParams);
-      } catch {
-        navigate2('BookingChat', chatParams);
-      }
-    } catch (error) {
-      console.warn('handleChatPartner error:', error);
-      const fallbackParams = {
-        name: targetName,
-        customerName: targetName,
-        avatar: targetAvatar,
-        customerAvatar: targetAvatar,
-        toUserId: targetId,
-        packageId,
-        orderId,
-      };
-      try {
-        navigation.navigate('BookingChat', fallbackParams);
-      } catch {
-        navigate2('BookingChat', fallbackParams);
-      }
-    } finally {
-      setChatLoadingId(null);
+      navigation.navigate('BookingChat', chatParams);
+    } catch {
+      navigate2('BookingChat', chatParams);
     }
   };
 

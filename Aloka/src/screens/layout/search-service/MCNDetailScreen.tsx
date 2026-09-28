@@ -182,7 +182,6 @@ export const MCNDetailScreen: React.FC = () => {
           activeOpacity={0.7}
           onPress={() => handleCall(hospital.phone)}
         >
-          <IconX type="ionicons" name="call-outline" size={20} color="#14B8A6" />
         </TouchableOpacity>
       </View>
 
@@ -345,7 +344,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0FDFA',
+    backgroundColor: 'white',
   },
   scrollBody: {
     paddingBottom: 36,

@@ -76,12 +76,18 @@ const mapBookingToWorkItem = (item: any, currentTab: SubStatus): WorkRequestItem
   const endM = startM.clone().add(duration, 'minutes');
   const timeStr = `${startM.format('HH:mm')} - ${endM.format('HH:mm')}`;
 
-  const customer = item?.user || item?.customer || {};
+  const customer = item?.user || item?.customer || item?.patient || {};
   const customerName =
     customer.full_name || customer.name || item?.customer_name || 'Khách hàng';
   const customerAvatar = customer.avatar || item?.customer_avatar;
   const customerPhone = customer.phone || customer.phone_number || item?.phone || '';
-  const customerId = customer.id || customer._id || item?.user_id;
+  const customerId =
+    customer.id ||
+    customer._id ||
+    item?.user_id ||
+    item?.customer_id ||
+    item?.patient_id ||
+    item?.patient?.user_id;
 
   const serviceTitle =
     item?.package?.name ||
@@ -409,69 +415,85 @@ export const PartnerWorkScreen: React.FC = () => {
     });
   };
 
-  const handleOpenChat = async (
+  const handleOpenChatFromChatList = (
+    name: string,
+    avatar?: any,
+    roomId?: string,
+    toUserId?: string,
+  ) => {
+    if (roomId) {
+      socketService.emitJoinSocket(roomId, 1);
+    }
+    navigation.navigate('PartnerChatScreen', {
+      roomId,
+      name,
+      customerName: name,
+      avatar,
+      customerAvatar: avatar,
+      toUserId,
+      item: {
+        id: roomId,
+        room_id: roomId,
+        title: name,
+        thumbnail: avatar,
+        to: toUserId,
+        type: '1-1',
+      },
+    });
+  };
+
+  const handleOpenChatFromWorkCard = (
     name: string,
     avatar?: any,
     jobId?: string,
     toUserId?: string,
     rawItem?: any,
   ) => {
-    // Nếu đi từ danh sách tin nhắn (WorkChatTab) và đã có sẵn roomId hợp lệ
-    if (jobId && !rawItem) {
-      navigation.navigate('PartnerChatScreen', {
-        roomId: jobId,
-        name,
-        customerName: name,
-        avatar,
-        customerAvatar: avatar,
-        toUserId,
-      });
-      return;
-    }
-
     const packageInfo = rawItem?.package || {};
     const packageId = packageInfo?.id || packageInfo?._id || rawItem?.package_id;
     const orderId = rawItem?.id || rawItem?._id || jobId;
-    const targetId = toUserId || rawItem?.user?.id || rawItem?.customer_id;
+    const customer = rawItem?.user || rawItem?.customer || rawItem?.patient || {};
+    const targetId =
+      toUserId ||
+      customer.id ||
+      customer._id ||
+      rawItem?.user_id ||
+      rawItem?.customer_id ||
+      rawItem?.patient_id ||
+      rawItem?.patient?.user_id;
 
-    try {
-      showToast(`${t('partnerWork.startChatWith', 'Đang mở đoạn chat với')} ${name}...`, 'success');
-      const room = await socketService.createRoom1vs1(
-        name,
-        String(targetId || `cust_${Date.now()}`),
-        avatar,
-        {
-          media: 'text',
-          is_premium: 1,
-          is_chat: 1,
-          package_id: packageId,
-          order_id: orderId,
-        },
-      );
+    const existingRoomId =
+      rawItem?.room_id ||
+      rawItem?.room?.id ||
+      rawItem?.chat_room_id ||
+      '';
 
-      const roomId = room?.id || room?.room_id;
-
-      navigation.navigate('PartnerChatScreen', {
-        roomId,
-        name,
-        customerName: name,
-        avatar,
-        customerAvatar: avatar,
-        toUserId: targetId,
-        packageId,
-        orderId,
-      });
-    } catch (e) {
-      navigation.navigate('PartnerChatScreen', {
-        name,
-        customerName: name,
-        avatar,
-        customerAvatar: avatar,
-        toUserId: targetId,
-        packageId,
-        orderId,
-      });
+    if (existingRoomId) {
+      socketService.emitJoinSocket(existingRoomId, 1);
     }
+
+    // ⚡ ĐIỀU HƯỚNG NGAY LẬP TỨC (0ms) - ChatScreen sẽ lo kết nối / tạo phòng trong background
+    navigation.navigate('PartnerChatScreen', {
+      roomId: existingRoomId,
+      name,
+      customerName: name,
+      avatar,
+      customerAvatar: avatar,
+      toUserId: targetId,
+      packageId,
+      orderId,
+      item: {
+        id: existingRoomId,
+        room_id: existingRoomId,
+        title: name,
+        thumbnail: avatar,
+        to: targetId,
+        type: '1-1',
+        package_id: packageId,
+        order_id: orderId,
+        created_at: Date.now(),
+      },
+    });
   };
 
   // Update booking status via ApiService
@@ -703,7 +725,7 @@ export const PartnerWorkScreen: React.FC = () => {
           onRefresh={handleRefresh}
           onCall={handleCall}
           onChat={(name, avatar, jobId, toUserId, rawItem) =>
-            handleOpenChat(name, avatar, jobId, toUserId, rawItem)
+            handleOpenChatFromWorkCard(name, avatar, jobId, toUserId, rawItem)
           }
           onOpenRejectModal={handleOpenRejectModal}
           onAcceptJob={handleAcceptJob}
@@ -715,7 +737,7 @@ export const PartnerWorkScreen: React.FC = () => {
       ) : (
         <WorkChatTab
           onOpenChat={(name, avatar, roomId, toUserId) =>
-            handleOpenChat(name, avatar, roomId, toUserId)
+            handleOpenChatFromChatList(name, avatar, roomId, toUserId)
           }
         />
       )}

@@ -25,6 +25,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { rootRoute } from '@/constants';
 import { navigationRef } from '@/navigation/RootNavigation';
+import socketService from '@/socketio';
 
 interface NotificationItem {
   id: string;
@@ -204,6 +205,9 @@ export const NotificationList: React.FC<NotificationListProps> = ({ onBack }) =>
       if (roomId || toUserId) {
         if (navigationRef.isReady()) {
           try {
+            if (roomId) {
+              socketService.emitJoinSocket(roomId, 1);
+            }
             (navigationRef.current as any)?.navigate('BookingChat', {
               roomId,
               toUserId,

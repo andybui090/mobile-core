@@ -116,7 +116,6 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
       fq: `status:1,is_deleted:0,parent_id:0,is_book_service:1`,
       s: '',
     };
-    console.log('🚀 ~ callAPICarelyServices ~ param:', param);
     dispatch(getCarelyServices(param));
   };
 
@@ -160,10 +159,8 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
   useEffect(() => {
     const processAPITopBanner = () => {
       const { loading, data, error } = topBannerData;
-      console.log('🚀 ~ banner ~ loading:', loading, '| error:', error, '| data:', JSON.stringify(data));
       if (!loading) {
         if (data) {
-          console.log('🚀 ~ banner data.items:', JSON.stringify(data.items));
           if (!isEmptyArray(data.items)) {
             let arrClone = [...data.items];
             for (let i = 0; i < data.items.length; i++) {
@@ -189,7 +186,6 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
       if (!loading) {
         if (data) {
           const newItems = data.items || [];
-          console.log('🚀 ~ processAPIListService ~ newItems:', newItems);
           if (offset === 0) {
             setListServices(newItems);
           } else {

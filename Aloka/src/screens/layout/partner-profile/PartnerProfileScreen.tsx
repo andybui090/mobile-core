@@ -275,11 +275,6 @@ export const PartnerProfileScreen: React.FC = () => {
 
   const medicalLicenseNumber = currentUser?.medical_license_number || '';
 
-  console.log("🚀 ------------------------------------------------------------------------------------🚀");
-  console.log("🚀 ~ PartnerProfileScreen.tsx:278 ~ PartnerProfileScreen ~ currentUser:", currentUser);
-  console.log("🚀 ------------------------------------------------------------------------------------🚀");
-
-
   const displayIntro = currentUser?.personalization?.description || '';
 
   const avatar = currentUser?.avatar;

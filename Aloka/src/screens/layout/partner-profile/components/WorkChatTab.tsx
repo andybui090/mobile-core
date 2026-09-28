@@ -18,10 +18,12 @@ import { IconX } from '@/components';
 import { changeAlias, keyExtractor } from '@/configs';
 import { images } from '@/configs/image';
 import { CEmptySearch, CText } from '@/utils';
-import { PAGINATION } from '@/constants';
+import { PAGINATION, STORAGEKEY } from '@/constants';
+import { getObjectData, storeObjectData } from '@/storages';
 import { AppContext } from '@/contexts';
 import socketService from '@/socketio';
 import ApiService from '@/services/api-base';
+import { formatChatMessageText } from '@/screens/layout/chat';
 import { ConversationItem } from './types';
 
 export const formatChatTime = (timeVal: any, t?: any): string => {
@@ -257,14 +259,8 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
         return last_message;
       }
     }
-    if (last_message.includes('{community.chat.remove}')) {
-      return t('communityChat.chat.remove', 'Tin nhắn đã được thu hồi');
-    }
-    if (last_message.includes('{communityChat.chat.addMember}')) {
-      return t('communityChat.chat.addMember', 'Đã thêm thành viên');
-    }
-    if (last_message.includes('{communityChat.chat.memberLeveaGroup}')) {
-      return t('communityChat.chat.memberLeveaGroup', 'Đã rời khỏi nhóm');
+    if (last_message.includes('{community')) {
+      return formatChatMessageText(last_message);
     }
     return (
       last_message.replaceAll('DoctorNetwork_Chat_NETDEV ', '').trim() ||
@@ -392,10 +388,86 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
     });
   };
 
-  // Cập nhật state danh sách phòng chat
-  const processRoomList = (rawItems: any[], reqOffset: number) => {
-    const parsed = parseRoomListResponse(rawItems);
+  // Cập nhật state danh sách phòng chat chuẩn DoctorNetwork
+  const processRoomList = async (rawItems: any[], reqOffset: number) => {
+    let parsed = parseRoomListResponse(rawItems);
     const sizeResponse = rawItems.length;
+
+    try {
+      // 1. Kiểm tra trạng thái xóa từ STORAGEKEY.DELETE_CHAT chuẩn DoctorNetwork
+      const deleteHistory: any = await getObjectData(STORAGEKEY.DELETE_CHAT);
+      if (deleteHistory) {
+        if (deleteHistory.deleteRoom === 'true' && deleteHistory.room_id) {
+          // Nếu server vẫn trả về phòng này (có tin nhắn mới hoặc phòng hoạt động), tự động khôi phục hiển thị
+          const isReturnedByServer = rawItems.some(
+            (r: any) => String(r.id || r.room_id || r._id) === String(deleteHistory.room_id),
+          );
+          if (isReturnedByServer) {
+            await storeObjectData(STORAGEKEY.DELETE_CHAT, {
+              room_id: deleteHistory.room_id,
+              deleteRoom: 'false',
+            });
+          } else {
+            parsed = parsed.filter(
+              t => String(t.roomId || t.id) !== String(deleteHistory.room_id),
+            );
+          }
+        } else if (Array.isArray(deleteHistory)) {
+          const delSet = new Set(
+            deleteHistory.map((d: any) =>
+              String(typeof d === 'string' ? d : d.room_id || d.roomId || d.id),
+            ),
+          );
+          // Chỉ lọc nếu server không trả về phòng này trong danh sách
+          parsed = parsed.filter(t => {
+            const isMatch = delSet.has(String(t.roomId || t.id));
+            if (isMatch) {
+              const rawMatch = rawItems.find(
+                (r: any) => String(r.id || r.room_id || r._id) === String(t.roomId || t.id),
+              );
+              if (rawMatch) return true;
+              return false;
+            }
+            return true;
+          });
+        }
+      }
+
+      // 2. Gắn cờ và sắp xếp ghim lên đầu theo STORAGEKEY.PIN_LOCAL
+      const pinLocal: any = await getObjectData(STORAGEKEY.PIN_LOCAL);
+      if (pinLocal && Array.isArray(pinLocal)) {
+        const pinSet = new Set(
+          pinLocal.map((p: any) =>
+            typeof p === 'string' ? p : p.id || p.roomId,
+          ),
+        );
+        parsed = parsed.map(item => ({
+          ...item,
+          isPin_local: pinSet.has(item.roomId || item.id) || item.is_pin === 1,
+        }));
+
+        // Đưa các phòng được ghim lên đầu danh sách chuẩn DoctorNetwork
+        const pinnedList = parsed.filter(i => i.isPin_local);
+        const unpinnedList = parsed.filter(i => !i.isPin_local);
+        parsed = [...pinnedList, ...unpinnedList];
+      }
+
+      // 3. Gắn cờ tắt thông báo theo STORAGEKEY.MUTE_LOCAL
+      const muteLocal: any = await getObjectData(STORAGEKEY.MUTE_LOCAL);
+      if (muteLocal && Array.isArray(muteLocal)) {
+        const muteSet = new Set(
+          muteLocal.map((m: any) =>
+            typeof m === 'string' ? m : m.id || m.roomId,
+          ),
+        );
+        parsed = parsed.map(item => ({
+          ...item,
+          isMuted: muteSet.has(item.roomId || item.id),
+        }));
+      }
+    } catch (err) {
+      console.warn('[WorkChatTab] processRoomList storage error:', err);
+    }
 
     console.log(
       `[WorkChatTab] processRoomList: size=${sizeResponse}, reqOffset=${reqOffset}`,
@@ -405,11 +477,25 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
       setConversations(parsed);
       offsetRef.current = 0;
       setOffset(0);
+
+      // Tự động tham gia các phòng chat ngầm chuẩn DoctorNetwork (communityScreen.tsx line 637)
+      // Giúp thiết bị nhận được sự kiện 'message' realtime ngay cả khi đang ở ngoài danh sách chat
+      for (let i = 0; i < parsed.length; i++) {
+        const rId = parsed[i].roomId || parsed[i].id;
+        if (rId) {
+          socketService.emitJoinSocketAuto(rId, 1);
+        }
+      }
+      socketService.emitRejoinRoom();
     } else {
       setConversations(prev => {
         const existingIds = new Set(prev.map(t => t.roomId || t.id));
         const newItems = parsed.filter(t => !existingIds.has(t.roomId || t.id));
-        return [...prev, ...newItems];
+        const merged = [...prev, ...newItems];
+        // Đảm bảo phòng ghim luôn ở trên cùng
+        const pinned = merged.filter(i => i.isPin_local);
+        const unpinned = merged.filter(i => !i.isPin_local);
+        return [...pinned, ...unpinned];
       });
       offsetRef.current = reqOffset;
       setOffset(reqOffset);
@@ -442,7 +528,7 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
     }
   };
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     if (isRefreshingRef.current || isLoadingMoreRef.current) return;
     isRefreshingRef.current = true;
     offsetRef.current = 0;
@@ -451,6 +537,16 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
     setFinalLoad(false);
     setOffset(0);
     setRefreshing(true);
+    // Khi người dùng chủ động kéo làm mới, xóa cờ deleteRoom cũ để đồng bộ chính xác với API
+    try {
+      const deleteHistory: any = await getObjectData(STORAGEKEY.DELETE_CHAT);
+      if (deleteHistory && deleteHistory.deleteRoom === 'true') {
+        await storeObjectData(STORAGEKEY.DELETE_CHAT, {
+          room_id: deleteHistory.room_id,
+          deleteRoom: 'false',
+        });
+      }
+    } catch { }
     getListRoomApi(0);
   };
 
@@ -496,7 +592,21 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
       }
     };
 
-    const handleNewMessage = () => {
+    const handleNewMessage = (data?: any) => {
+      const msgData = data?.data || data;
+      const targetRoomId = msgData?.room || msgData?.room_id;
+      if (targetRoomId) {
+        getObjectData(STORAGEKEY.DELETE_CHAT)
+          .then(del => {
+            if (del && (del.room_id === targetRoomId || del.deleteRoom === 'true')) {
+              storeObjectData(STORAGEKEY.DELETE_CHAT, {
+                room_id: targetRoomId,
+                deleteRoom: 'false',
+              });
+            }
+          })
+          .catch(() => { });
+      }
       getListRoomApi(0);
     };
 
@@ -566,8 +676,12 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
         {
           text: t('common.delete', 'Xóa'),
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             socketService.emitDeleteRoom(roomId);
+            await storeObjectData(STORAGEKEY.DELETE_CHAT, {
+              room_id: roomId,
+              deleteRoom: 'true',
+            });
             setConversations(prev =>
               prev.filter(c => (c.roomId || c.id) !== roomId),
             );
@@ -643,14 +757,18 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
           <TouchableOpacity
             style={styles.conversationItem}
             activeOpacity={0.7}
-            onPress={() =>
+            onPress={() => {
+              const targetRoomId = item.roomId || item.id;
+              if (targetRoomId) {
+                socketService.emitJoinSocket(targetRoomId, 1);
+              }
               onOpenChat(
                 item.customerName,
                 item.customerAvatar,
-                item.roomId || item.id,
+                targetRoomId,
                 item.toUserId,
-              )
-            }
+              );
+            }}
             onLongPress={() => handleDeleteConversation(item)}
           >
             <View style={styles.convAvatarWrapper}>
@@ -666,7 +784,25 @@ export const WorkChatTab: React.FC<WorkChatTabProps> = ({ onOpenChat }) => {
                 <CText style={styles.convName} numberOfLines={1}>
                   {item.customerName}
                 </CText>
-                {!!item.time && <CText style={styles.convTime}>{item.time}</CText>}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  {item.isMuted && (
+                    <IconX
+                      type="ionicons"
+                      name="notifications-off-outline"
+                      size={13}
+                      color={colors.c98A2B3 || '#98A2B3'}
+                    />
+                  )}
+                  {(item.isPin_local || item.is_pin === 1) && (
+                    <IconX
+                      type="antdesign"
+                      name="pushpino"
+                      size={13}
+                      color={colors.primary || '#19A2A7'}
+                    />
+                  )}
+                  {!!item.time && <CText style={styles.convTime}>{item.time}</CText>}
+                </View>
               </View>
 
               <View style={styles.convMessageRow}>
