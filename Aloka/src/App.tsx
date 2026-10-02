@@ -5,7 +5,6 @@ import { RootNavigator } from '@/navigation';
 // import {useEffect} from 'react';
 import { Platform, StatusBar } from 'react-native';
 // import Orientation from 'react-native-orientation-locker';
-// import Toast from 'react-native-toast-message';
 // import {
 //   getTrackingStatus,
 //   requestTrackingPermission,
@@ -228,9 +227,6 @@ function App() {
       <RootNavigator onCompleteLoading={hideSlashScreen} />
       <FirebaseConfigProvider />
       <NetworkAwareProvider />
-      {/*
-      
-      <Toast /> */}
     </View>
   );
 }

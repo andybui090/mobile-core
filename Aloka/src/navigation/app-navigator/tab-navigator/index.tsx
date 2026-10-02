@@ -111,7 +111,10 @@ function BottomTab(props: any) {
   if (currentRoute && currentRoute.state) {
     isHide = currentRoute.state.index;
   }
+
+  // Thay doi logic tren de an bottom tab doi voi tung loai tai khoan
   const hideBottomTab = isHide || tabIndex == 5;
+  
   return (
     !hideBottomTab && (
       <TabBar state={state} descriptors={descriptors} navigation={navigation} />

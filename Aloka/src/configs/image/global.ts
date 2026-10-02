@@ -7,4 +7,9 @@ export const global = {
   empty_data: require('../../assets/images/global/empty_data.png'),
   bg_header: require('../../assets/images/global/bg_header.png'),
   ico_notify: require('../../assets/images/global/ico_notify.png'),
+  no_avatar: require('../../assets/images/global/no_avatar.png'),
+  ico_edit: require('../../assets/images/global/ico_edit.png'),
+  ico_rules: require('../../assets/images/global/ico_rules.png'),
+  ico_success: require('../../assets/images/global/ico_success.png'),
+  complete: require('../../assets/images/global/complete.png'),
 };

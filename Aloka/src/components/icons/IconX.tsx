@@ -1,41 +1,49 @@
 import React from 'react';
 
-// ✅ import kiểu mới (named export)
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Fontisto } from '@react-native-vector-icons/fontisto';
 import { AntDesign } from '@react-native-vector-icons/ant-design';
 import { Octicons } from '@react-native-vector-icons/octicons';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
+import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { Entypo } from '@react-native-vector-icons/entypo';
 
-// 👉 map icon
+export const IconType = {
+  IONICONS: 'ionicons',
+  FONTISTO: 'fontisto',
+  ANT_DESIGN: 'antdesign',
+  OCTICONS: 'octicons',
+  MATERIAL_ICONS: 'materialicons',
+  MATERIAL_DESIGN_ICONS: 'materialdesignicons',
+  ENTYPO: 'entypo',
+} as const;
+
+export type IconType = typeof IconType[keyof typeof IconType];
+
 const ICON_MAP = {
-  ionicons: Ionicons,
-  fontisto: Fontisto,
-  antdesign: AntDesign,
-  octicons: Octicons,
-  materialicons: MaterialIcons,
-  entypo: Entypo,
+  [IconType.IONICONS]: Ionicons,
+  [IconType.FONTISTO]: Fontisto,
+  [IconType.ANT_DESIGN]: AntDesign,
+  [IconType.OCTICONS]: Octicons,
+  [IconType.MATERIAL_ICONS]: MaterialIcons,
+  [IconType.MATERIAL_DESIGN_ICONS]: MaterialDesignIcons,
+  [IconType.ENTYPO]: Entypo,
 };
 
-export type IconType = keyof typeof ICON_MAP;
-
-// 👉 base props
 type BaseProps = {
-  size?: number; // 🔥 dùng global sizes
+  size?: number;
   color?: string;
   style?: any;
   onPress?: () => void;
 };
 
-// 👉 type-safe name
 type IconProps = {
-  type?: 'ionicons' | 'fontisto' | 'antdesign' | 'octicons' | 'materialicons' | 'entypo';
-  name: React.ComponentProps<typeof Ionicons>['name'];
+  type?: IconType;
+  name: string;
 } & BaseProps;
 
 export const IconX = ({
-  type = 'ionicons',
+  type = IconType.IONICONS,
   name,
   size = 24,
   color,

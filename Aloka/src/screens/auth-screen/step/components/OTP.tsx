@@ -1,4 +1,4 @@
-import { ActionSheet, CHeader, IconX, ReCaptcha, Wrapper } from '@/components';
+import { ActionSheet, APILoading, CHeader, IconX, ReCaptcha, Wrapper } from '@/components';
 import { OTPType } from '@/components/modal-otp';
 import {
   ScreenWidth,
@@ -56,7 +56,7 @@ const OTP = ({
   dataLogin,
   goBack,
   updateLoginData,
-  closeModal,
+  // closeModal,
   gotoOnboard,
 }: any) => {
   const { login } = useContext(AppContext);
@@ -106,8 +106,9 @@ const OTP = ({
           const { status, result }: any = otpVerify.data;
           if (result?.id) {
             if (result.username) {
+              // cho nay goi lay profile xong moi goi login 
               login(result);
-              closeModal();
+              // closeModal();
             } else {
               // Onboard
               gotoOnboard(result);
@@ -392,6 +393,9 @@ const OTP = ({
         destructiveButtonIndex={2}
         onPress={handleChooseSupport}
       />
+      {otpVerify.loading || otpResend.loading ? (
+        <APILoading showAlert={true} isLoadingAPI={true} />
+      ) : null}
     </Wrapper>
   );
 };

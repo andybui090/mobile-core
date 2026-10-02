@@ -4,6 +4,8 @@ interface GlobalState {
   tutorialData: responseProps;
   firebaseConfig: any;
   languageList: responseProps;
+  countryList: responseProps;
+  categoryList: responseProps;
 }
 
 const initialState: GlobalState = {
@@ -21,6 +23,16 @@ const initialState: GlobalState = {
     isReviewApp: false,
   },
   languageList: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
+  countryList: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
+  categoryList: {
     loading: false,
     data: undefined,
     error: undefined,
@@ -54,6 +66,26 @@ const globalSlice = createSlice({
       languageList.data = data;
       languageList.error = error;
     },
+    //
+    getCountries: (state, _action) => {
+      state.countryList.loading = true;
+    },
+    getCountriesCallback: (state, { payload: { data, error } }) => {
+      const { countryList } = state;
+      countryList.loading = false;
+      countryList.data = data;
+      countryList.error = error;
+    },
+    //
+    getCategories: (state, _action) => {
+      state.categoryList.loading = true;
+    },
+    getCategoriesCallback: (state, { payload: { data, error } }) => {
+      const { categoryList } = state;
+      categoryList.loading = false;
+      categoryList.data = data;
+      categoryList.error = error;
+    },
   },
 });
 
@@ -63,6 +95,10 @@ export const {
   setFirebaseConfig,
   getLanguages,
   getLanguagesCallback,
+  getCountries,
+  getCountriesCallback,
+  getCategories,
+  getCategoriesCallback,
 } = globalSlice.actions;
 
 export default globalSlice.reducer;

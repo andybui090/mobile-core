@@ -17,9 +17,28 @@ export const screenStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
+  leftWrapper: {
+    position: 'absolute' as const,
+    left: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center' as const,
+  },
+  rightWrapper: {
+    position: 'absolute' as const,
+    right: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
   flexGrowBottom: {
     flexGrow: 1,
     paddingBottom: getBottomSpace() + ifIphoneX(5, 10),
+  },
+  flexEndBottomBtn: {
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingBottom: getBottomSpace() + ifIphoneX(0, 20),
+    paddingTop: 20,
   },
   fillParent: {
     width: '100%',
@@ -61,9 +80,19 @@ export const screenStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#EAECF0',
   },
+  rowWrap: {
+    flexWrap: 'wrap',
+    flexDirection: 'row',
+  },
+  justifyBetween: {
+    justifyContent: 'space-between',
+  },
   //
   // MARGIN
   //
+  mT2: {
+    marginTop: 2,
+  },
   mT3: {
     marginTop: 3,
   },
@@ -81,6 +110,9 @@ export const screenStyles = StyleSheet.create({
   },
   mT15: {
     marginTop: 15,
+  },
+  mT16: {
+    marginTop: 16,
   },
   mT20: { marginTop: 20 },
   mT30: {
@@ -116,8 +148,14 @@ export const screenStyles = StyleSheet.create({
   mL16: {
     marginLeft: 16,
   },
+  mL18: {
+    marginLeft: 18,
+  },
   mL20: {
     marginLeft: 20,
+  },
+  mV15: {
+    marginVertical: 15,
   },
   //  PADDING
   pH5: {
@@ -144,6 +182,9 @@ export const screenStyles = StyleSheet.create({
   pH20: {
     paddingHorizontal: 20,
   },
+  pV10: {
+    paddingVertical: 10,
+  },
   pV13: {
     paddingVertical: 13,
   },
@@ -163,8 +204,21 @@ export const screenStyles = StyleSheet.create({
   pV16: {
     paddingVertical: 16,
   },
+  pV22: {
+    paddingVertical: 22,
+  },
   pT8: {
     paddingTop: 8,
+  },
+  pT16: {
+    paddingTop: 16,
+  },
+  pB16: {
+    paddingBottom: 16,
+  },
+  rowStart: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   //
   // BOX
@@ -244,5 +298,17 @@ export const screenStyles = StyleSheet.create({
   box88: {
     height: 88,
     width: 88,
+  },
+  round64: {
+    height: 64,
+    width: 64,
+    borderRadius: 32,
+    overflow: 'hidden',
+  },
+  bR8: {
+    borderRadius: 8,
+  },
+  overflowHidden: {
+    overflow: 'hidden',
   },
 });

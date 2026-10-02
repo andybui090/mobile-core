@@ -107,7 +107,7 @@ type LoginData = {
 
 interface SignInProps {
   onNext: () => void;
-  closeModal: () => void;
+  // closeModal: () => void;
   dataLogin: LoginData;
   updateLoginData: (name: string, value: string) => void;
   onNextSocial: (result: any, socialType: string) => void;
@@ -118,7 +118,7 @@ interface SignInProps {
 // =====================
 export const Signin: React.FC<SignInProps> = ({
   onNext,
-  closeModal,
+  // closeModal,
   dataLogin,
   updateLoginData,
   onNextSocial,
@@ -319,7 +319,7 @@ export const Signin: React.FC<SignInProps> = ({
     try {
       await GoogleSignin.signOut();
       await GoogleSignin.hasPlayServices();
-      const user = await GoogleSignin.signIn();
+      await GoogleSignin.signIn();
       const tokens = await GoogleSignin.getTokens();
       const deviceId = getDeviceId();
       const deviceName = await getDeviceName();
@@ -460,7 +460,7 @@ export const Signin: React.FC<SignInProps> = ({
       if (index === 0) return handleLoginByApple();
       if (index === 1) return handleLoginByGoogle();
       if (index === 2) return handleLoginByFacebook();
-      if (index === 3) return closeModal();
+      // if (index === 3) return closeModal();
     };
 
     return (

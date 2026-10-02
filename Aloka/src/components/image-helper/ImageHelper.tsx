@@ -25,14 +25,19 @@ const PLACEHOLDER_BLURHASH = 'LGFFaXYk^6#M@-5c,1J5@[or[Q6.';
 const hasRemoteSource = (
   source: FastImageSource,
 ): source is Exclude<FastImageSource, number> => {
-  return typeof source === 'object' && source !== null && 'uri' in source && !!source.uri;
+  return (
+    typeof source === 'object' &&
+    source !== null &&
+    'uri' in source &&
+    !!source.uri
+  );
 };
 
 type FallbackImageProps = {
   renderErrorImage: ImageHelperProps['renderErrorImage'];
   isLogo?: boolean;
   sizeLogo: number;
-  layout: {width: number; height: number};
+  layout: { width: number; height: number };
 };
 
 const FallbackImage = ({
@@ -113,7 +118,7 @@ const RemoteImage = ({
         {...otherProps}
         source={source}
         resizeMode={resizeMode}
-        style={styles.image}
+        style={styles.image as any}
         fallback={Platform.OS === 'android'} // optimize android
         onError={() => {
           setLoading(false);
@@ -138,7 +143,7 @@ const ImageHelper = ({
   renderErrorImage = null,
   onError,
   onLoad,
-  imageStyle = {width: '100%', height: '100%'},
+  imageStyle = { width: '100%', height: '100%' },
   resizeMode = 'cover',
   source,
   isLogo,
@@ -147,7 +152,7 @@ const ImageHelper = ({
 }: ImageHelperProps) => {
   const [isLoading, setLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  const [layout, setLayout] = useState({width: 50, height: 50});
+  const [layout, setLayout] = useState({ width: 50, height: 50 });
 
   const renderLoading = () => {
     if (typeof renderPlaceholder === 'function') {
@@ -176,10 +181,10 @@ const ImageHelper = ({
   };
 
   const handleLayout = (event: {
-    nativeEvent: {layout: {width: number; height: number}};
+    nativeEvent: { layout: { width: number; height: number } };
   }) => {
-    const {width, height} = event.nativeEvent.layout;
-    setLayout({width, height});
+    const { width, height } = event.nativeEvent.layout;
+    setLayout({ width, height });
   };
 
   const renderContent = () => {

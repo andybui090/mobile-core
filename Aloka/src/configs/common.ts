@@ -119,6 +119,55 @@ export const changeAlias = (val: string) => {
 
 export const keyExtractor = (item: any, index: number) => index.toString();
 
+export const formatISOToVietnameseDate = (
+  value?: string | Date | null,
+  locale = 'vi',
+  _t?: unknown,
+) => {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return new Intl.DateTimeFormat(locale === 'vi' ? 'vi-VN' : 'en-US', {
+    weekday: 'long',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
+};
+
+export const formatTimeRangeWithDurationFromISO = (
+  value?: string | Date | null,
+  durationMinutes = 0,
+  locale = 'vi',
+) => {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const endDate = new Date(date.getTime() + durationMinutes * 60 * 1000);
+  const timeFormatter = new Intl.DateTimeFormat(
+    locale === 'vi' ? 'vi-VN' : 'en-US',
+    {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    },
+  );
+
+  return `${timeFormatter.format(date)} - ${timeFormatter.format(endDate)}`;
+};
+
 export const getDeviceId = async () => {
   const deviceId = await DeviceInfo.getUniqueId();
   return deviceId;
@@ -238,4 +287,51 @@ export const parsePricePackage = (
     rootPrice: parseValueToNumber(stagePrice),
     discountPrice: parseValueToNumber(stateDiscount),
   };
+};
+
+export const replaceOverSpace = (value: string) => {
+  return value.replace(/\s\s+/g, ' ');
+};
+
+export const checkActiveObjectInArr = (
+  arr: [],
+  keyFind: string,
+  valueFine: any,
+) => {
+  //array with some: stop as soon as one element is found
+  return arr.some((e: any) => e[keyFind] === valueFine);
+};
+
+//do chuoi qua dai backend xu ly bi loi
+export const toLower = (fileName: string) => {
+  let result = '';
+  if (fileName) {
+    if (fileName.length > 56) {
+      result = fileName.slice(0, 46);
+      result = result + '.' + fileName.split('.').pop();
+    } else {
+      result = fileName;
+    }
+  }
+  return result;
+};
+
+export const removeExtraSpaces = (value: string) => {
+  return value.replace(/\s{2,}/g, ' ');
+};
+
+export const formatBytes = (bytes: number, decimals = 2) => {
+  if (!+bytes) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+};
+
+export const formatByte = (type: any, name: string, size: number) => {
+  let extension = type.split('/').pop().toUpperCase();
+  let removeEx = name.split('.').shift();
+  let MB = formatBytes(size);
+  return {MB, removeEx, extension};
 };

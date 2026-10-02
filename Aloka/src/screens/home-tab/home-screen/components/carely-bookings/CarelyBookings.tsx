@@ -14,7 +14,7 @@ const useStyles = makeStyles(({ colors }) => ({
         borderRadius: 16,
         borderColor: colors.cEAECF0,
         borderWidth: 1,
-        overflow: 'hidden',
+        overflow: 'hidden' as const,
         marginRight: 16,
         width: ScreenWidth - 80,
         backgroundColor: colors.cF9FAFB
@@ -27,7 +27,7 @@ const useStyles = makeStyles(({ colors }) => ({
         width: 60,
         height: 60,
         borderRadius: 8,
-        overflow: 'hidden',
+        overflow: 'hidden' as const,
         borderWidth: 1,
         borderColor: colors.cEAECF0
     },

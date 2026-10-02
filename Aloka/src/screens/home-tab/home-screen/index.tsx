@@ -1,10 +1,17 @@
-import { HeaderBar, Toast, Wrapper } from '@/components';
-import { images, isEmptyArray, screenStyles, ScreenWidth } from '@/configs';
+import { HeaderBar, ImageHeader, Toast, Wrapper } from '@/components';
+import { isEmptyArray, screenStyles } from '@/configs';
+import { PAGINATION } from '@/constants';
+import {
+  getCarelySearchServices,
+  getCarelyServices,
+} from '@/redux/slices/carelySlice';
+import { getBanner, getUpcomingBookingHome } from '@/redux/slices/homeSlice';
 import { useAppDispatch, useAppSelector } from '@/redux/store/customReduxHook';
+import { Container, CScrollView, CText, Row } from '@/utils';
 import { makeStyles, useTheme } from '@rneui/themed';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import {
   BannerLoading,
   CarelyBookings,
@@ -13,23 +20,9 @@ import {
   CSearchBarTrigger,
   SlideShow,
 } from './components';
-import { Row, CText, Container, CScrollView } from '@/utils';
 import { onLinkBanner } from './function';
-import { getBanner, getUpcomingBookingHome } from '@/redux/slices/homeSlice';
-import { PAGINATION } from '@/constants';
-import {
-  getCarelySearchServices,
-  getCarelyServices,
-} from '@/redux/slices/carelySlice';
 
 const useStyles = makeStyles(() => ({
-  imgBg: {
-    position: 'absolute' as const,
-    top: 0,
-    width: ScreenWidth,
-    height: (ScreenWidth / 1500) * 960,
-    zIndex: 0,
-  },
   tab: {
     marginRight: 10,
     borderRadius: 25,
@@ -456,11 +449,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
 
   return (
     <Wrapper>
-      <Image
-        source={images.global.bg_header}
-        style={styles.imgBg}
-        resizeMode="cover"
-      />
+      <ImageHeader />
       <HeaderBar isBorderBottom />
       {renderContent()}
       <Toast ref={toastEl} position={'center'} />

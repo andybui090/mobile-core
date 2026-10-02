@@ -1,9 +1,8 @@
-import { fonts, images, screenStyles } from '@/configs';
-import { AppContext } from '@/contexts';
+import { fonts, screenStyles } from '@/configs';
 import { CText, Row } from '@/utils';
 import { Input, useTheme } from '@rneui/themed';
-import React, { useContext, useState } from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 type CInputProps = {
   refChild?: any;
@@ -28,7 +27,7 @@ type CInputProps = {
   onPressKycInfo?: any;
   isVerifyOTP?: boolean;
   isVerified?: boolean;
-  onBlur?: () => void;   // 🔥 thêm dòng này
+  onBlur?: () => void; // 🔥 thêm dòng này
 };
 
 export const CInput = (props: CInputProps) => {
@@ -51,17 +50,18 @@ export const CInput = (props: CInputProps) => {
     isRequire,
     editable = true,
     rightIconCustom,
-    isKYC,
-    onPressKycInfo,
-    isVerifyOTP,
-    isVerified,
+    // isKYC,
+    // onPressKycInfo,
+    // isVerifyOTP,
+    // isVerified,
     onBlur,
   } = props;
 
   const {
     theme: { colors },
   } = useTheme();
-  const { user } = useContext(AppContext);
+  
+  // const { user } = useContext(AppContext);
 
   const [borderColor, setBorderColor] = useState(colors.cD0D5DD);
 
@@ -110,13 +110,6 @@ export const CInput = (props: CInputProps) => {
           ) : (
             <View />
           )} */}
-          {/* {isVerifyOTP ? (
-            <View>
-              <Image source={isVerified ? images.doctor.kyc_1 : images.doctor.kyc_0} style={screenStyles.box16} resizeMode="contain" />
-            </View>
-          ) : (
-            <View />
-          )} */}
         </Row>
       ) : null}
       <Row style={{ flex: 1 }}>
@@ -152,7 +145,10 @@ export const CInput = (props: CInputProps) => {
               height: 48,
             },
           ]}
-          containerStyle={[screenStyles.centerWrap, { paddingHorizontal: 0, marginTop: 8, flex: 1 }]}
+          containerStyle={[
+            screenStyles.centerWrap,
+            { paddingHorizontal: 0, marginTop: 8, flex: 1 },
+          ]}
           onChangeText={handleChangeText}
           value={value || ''}
           renderErrorMessage={false}

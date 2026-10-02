@@ -5,6 +5,8 @@ import profileSaga from './profileSaga';
 import authSaga from './authSaga';
 import homeSaga from './homeSaga';
 import carelySaga from './carelySaga';
+import onboardSaga from './onboardSaga';
+import locationSaga from './locationSaga';
 
 export default function* rootSaga() {
   yield all([
@@ -14,5 +16,7 @@ export default function* rootSaga() {
     ...authSaga,
     ...homeSaga,
     ...carelySaga,
+    ...onboardSaga,
+    ...locationSaga,
   ]);
 }

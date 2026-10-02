@@ -216,7 +216,7 @@ const PaginationItem: React.FC<{
         },
       ],
     };
-  }, [animValue, index, length]);
+  });
 
   return (
     <View

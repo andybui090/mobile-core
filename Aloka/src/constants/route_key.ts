@@ -18,6 +18,7 @@ export const accountTabRoute = {
 
 export const mainRoute = {
   notificationScreen: 'NotificationScreen',
+  settingScreen: 'SettingScreen',
 };
 
 // export const gettingRoute = {

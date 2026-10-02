@@ -200,7 +200,7 @@ const getBottomSpace = (): number => {
   return isIPhoneXFamily() ? 34 : 0;
 };
 
-const ifIphoneX = (iphoneXValue: number, regularValue: number): number => {
+const ifIphoneX = (iphoneXValue: any, regularValue: any): any => {
   if (isIPhoneXFamily()) {
     return iphoneXValue;
   }

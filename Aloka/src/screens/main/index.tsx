@@ -1,2 +1,3 @@
 import NotificationScreen from './notification-screen';
-export { NotificationScreen };
+import SettingScreen from './setting-screen';
+export { NotificationScreen, SettingScreen };

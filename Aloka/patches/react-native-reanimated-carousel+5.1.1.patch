@@ -1,0 +1,4783 @@
+diff --git a/node_modules/react-native-reanimated-carousel/src/components/Carousel.gesture-root.test.tsx b/node_modules/react-native-reanimated-carousel/src/components/Carousel.gesture-root.test.tsx
+new file mode 100644
+index 0000000..4b6a360
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/components/Carousel.gesture-root.test.tsx
+@@ -0,0 +1,43 @@
++import React from "react";
++import { View } from "react-native";
++
++import { render } from "@testing-library/react-native";
++
++import { Carousel } from "./Carousel";
++
++jest.mock("react-native-gesture-handler", () => {
++  const actual = jest.requireActual("react-native-gesture-handler");
++  const React = jest.requireActual("react");
++  const { View } = jest.requireActual("react-native");
++
++  return {
++    ...actual,
++    GestureHandlerRootView: ({ children, ...props }: { children?: React.ReactNode }) =>
++      React.createElement(
++        View,
++        { ...props, accessibilityLabel: "nested-gesture-handler-root" },
++        children
++      ),
++  };
++});
++
++jest.mock("./ItemRenderer", () => ({ ItemRenderer: () => null }));
++
++describe("Carousel gesture-handler root", () => {
++  it("relies on the root configured by the application", async () => {
++    const { GestureHandlerRootView } = jest.requireActual<
++      typeof import("react-native-gesture-handler")
++    >("react-native-gesture-handler");
++    const screen = render(
++      <GestureHandlerRootView>
++        <Carousel
++          data={["A"]}
++          renderItem={({ index }) => <View testID={`carousel-item-${index}`} />}
++          style={{ width: 300, height: 200 }}
++        />
++      </GestureHandlerRootView>
++    );
++
++    expect(screen.queryByLabelText("nested-gesture-handler-root")).toBeNull();
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/components/Carousel.test.tsx b/node_modules/react-native-reanimated-carousel/src/components/Carousel.test.tsx
+new file mode 100644
+index 0000000..6433157
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/components/Carousel.test.tsx
+@@ -0,0 +1,343 @@
++import React from "react";
++import { I18nManager, View } from "react-native";
++import { Gesture, GestureHandlerRootView, State } from "react-native-gesture-handler";
++import type { SharedValue } from "react-native-reanimated";
++import { useSharedValue } from "react-native-reanimated";
++
++import { act, fireEvent, render as renderNative, waitFor } from "@testing-library/react-native";
++import { fireGestureHandler, getByGestureTestId } from "react-native-gesture-handler/jest-utils";
++
++import { Carousel } from "./Carousel";
++import { resolveCarouselLayoutStyle } from "./CarouselLayout";
++import { resolveItemMainAxisSize } from "./ItemLayout";
++
++import type { CarouselProps, CarouselRef } from "../types";
++
++{
++  const cfg = (
++    global as {
++      __reanimatedLoggerConfig?: {
++        logFunction: (data: { message: string }) => void;
++      };
++    }
++  ).__reanimatedLoggerConfig;
++  if (cfg) {
++    const originalLog = cfg.logFunction;
++    cfg.logFunction = (data) => {
++      if (data.message.includes("measure() cannot be used with Jest")) return;
++      originalLog(data);
++    };
++  }
++}
++
++const gestureTestId = "rnrc-gesture-handler";
++const realPan = Gesture.Pan();
++type LegacyPanGesture = ReturnType<typeof Gesture.Pan>;
++const originalIsRTL = I18nManager.isRTL;
++
++function render(ui: React.ReactElement) {
++  return renderNative(ui, { wrapper: GestureHandlerRootView });
++}
++
++function setRTL(isRTL: boolean) {
++  Object.defineProperty(I18nManager, "isRTL", {
++    configurable: true,
++    value: isRTL,
++  });
++}
++
++function TestCarousel({
++  progress,
++  ...props
++}: {
++  progress?: SharedValue<number>;
++  ref?: React.Ref<CarouselRef>;
++} & Partial<CarouselProps<string>>) {
++  const localProgress = useSharedValue(0);
++
++  return (
++    <Carousel
++      data={["A", "B", "C", "D"]}
++      renderItem={({ item, index, relativeProgress }) => (
++        <View
++          testID={`item-${index}`}
++          accessibilityLabel={item}
++          accessibilityHint={relativeProgress ? "has-progress" : undefined}
++        />
++      )}
++      progress={progress ?? localProgress}
++      style={{ width: 300, height: 200 }}
++      {...props}
++    />
++  );
++}
++
++describe("Carousel v5 integration", () => {
++  beforeEach(() => {
++    setRTL(false);
++    jest.useFakeTimers();
++    jest.spyOn(Gesture, "Pan").mockImplementation(() => realPan.withTestId(gestureTestId));
++  });
++
++  afterEach(() => {
++    act(() => {
++      jest.runOnlyPendingTimers();
++    });
++    jest.useRealTimers();
++    setRTL(originalIsRTL);
++    jest.restoreAllMocks();
++  });
++
++  it("renders through the named export and forwards root props", () => {
++    const onLayout = jest.fn();
++    const screen = render(
++      <TestCarousel testID="carousel" onLayout={onLayout} style={{ width: 320, height: 180 }} />
++    );
++
++    expect(screen.getByTestId("carousel")).toBeTruthy();
++    expect(screen.getByTestId("carousel-content-container")).toBeTruthy();
++    expect(screen.getByTestId("item-0")).toBeTruthy();
++
++    fireEvent(screen.getByTestId("carousel"), "layout", {
++      nativeEvent: { layout: { width: 320, height: 180, x: 0, y: 0 } },
++    });
++    expect(onLayout).toHaveBeenCalled();
++  });
++
++  it("exposes the settled ref API and emits one lifecycle for a non-animated command", () => {
++    const ref = React.createRef<CarouselRef>();
++    const onScrollStart = jest.fn();
++    const onSnapToItem = jest.fn();
++    render(<TestCarousel ref={ref} onScrollStart={onScrollStart} onSnapToItem={onSnapToItem} />);
++
++    act(() => ref.current?.next({ animated: false }));
++
++    expect(ref.current?.getCurrentIndex()).toBe(1);
++    expect(onScrollStart).toHaveBeenCalledTimes(1);
++    expect(onSnapToItem).toHaveBeenCalledWith(1);
++  });
++
++  it("defaults to non-looping behavior", () => {
++    const ref = React.createRef<CarouselRef>();
++    const onScrollStart = jest.fn();
++    render(<TestCarousel ref={ref} onScrollStart={onScrollStart} />);
++
++    act(() => ref.current?.prev({ animated: false }));
++
++    expect(ref.current?.getCurrentIndex()).toBe(0);
++    expect(onScrollStart).not.toHaveBeenCalled();
++  });
++
++  it("keeps the raw offset independently writable from public progress", () => {
++    const ref = React.createRef<CarouselRef>();
++    const progress = { value: 0 } as SharedValue<number>;
++    const offset = { value: 0 } as SharedValue<number>;
++    render(<TestCarousel ref={ref} progress={progress} scrollOffsetValue={offset} loop />);
++
++    act(() => ref.current?.prev({ animated: false }));
++
++    expect(offset.value).toBe(300);
++    expect(ref.current?.getCurrentIndex()).toBe(3);
++  });
++
++  it("starts gesture lifecycle only after non-zero movement", async () => {
++    const onScrollStart = jest.fn();
++    const onSnapToItem = jest.fn();
++    render(<TestCarousel onScrollStart={onScrollStart} onSnapToItem={onSnapToItem} />);
++
++    fireGestureHandler<LegacyPanGesture>(getByGestureTestId(gestureTestId), [
++      { state: State.BEGAN, translationX: 0, velocityX: 0 },
++      { state: State.ACTIVE, translationX: 0, velocityX: 0 },
++      { state: State.ACTIVE, translationX: -180, velocityX: -300 },
++      { state: State.END, translationX: -300, velocityX: -300 },
++    ]);
++
++    act(() => jest.runOnlyPendingTimers());
++    await waitFor(() => {
++      expect(onScrollStart).toHaveBeenCalledTimes(1);
++      expect(onSnapToItem).toHaveBeenCalledWith(1);
++    });
++  });
++
++  it("uses a physical rightward swipe for logical forward navigation in RTL", async () => {
++    setRTL(true);
++    const onSnapToItem = jest.fn();
++    const onObservedUpdate = jest.fn();
++    render(
++      <TestCarousel
++        onConfigurePanGesture={(gesture) => {
++          gesture.onUpdate(onObservedUpdate);
++        }}
++        onSnapToItem={onSnapToItem}
++      />
++    );
++
++    fireGestureHandler<LegacyPanGesture>(getByGestureTestId(gestureTestId), [
++      { state: State.BEGAN, translationX: 0, velocityX: 0 },
++      { state: State.ACTIVE, translationX: 0, velocityX: 0 },
++      { state: State.ACTIVE, translationX: 180, velocityX: 300 },
++      { state: State.END, translationX: 300, velocityX: 300 },
++    ]);
++
++    act(() => jest.runOnlyPendingTimers());
++    await waitFor(() => {
++      expect(onSnapToItem).toHaveBeenCalledWith(1);
++    });
++    expect(onObservedUpdate).toHaveBeenCalledWith(expect.objectContaining({ translationX: 180 }));
++  });
++
++  it("keeps imperative navigation and signed offsets logical in RTL", () => {
++    setRTL(true);
++    const ref = React.createRef<CarouselRef>();
++    const offset = { value: 0 } as SharedValue<number>;
++    render(<TestCarousel ref={ref} scrollOffsetValue={offset} />);
++
++    act(() => ref.current?.next({ animated: false }));
++
++    expect(offset.value).toBe(-300);
++    expect(ref.current?.getCurrentIndex()).toBe(1);
++  });
++
++  it("uses itemSize as the page size", () => {
++    const ref = React.createRef<CarouselRef>();
++    const offset = { value: 0 } as SharedValue<number>;
++    render(
++      <TestCarousel
++        ref={ref}
++        itemSize={240}
++        scrollOffsetValue={offset}
++        style={{ width: 480, height: 200 }}
++      />
++    );
++
++    act(() => ref.current?.next({ animated: false }));
++    expect(offset.value).toBe(-240);
++  });
++
++  it("applies itemAnimation with the raw item index", () => {
++    const itemAnimation = jest.fn(() => ({ opacity: 0.5 }));
++    const screen = render(<TestCarousel itemAnimation={itemAnimation} />);
++
++    expect(screen.getByTestId("item-0")).toBeTruthy();
++    expect(itemAnimation).toHaveBeenCalledWith(expect.any(Number), 0);
++  });
++
++  it("hides every non-current slide from the accessibility tree", () => {
++    const screen = render(<TestCarousel defaultIndex={1} />);
++    const findSlide = (index: number) =>
++      screen.UNSAFE_root.find((node) => node.props.testID === `__CAROUSEL_ITEM_${index}__`);
++
++    expect(findSlide(1).props.importantForAccessibility).toBe("auto");
++    expect(findSlide(0).props.importantForAccessibility).toBe("no-hide-descendants");
++    expect(findSlide(0).props.accessibilityElementsHidden).toBe(true);
++    expect(findSlide(0).props["aria-hidden"]).toBe(true);
++  });
++
++  it("removes protected content styles and warns once", () => {
++    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
++    const screen = render(
++      <TestCarousel
++        contentContainerStyle={{ padding: 12, opacity: 0.2, transform: [{ scale: 2 }] } as never}
++      />
++    );
++    const style = screen.getByTestId("carousel-content-container").props.style;
++
++    expect(style).toEqual(expect.arrayContaining([{ padding: 12 }]));
++    expect(warnSpy).toHaveBeenCalledTimes(1);
++  });
++
++  it("preserves renderItem identity fields under auto-fill", () => {
++    const seen: Array<[string, number]> = [];
++    render(
++      <Carousel
++        data={["A"]}
++        loop
++        keyExtractor={(item) => item}
++        renderItem={({ item, index }) => {
++          seen.push([item, index]);
++          return <View testID={`single-${index}`} />;
++        }}
++        style={{ width: 300, height: 200 }}
++      />
++    );
++
++    expect(seen).toEqual([
++      ["A", 0],
++      ["A", 0],
++      ["A", 0],
++    ]);
++  });
++
++  it("reconciles keyed selection without emitting lifecycle callbacks", () => {
++    const ref = React.createRef<CarouselRef>();
++    const onScrollStart = jest.fn();
++    const onSnapToItem = jest.fn();
++    const offset = { value: 0 } as SharedValue<number>;
++    const renderItem = ({ item }: { item: { id: string } }) => <View testID={`keyed-${item.id}`} />;
++    const first = [{ id: "a" }, { id: "b" }, { id: "c" }];
++    const screen = render(
++      <Carousel
++        ref={ref}
++        data={first}
++        defaultIndex={1}
++        keyExtractor={(item) => item.id}
++        onScrollStart={onScrollStart}
++        onSnapToItem={onSnapToItem}
++        renderItem={renderItem}
++        scrollOffsetValue={offset}
++        style={{ width: 300, height: 200 }}
++      />
++    );
++
++    const reordered = [first[1], first[0], first[2]];
++    screen.rerender(
++      <Carousel
++        ref={ref}
++        data={reordered}
++        defaultIndex={1}
++        keyExtractor={(item) => item.id}
++        onScrollStart={onScrollStart}
++        onSnapToItem={onSnapToItem}
++        renderItem={renderItem}
++        scrollOffsetValue={offset}
++        style={{ width: 300, height: 200 }}
++      />
++    );
++
++    expect(offset.value).toBe(0);
++    expect(ref.current?.getCurrentIndex()).toBe(0);
++    expect(onScrollStart).not.toHaveBeenCalled();
++    expect(onSnapToItem).not.toHaveBeenCalled();
++  });
++});
++
++describe("layout sizing helpers", () => {
++  it("resolves automatic and explicit carousel dimensions", () => {
++    expect(
++      resolveCarouselLayoutStyle({
++        flattenedStyle: { height: 200 },
++        isVertical: false,
++        measuredSize: 350,
++        sizeExplicit: false,
++      })
++    ).toEqual({ width: "100%", height: 200 });
++
++    expect(
++      resolveCarouselLayoutStyle({
++        flattenedStyle: { height: 200 },
++        isVertical: false,
++        measuredSize: 240,
++        sizeExplicit: true,
++      })
++    ).toEqual({ width: 240, height: 200 });
++  });
++
++  it("resolves item size by explicit, effective, measured, then percentage order", () => {
++    expect(
++      resolveItemMainAxisSize({ explicitSize: 200, effectivePageSize: 300, measuredSize: 400 })
++    ).toBe(200);
++    expect(resolveItemMainAxisSize({ effectivePageSize: 300, measuredSize: 400 })).toBe(300);
++    expect(resolveItemMainAxisSize({ measuredSize: 400 })).toBe(400);
++    expect(resolveItemMainAxisSize({ measuredSize: null })).toBe("100%");
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/components/CarouselLayout.tsx b/node_modules/react-native-reanimated-carousel/src/components/CarouselLayout.tsx
+index 80ab7ca..4cd4fdb 100644
+--- a/node_modules/react-native-reanimated-carousel/src/components/CarouselLayout.tsx
++++ b/node_modules/react-native-reanimated-carousel/src/components/CarouselLayout.tsx
+@@ -8,6 +8,7 @@ import { useLayoutConfig } from "../hooks/useLayoutConfig";
+ import { useOnProgressChange } from "../hooks/useOnProgressChange";
+ import { useGlobalState } from "../store";
+ import type { CarouselRef } from "../types";
++import { webOnlyDependencies } from "../utils/web-only-dependencies";
+ import { ItemRenderer } from "./ItemRenderer";
+ import { ScrollViewGesture } from "./ScrollViewGesture";
+ 
+@@ -66,11 +67,13 @@ export const CarouselLayout = React.forwardRef<CarouselRef>((_props, ref) => {
+   const { size, handlerOffset, resolvedSize, sizePhase, sizeExplicit } = common;
+   const layoutConfig = useLayoutConfig({ ...props, size });
+ 
++  const isSizeReadyDependencies = webOnlyDependencies([resolvedSize, sizePhase]);
+   const isSizeReady = useDerivedValue(() => {
+     const currentSize = resolvedSize.value ?? 0;
+     return sizePhase.value === "ready" && currentSize > 0;
+-  }, [resolvedSize, sizePhase]);
++  }, isSizeReadyDependencies);
+ 
++  const offsetXDependencies = webOnlyDependencies([loop, dataLength, handlerOffset, resolvedSize]);
+   const offsetX = useDerivedValue(() => {
+     const currentSize = resolvedSize.value ?? 0;
+     if (currentSize <= 0) return 0;
+@@ -83,7 +86,7 @@ export const CarouselLayout = React.forwardRef<CarouselRef>((_props, ref) => {
+ 
+     const x = value % totalSize;
+     return Number.isNaN(x) ? 0 : x;
+-  }, [loop, dataLength, handlerOffset, resolvedSize]);
++  }, offsetXDependencies);
+ 
+   useOnProgressChange({
+     loop,
+@@ -135,7 +138,7 @@ export const CarouselLayout = React.forwardRef<CarouselRef>((_props, ref) => {
+       if (state.ready) scheduleOnRN(triggerAutoPlay);
+       else scheduleOnRN(pauseAutoPlay);
+     },
+-    [autoplay]
++    webOnlyDependencies([autoplay])
+   );
+ 
+   const scrollViewGestureOnScrollStart = React.useCallback(() => {
+@@ -158,6 +161,14 @@ export const CarouselLayout = React.forwardRef<CarouselRef>((_props, ref) => {
+     StyleSheet.flatten(contentContainerStyle as StyleProp<ViewStyle>) || {};
+   const flattenedStyle = StyleSheet.flatten(style) || {};
+ 
++  const layoutStyleDependencies = webOnlyDependencies([
++    flattenedStyle,
++    isSizeReady,
++    isVertical,
++    resolvedSize,
++    sizePhase,
++    sizeExplicit,
++  ]);
+   const layoutStyle = useAnimatedStyle(() => {
+     const measuredSize = resolvedSize.value ?? 0;
+     const { width, height } = resolveCarouselLayoutStyle({
+@@ -172,7 +183,7 @@ export const CarouselLayout = React.forwardRef<CarouselRef>((_props, ref) => {
+       height,
+       opacity: isSizeReady.value ? 1 : 0,
+     };
+-  }, [flattenedStyle, isSizeReady, isVertical, resolvedSize, sizePhase, sizeExplicit]);
++  }, layoutStyleDependencies);
+ 
+   return (
+     <View testID={testID} style={[styles.layoutContainer, style]} onLayout={props.onLayout}>
+diff --git a/node_modules/react-native-reanimated-carousel/src/components/ItemLayout.tsx b/node_modules/react-native-reanimated-carousel/src/components/ItemLayout.tsx
+index ab6ddca..cf6e89e 100644
+--- a/node_modules/react-native-reanimated-carousel/src/components/ItemLayout.tsx
++++ b/node_modules/react-native-reanimated-carousel/src/components/ItemLayout.tsx
+@@ -18,6 +18,7 @@ import type { CarouselItemAnimation } from "../types";
+ import { getHorizontalStackOffsetType } from "../utils/carousel-direction";
+ import { positiveModulo } from "../utils/carousel-math";
+ import { sanitizeAnimationStyle } from "../utils/sanitize-animation-style";
++import { webOnlyDependencies } from "../utils/web-only-dependencies";
+ 
+ export type ItemAnimationStyle = CarouselItemAnimation;
+ 
+@@ -67,6 +68,13 @@ export const ItemLayout: React.FC<{
+   const size = (itemSize ?? fallbackSize) || 0;
+   const effectivePageSize = size > 0 ? size : undefined;
+ 
++  const dimensionsStyleDependencies = webOnlyDependencies([
++    effectivePageSize,
++    isVertical,
++    itemSize,
++    styleHeightNumber,
++    styleWidthNumber,
++  ]);
+   const dimensionsStyle = useAnimatedStyle<ViewStyle>(() => {
+     const widthCandidate = isVertical ? styleWidthNumber : itemSize;
+     const heightCandidate = isVertical ? itemSize : styleHeightNumber;
+@@ -95,7 +103,7 @@ export const ItemLayout: React.FC<{
+       width: computedWidth,
+       height: computedHeight,
+     };
+-  }, [effectivePageSize, isVertical, itemSize, styleHeightNumber, styleWidthNumber]);
++  }, dimensionsStyleDependencies);
+ 
+   let offsetXConfig: OffsetOptions = {
+     handlerOffset,
+@@ -137,17 +145,19 @@ export const ItemLayout: React.FC<{
+         scheduleOnRN(setIsAccessibilityCurrent, isCurrent);
+       }
+     },
+-    [isCurrentForAccessibility]
++    webOnlyDependencies([isCurrentForAccessibility])
+   );
+ 
++  const relativeProgressDependencies = webOnlyDependencies([x, size]);
+   const relativeProgress = useDerivedValue(() => {
+     if (!size) return 0;
+     return x.value / size;
+-  }, [x, size]);
++  }, relativeProgressDependencies);
++  const animatedStyleDependencies = webOnlyDependencies([animationStyle, rawIndex, x, size]);
+   const animatedStyle = useAnimatedStyle<ViewStyle>(() => {
+     const safeSize = size || 1;
+     return sanitizeAnimationStyle(animationStyle(x.value / safeSize, rawIndex));
+-  }, [animationStyle, rawIndex, x, size]);
++  }, animatedStyleDependencies);
+ 
+   // TODO: For dynamic dimension in the future
+   // function handleLayout(e: LayoutChangeEvent) {
+diff --git a/node_modules/react-native-reanimated-carousel/src/components/ItemRenderer.tsx b/node_modules/react-native-reanimated-carousel/src/components/ItemRenderer.tsx
+index 562c8db..d355cef 100644
+--- a/node_modules/react-native-reanimated-carousel/src/components/ItemRenderer.tsx
++++ b/node_modules/react-native-reanimated-carousel/src/components/ItemRenderer.tsx
+@@ -11,6 +11,7 @@ import type { VisibleRanges } from "../hooks/useVisibleRanges";
+ import { computeVisibleRanges, useVisibleRanges } from "../hooks/useVisibleRanges";
+ import type { CarouselItemAnimation, CarouselRenderItem } from "../types";
+ import { computedRealIndexWithAutoFillData } from "../utils/computed-with-auto-fill-data";
++import { webOnlyDependencies } from "../utils/web-only-dependencies";
+ 
+ interface Props {
+   data: unknown[];
+@@ -74,7 +75,7 @@ export const ItemRenderer: FC<Props> = (props) => {
+   useAnimatedReaction(
+     () => visibleRanges.value,
+     (ranges) => scheduleOnRN(setDisplayedItems, ranges),
+-    [visibleRanges]
++    webOnlyDependencies([visibleRanges])
+   );
+ 
+   return (
+diff --git a/node_modules/react-native-reanimated-carousel/src/components/LazyView.test.tsx b/node_modules/react-native-reanimated-carousel/src/components/LazyView.test.tsx
+new file mode 100644
+index 0000000..8463417
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/components/LazyView.test.tsx
+@@ -0,0 +1,61 @@
++import { render } from "@testing-library/react-native";
++import React from "react";
++import { Text } from "react-native";
++
++import { LazyView } from "./LazyView";
++
++describe("LazyView", () => {
++  it("should render children when shouldUpdate is true", () => {
++    const { getByText } = render(
++      <LazyView shouldUpdate={true}>
++        <Text>Test Child</Text>
++      </LazyView>
++    );
++
++    expect(getByText("Test Child")).toBeTruthy();
++  });
++
++  it("should not render children when shouldUpdate is false", () => {
++    const { queryByText } = render(
++      <LazyView shouldUpdate={false}>
++        <Text>Test Child</Text>
++      </LazyView>
++    );
++
++    expect(queryByText("Test Child")).toBeNull();
++  });
++
++  it("should render empty fragment when shouldUpdate is false", () => {
++    const { toJSON } = render(
++      <LazyView shouldUpdate={false}>
++        <Text>Test Child</Text>
++      </LazyView>
++    );
++
++    expect(toJSON()).toBeNull();
++  });
++
++  it("should handle multiple children when shouldUpdate is true", () => {
++    const { getByText } = render(
++      <LazyView shouldUpdate={true}>
++        <Text>First Child</Text>
++        <Text>Second Child</Text>
++      </LazyView>
++    );
++
++    expect(getByText("First Child")).toBeTruthy();
++    expect(getByText("Second Child")).toBeTruthy();
++  });
++
++  it("should not render multiple children when shouldUpdate is false", () => {
++    const { queryByText } = render(
++      <LazyView shouldUpdate={false}>
++        <Text>First Child</Text>
++        <Text>Second Child</Text>
++      </LazyView>
++    );
++
++    expect(queryByText("First Child")).toBeNull();
++    expect(queryByText("Second Child")).toBeNull();
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/components/Pagination/Pagination.test.tsx b/node_modules/react-native-reanimated-carousel/src/components/Pagination/Pagination.test.tsx
+new file mode 100644
+index 0000000..ee122e4
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/components/Pagination/Pagination.test.tsx
+@@ -0,0 +1,204 @@
++import { fireEvent, render } from "@testing-library/react-native";
++import { I18nManager, StyleSheet, View } from "react-native";
++import { useSharedValue } from "react-native-reanimated";
++
++import { Pagination } from ".";
++import { getPaginationDotDistance, getPaginationSelectedIndex } from "./PaginationItem";
++
++const originalIsRTL = I18nManager.isRTL;
++
++function setRTL(isRTL: boolean) {
++  Object.defineProperty(I18nManager, "isRTL", {
++    configurable: true,
++    value: isRTL,
++  });
++}
++
++beforeEach(() => {
++  jest.useFakeTimers();
++});
++
++afterEach(() => {
++  setRTL(originalIsRTL);
++  jest.useRealTimers();
++  jest.restoreAllMocks();
++});
++
++function InteractivePagination(props: Partial<React.ComponentProps<typeof Pagination>> = {}) {
++  const progress = useSharedValue(0);
++  return <Pagination count={3} progress={progress} onPress={() => {}} {...props} />;
++}
++
++function getButtons(screen: ReturnType<typeof render>) {
++  const matching = screen.UNSAFE_root.findAll(
++    (node) =>
++      node.props.accessibilityRole === "button" && typeof node.props.accessibilityLabel === "string"
++  );
++  return Array.from(
++    new Map(matching.map((node) => [node.props.accessibilityLabel as string, node])).values()
++  );
++}
++
++describe("Pagination", () => {
++  it("renders nothing for count zero and rejects invalid count", () => {
++    const Empty = () => {
++      const progress = useSharedValue(0);
++      return <Pagination count={0} progress={progress} />;
++    };
++    const Invalid = () => {
++      const progress = useSharedValue(0);
++      return <Pagination count={1.5} progress={progress} />;
++    };
++
++    expect(render(<Empty />).toJSON()).toBeNull();
++    expect(() => render(<Invalid />)).toThrow("Pagination count must be a non-negative integer");
++  });
++
++  it("rejects runtime-invalid narrow dot styles", () => {
++    const Invalid = () => {
++      const progress = useSharedValue(0);
++      return <Pagination count={2} progress={progress} dotStyle={{ width: "12px" } as never} />;
++    };
++
++    expect(() => render(<Invalid />)).toThrow("Pagination dotStyle.width must be a finite number");
++  });
++
++  it("renders interactive dots as selected buttons and reports raw indexes", () => {
++    const onPress = jest.fn();
++    const screen = render(
++      <InteractivePagination
++        getItemAccessibilityLabel={(index, count) => `Page ${index + 1}/${count}`}
++        onPress={onPress}
++      />
++    );
++
++    const buttons = getButtons(screen);
++    expect(buttons).toHaveLength(3);
++    expect(buttons[0].props.accessibilityLabel).toBe("Page 1/3");
++    expect(buttons[0].props.accessibilityRole).toBe("button");
++    expect(buttons[0].props.accessibilityState).toEqual({ selected: true });
++    expect(buttons[1].props.accessibilityState).toEqual({ selected: false });
++
++    fireEvent.press(buttons[2]);
++    expect(onPress).toHaveBeenCalledWith(2);
++  });
++
++  it("uses default accessibility labels for interactive dots", () => {
++    const screen = render(<InteractivePagination />);
++    const buttons = getButtons(screen);
++
++    expect(buttons.map((button) => button.props.accessibilityLabel)).toEqual([
++      "Slide 1 of 3",
++      "Slide 2 of 3",
++      "Slide 3 of 3",
++    ]);
++  });
++
++  it("hides decorative dots from the accessibility tree", () => {
++    const Decorative = () => {
++      const progress = useSharedValue(0);
++      return <Pagination count={3} progress={progress} />;
++    };
++    const screen = render(<Decorative />);
++
++    expect(getButtons(screen)).toHaveLength(0);
++    const hiddenDots = screen.UNSAFE_root.findAllByType(View).filter(
++      (node) => node.props.importantForAccessibility === "no-hide-descendants"
++    );
++    expect(hiddenDots).toHaveLength(3);
++    expect(hiddenDots.every((node) => node.props.accessible === false)).toBe(true);
++  });
++
++  it("keeps one dot selected when count is one", () => {
++    const Single = () => {
++      const progress = useSharedValue(10_000_000.4);
++      return <Pagination count={1} progress={progress} onPress={() => {}} />;
++    };
++    const screen = render(<Single />);
++
++    expect(getButtons(screen)[0].props.accessibilityState).toEqual({ selected: true });
++  });
++
++  it("reserves the larger base and active dimensions without swapping axes", () => {
++    const screen = render(
++      <InteractivePagination
++        orientation="vertical"
++        dotStyle={{ width: 8, height: 14 }}
++        activeDotStyle={{ width: 20, height: 10 }}
++      />
++    );
++    const buttonStyle = StyleSheet.flatten(getButtons(screen)[0].props.style);
++    const verticalContainer = screen.UNSAFE_root.findAllByType(View).find(
++      (node) => StyleSheet.flatten(node.props.style)?.flexDirection === "column"
++    );
++
++    expect(buttonStyle).toMatchObject({ width: 20, height: 14 });
++    expect(verticalContainer).toBeTruthy();
++  });
++
++  it("follows the application direction for horizontal dots only", () => {
++    setRTL(true);
++    const horizontal = render(<InteractivePagination />);
++    const vertical = render(<InteractivePagination orientation="vertical" />);
++    const horizontalContainer = horizontal.UNSAFE_root.findAllByType(View).find(
++      (node) => StyleSheet.flatten(node.props.style)?.flexDirection === "row"
++    );
++    const verticalContainer = vertical.UNSAFE_root.findAllByType(View).find(
++      (node) => StyleSheet.flatten(node.props.style)?.flexDirection === "column"
++    );
++
++    expect(StyleSheet.flatten(horizontalContainer?.props.style)).toMatchObject({
++      direction: "rtl",
++      flexDirection: "row",
++    });
++    expect(StyleSheet.flatten(verticalContainer?.props.style)?.direction).toBeUndefined();
++  });
++
++  it("ignores protected container direction fields and warns once", () => {
++    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
++    const screen = render(
++      <InteractivePagination
++        containerStyle={{ direction: "rtl", flexDirection: "column", gap: 6 } as never}
++      />
++    );
++    screen.rerender(
++      <InteractivePagination
++        containerStyle={{ direction: "rtl", flexDirection: "column", gap: 8 } as never}
++      />
++    );
++    const container = screen.UNSAFE_root.findAllByType(View).find(
++      (node) => StyleSheet.flatten(node.props.style)?.flexDirection === "row"
++    );
++
++    expect(StyleSheet.flatten(container?.props.style)).toMatchObject({
++      direction: "ltr",
++      flexDirection: "row",
++      gap: 8,
++    });
++    const protectedStyleWarnings = warn.mock.calls.filter(([message]) =>
++      String(message).includes("Pagination containerStyle cannot override")
++    );
++    expect(protectedStyleWarnings).toHaveLength(1);
++  });
++});
++
++describe("Pagination nearest-cycle math", () => {
++  it("activates the nearest equivalent dot across both loop seams", () => {
++    expect(getPaginationDotDistance(4.8, 0, 5)).toBeCloseTo(0.2);
++    expect(getPaginationDotDistance(-0.2, 0, 5)).toBeCloseTo(0.2);
++    expect(getPaginationDotDistance(5.2, 0, 5)).toBeCloseTo(0.2);
++    expect(getPaginationDotDistance(4.8, 4, 5)).toBeCloseTo(0.8);
++  });
++
++  it("remains finite and selects the raw index after many loop cycles", () => {
++    const progress = 10_000_000.375;
++    const count = 7;
++    const distances = Array.from({ length: count }, (_, index) =>
++      getPaginationDotDistance(progress, index, count)
++    );
++
++    expect(distances.every(Number.isFinite)).toBe(true);
++    expect(Math.min(...distances)).toBeCloseTo(0.375);
++    expect(getPaginationSelectedIndex(progress, count)).toBe(3);
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/components/Pagination/PaginationItem.tsx b/node_modules/react-native-reanimated-carousel/src/components/Pagination/PaginationItem.tsx
+index 01fe788..3a62992 100644
+--- a/node_modules/react-native-reanimated-carousel/src/components/Pagination/PaginationItem.tsx
++++ b/node_modules/react-native-reanimated-carousel/src/components/Pagination/PaginationItem.tsx
+@@ -12,6 +12,7 @@ import { scheduleOnRN } from "react-native-worklets";
+ 
+ import type { PaginationDotStyle, PaginationProps } from "../../public-types";
+ import { getNearestLoopPosition, getSettledRawIndex } from "../../utils/carousel-math";
++import { webOnlyDependencies } from "../../utils/web-only-dependencies";
+ 
+ const DEFAULT_DOT_SIZE = 10;
+ const DEFAULT_DOT_COLOR = "#D1D5DB";
+@@ -86,9 +87,28 @@ export function PaginationItem(props: {
+         scheduleOnRN(setSelected, nextSelected);
+       }
+     },
+-    [count, index, progress]
++    webOnlyDependencies([count, index, progress])
+   );
+ 
++  const animatedStyleDependencies = webOnlyDependencies([
++    activeBackgroundColor,
++    activeBorderColor,
++    activeBorderRadius,
++    activeBorderWidth,
++    activeHeight,
++    activeOpacity,
++    activeWidth,
++    baseBackgroundColor,
++    baseBorderColor,
++    baseBorderRadius,
++    baseBorderWidth,
++    baseHeight,
++    baseOpacity,
++    baseWidth,
++    count,
++    index,
++    progress,
++  ]);
+   const animatedStyle = useAnimatedStyle<ViewStyle>(() => {
+     const distance = Math.min(1, getPaginationDotDistance(progress.value, index, count));
+ 
+@@ -111,25 +131,7 @@ export function PaginationItem(props: {
+       backgroundColor: interpolateDotColor(distance, activeBackgroundColor, baseBackgroundColor),
+       opacity: interpolate(distance, [0, 1], [activeOpacity, baseOpacity], Extrapolation.CLAMP),
+     };
+-  }, [
+-    activeBackgroundColor,
+-    activeBorderColor,
+-    activeBorderRadius,
+-    activeBorderWidth,
+-    activeHeight,
+-    activeOpacity,
+-    activeWidth,
+-    baseBackgroundColor,
+-    baseBorderColor,
+-    baseBorderRadius,
+-    baseBorderWidth,
+-    baseHeight,
+-    baseOpacity,
+-    baseWidth,
+-    count,
+-    index,
+-    progress,
+-  ]);
++  }, animatedStyleDependencies);
+ 
+   const reservedStyle: ViewStyle = {
+     alignItems: "center",
+diff --git a/node_modules/react-native-reanimated-carousel/src/components/Pagination/issue-940-strict-mode-warning.test.tsx b/node_modules/react-native-reanimated-carousel/src/components/Pagination/issue-940-strict-mode-warning.test.tsx
+new file mode 100644
+index 0000000..0143acd
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/components/Pagination/issue-940-strict-mode-warning.test.tsx
+@@ -0,0 +1,65 @@
++import { useSharedValue } from "react-native-reanimated";
++
++import { render } from "@testing-library/react-native";
++
++import { Pagination } from ".";
++
++const STRICT_RENDER_READ_WARNING = "Reading from `value` during component render";
++
++type LoggerData = { level: number; message: string };
++type LoggerConfig = { logFunction: (data: LoggerData) => void };
++
++const loggerConfig = (global as unknown as { __reanimatedLoggerConfig?: LoggerConfig })
++  .__reanimatedLoggerConfig;
++
++if (!loggerConfig) {
++  throw new Error(
++    "Expected reanimated logger config to be installed by setUpTests(); cannot capture strict mode warnings."
++  );
++}
++
++const capturedMessages: string[] = [];
++let originalLogFunction: LoggerConfig["logFunction"];
++
++beforeEach(() => {
++  jest.useFakeTimers();
++  capturedMessages.length = 0;
++  originalLogFunction = loggerConfig.logFunction;
++  loggerConfig.logFunction = (data) => {
++    capturedMessages.push(data.message);
++  };
++});
++
++afterEach(() => {
++  loggerConfig.logFunction = originalLogFunction;
++  jest.useRealTimers();
++});
++
++function strictRenderReadWarnings() {
++  return capturedMessages.filter((message) => message.includes(STRICT_RENDER_READ_WARNING));
++}
++
++function PaginationHarness(_props: { tick: number }) {
++  const progress = useSharedValue(0);
++  return <Pagination count={3} progress={progress} />;
++}
++
++describe("issue #940 Pagination strict mode warning", () => {
++  it("control: first render alone does not warn (Reanimated exempts the first render)", () => {
++    render(<PaginationHarness tick={0} />);
++
++    expect(strictRenderReadWarnings()).toEqual([]);
++  });
++
++  it("does not read progress.value during component render (initial + re-render)", () => {
++    const screen = render(<PaginationHarness tick={0} />);
++
++    // A parent-driven re-render is enough: the `useState` initializer
++    // expression is re-evaluated on every render (React only ignores the
++    // result), and reads outside the first render are not exempt from
++    // Reanimated's strict mode check.
++    screen.rerender(<PaginationHarness tick={1} />);
++
++    expect(strictRenderReadWarnings()).toEqual([]);
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/components/ScrollViewGesture.test.tsx b/node_modules/react-native-reanimated-carousel/src/components/ScrollViewGesture.test.tsx
+new file mode 100644
+index 0000000..2d7c5da
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/components/ScrollViewGesture.test.tsx
+@@ -0,0 +1,209 @@
++import React from "react";
++import { View } from "react-native";
++import type {
++  GestureStateChangeEvent,
++  GestureUpdateEvent,
++  PanGestureHandlerEventPayload,
++} from "react-native-gesture-handler";
++import type { SharedValue } from "react-native-reanimated";
++
++import { act, fireEvent, render } from "@testing-library/react-native";
++
++import { ScrollViewGesture } from "./ScrollViewGesture";
++
++import { usePanGestureProxy } from "../hooks/usePanGestureProxy";
++import { type CarouselContext, GlobalStateContext } from "../store";
++
++jest.mock("../hooks/usePanGestureProxy", () => ({
++  usePanGestureProxy: jest.fn(() => ({})),
++}));
++
++const mockUsePanGestureProxy = jest.mocked(usePanGestureProxy);
++
++jest.mock("react-native-gesture-handler", () => {
++  const React = require("react");
++  const actual = jest.requireActual("react-native-gesture-handler");
++
++  return {
++    ...actual,
++    GestureDetector: ({ children }: { children: React.ReactNode }) => {
++      const child = React.Children.only(children);
++
++      // Simulate the upstream web path that reads `element.ref`.
++      // React 19 warns only when the child element actually carries a ref.
++      // @ts-expect-error React 19 removed `element.ref` from the element type.
++      void child.ref;
++
++      return child;
++    },
++  };
++});
++
++type RenderGestureOptions = {
++  vertical?: boolean;
++  rtl?: boolean;
++  size?: number;
++  dataLength?: number;
++  containerSize?: { width: number; height: number };
++  onTouchBegin?: () => void;
++  onTouchEnd?: () => void;
++};
++
++function renderGesture({
++  vertical = false,
++  rtl = false,
++  size = 300,
++  dataLength = 3,
++  containerSize = { width: 300, height: 200 },
++  onTouchBegin,
++  onTouchEnd,
++}: RenderGestureOptions = {}) {
++  const translation = { value: 0 } as SharedValue<number>;
++  const contextValue = {
++    props: {
++      onConfigurePanGesture: undefined,
++      orientation: vertical ? "vertical" : "horizontal",
++      directionSign: !vertical && rtl ? -1 : 1,
++      snapMode: "page",
++      loop: false,
++      animation: { type: "timing", duration: 500 },
++      scrollEnabled: true,
++      dataLength,
++      overscrollEnabled: false,
++    },
++    common: {
++      size,
++      validLength: dataLength,
++      handlerOffset: { value: 0 },
++      resolvedSize: { value: size },
++      sizePhase: { value: "ready" },
++      sizeExplicit: true,
++      isMoving: { value: false },
++      startMovement: jest.fn(),
++      cancelMovement: jest.fn(),
++      settleMovement: jest.fn(),
++    },
++    layout: {
++      containerSize: { value: containerSize },
++      updateContainerSize: jest.fn(),
++      itemDimensions: { value: {} },
++      updateItemDimensions: jest.fn(),
++    },
++  } as unknown as CarouselContext;
++
++  const screen = render(
++    <GlobalStateContext.Provider value={contextValue}>
++      <ScrollViewGesture
++        size={size}
++        translation={translation}
++        style={containerSize}
++        testID="gesture-view"
++        onTouchBegin={onTouchBegin}
++        onTouchEnd={onTouchEnd}
++      >
++        <View testID="content" />
++      </ScrollViewGesture>
++    </GlobalStateContext.Provider>
++  );
++
++  const gestureCallbacks =
++    mockUsePanGestureProxy.mock.calls[mockUsePanGestureProxy.mock.calls.length - 1]?.[0];
++
++  if (!gestureCallbacks) {
++    throw new Error("Expected ScrollViewGesture to configure the pan gesture");
++  }
++
++  return { gestureCallbacks, screen, translation };
++}
++
++describe("issue #857 web regression", () => {
++  beforeEach(() => {
++    mockUsePanGestureProxy.mockClear();
++  });
++
++  it("does not emit the React 19 element.ref warning from the gesture path", () => {
++    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
++
++    try {
++      renderGesture();
++
++      const react19RefWarnings = errorSpy.mock.calls.filter(([message]) =>
++        String(message).includes("Accessing element.ref was removed in React 19")
++      );
++
++      expect(react19RefWarnings).toHaveLength(0);
++    } finally {
++      errorSpy.mockRestore();
++    }
++  });
++
++  it.each([
++    ["horizontal", false, 300, 3, { width: 300, height: 200 }, -600],
++    ["vertical", true, 300, 3, { width: 300, height: 200 }, -700],
++    ["unmeasured container", false, 300, 3, { width: 0, height: 0 }, 0],
++    ["content smaller than its container", false, 100, 2, { width: 300, height: 200 }, 0],
++  ] as const)(
++    "uses the %s main-axis container size for the non-loop boundary",
++    (_name, vertical, size, dataLength, containerSize, expectedTranslation) => {
++      const { gestureCallbacks, translation } = renderGesture({
++        vertical,
++        size,
++        dataLength,
++        containerSize,
++      });
++
++      act(() => {
++        gestureCallbacks.onGestureStart(
++          {} as GestureStateChangeEvent<PanGestureHandlerEventPayload>
++        );
++        gestureCallbacks.onGestureUpdate({
++          translationX: -1000,
++          translationY: -1000,
++        } as GestureUpdateEvent<PanGestureHandlerEventPayload>);
++      });
++
++      expect(translation.value).toBeCloseTo(expectedTranslation);
++    }
++  );
++
++  it("maps a physical rightward RTL swipe to logical forward movement", () => {
++    const { gestureCallbacks, translation } = renderGesture({ rtl: true });
++
++    act(() => {
++      gestureCallbacks.onGestureStart({} as GestureStateChangeEvent<PanGestureHandlerEventPayload>);
++      gestureCallbacks.onGestureUpdate({
++        translationX: 180,
++        translationY: -250,
++      } as GestureUpdateEvent<PanGestureHandlerEventPayload>);
++    });
++
++    expect(translation.value).toBe(-180);
++  });
++
++  it("does not apply horizontal RTL mapping to vertical gestures", () => {
++    const { gestureCallbacks, translation } = renderGesture({ rtl: true, vertical: true });
++
++    act(() => {
++      gestureCallbacks.onGestureStart({} as GestureStateChangeEvent<PanGestureHandlerEventPayload>);
++      gestureCallbacks.onGestureUpdate({
++        translationX: 180,
++        translationY: -180,
++      } as GestureUpdateEvent<PanGestureHandlerEventPayload>);
++    });
++
++    expect(translation.value).toBe(-180);
++  });
++
++  it("treats a cancelled touch as the end of an autoplay pause", () => {
++    const onTouchBegin = jest.fn();
++    const onTouchEnd = jest.fn();
++    const { screen } = renderGesture({ onTouchBegin, onTouchEnd });
++    const gestureView = screen.getByTestId("gesture-view");
++
++    fireEvent(gestureView, "touchStart");
++    fireEvent(gestureView, "touchCancel");
++
++    expect(onTouchBegin).toHaveBeenCalledTimes(1);
++    expect(onTouchEnd).toHaveBeenCalledTimes(1);
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/components/ScrollViewGesture.tsx b/node_modules/react-native-reanimated-carousel/src/components/ScrollViewGesture.tsx
+index 60f8bcc..42c7fd6 100644
+--- a/node_modules/react-native-reanimated-carousel/src/components/ScrollViewGesture.tsx
++++ b/node_modules/react-native-reanimated-carousel/src/components/ScrollViewGesture.tsx
+@@ -21,6 +21,7 @@ import { useGlobalState } from "../store";
+ import { toLogicalGestureValue } from "../utils/carousel-direction";
+ import { computeGestureTranslation } from "../utils/compute-gesture-translation";
+ import { dealWithAnimation } from "../utils/deal-with-animation";
++import { webOnlyDependencies } from "../utils/web-only-dependencies";
+ 
+ interface Props {
+   size: number;
+@@ -63,7 +64,7 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
+   const isVertical = orientation === "vertical";
+ 
+   const maxPage = dataLength;
+-  const isHorizontal = useDerivedValue(() => !isVertical, [isVertical]);
++  const isHorizontal = useDerivedValue(() => !isVertical, webOnlyDependencies([isVertical]));
+   const max = useSharedValue(0);
+   const panOffset = useSharedValue<number | undefined>(undefined); // set to undefined when not actively in a pan gesture
+   const touching = useSharedValue(false);
+@@ -71,10 +72,11 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
+   const hasStartedMovement = useSharedValue(false);
+   const scrollEndTranslation = useSharedValue(0);
+   const scrollEndVelocity = useSharedValue(0);
++  const sizeReadyDependencies = webOnlyDependencies([resolvedSize, sizePhase]);
+   const sizeReady = useDerivedValue(() => {
+     const currentSize = resolvedSize.value ?? 0;
+     return sizePhase.value === "ready" && currentSize > 0;
+-  }, [resolvedSize, sizePhase]);
++  }, sizeReadyDependencies);
+ 
+   // Get the limit of the scroll.
+   const getLimit = React.useCallback(() => {
+@@ -238,7 +240,7 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
+     () => {
+       if (snapMode !== "page") resetBoundary();
+     },
+-    [resetBoundary, snapMode]
++    webOnlyDependencies([resetBoundary, snapMode])
+   );
+ 
+   const onGestureStart = useCallback(
+diff --git a/node_modules/react-native-reanimated-carousel/src/components/issue-899-parallax-reverse-loop.test.tsx b/node_modules/react-native-reanimated-carousel/src/components/issue-899-parallax-reverse-loop.test.tsx
+new file mode 100644
+index 0000000..c4eeb8b
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/components/issue-899-parallax-reverse-loop.test.tsx
+@@ -0,0 +1,101 @@
++import React from "react";
++import { StyleSheet } from "react-native";
++import { Gesture, GestureHandlerRootView, State } from "react-native-gesture-handler";
++import Animated from "react-native-reanimated";
++
++import { act, render as renderNative, waitFor } from "@testing-library/react-native";
++import { fireGestureHandler, getByGestureTestId } from "react-native-gesture-handler/jest-utils";
++
++import { Carousel } from "./Carousel";
++
++{
++  const cfg = (global as any).__reanimatedLoggerConfig as
++    | { logFunction: (data: { level: number; message: string }) => void }
++    | undefined;
++  if (cfg) {
++    const originalLog = cfg.logFunction;
++    cfg.logFunction = (data) => {
++      if (data.message.includes("measure() cannot be used with Jest")) return;
++      originalLog(data);
++    };
++  }
++}
++
++const slideWidth = 300;
++const slideHeight = 200;
++const gestureTestId = "rnrc-gesture-handler";
++const realPan = Gesture.Pan();
++type LegacyPanGesture = ReturnType<typeof Gesture.Pan>;
++
++function render(ui: React.ReactElement) {
++  return renderNative(ui, { wrapper: GestureHandlerRootView });
++}
++
++jest.spyOn(Gesture, "Pan").mockImplementation(() => realPan.withTestId(gestureTestId));
++
++describe("issue #899 parallax reverse loop regression", () => {
++  beforeEach(() => {
++    jest.useFakeTimers();
++  });
++
++  afterEach(() => {
++    act(() => {
++      jest.runOnlyPendingTimers();
++    });
++    jest.useRealTimers();
++    jest.clearAllTimers();
++  });
++
++  it("preserves renderItem styles and props when looping backward from index 0 in parallax mode", async () => {
++    const data = Array.from({ length: 30 }, (_, index) => ({
++      id: `item-${index}`,
++      color: index === 29 ? "#111111" : `rgb(${index}, ${index}, ${index})`,
++    }));
++
++    const screen = render(
++      <Carousel
++        data={data}
++        defaultIndex={0}
++        loop
++        layout={{ type: "parallax" }}
++        renderWindowSize={5}
++        style={{ width: slideWidth, height: slideHeight }}
++        renderItem={({ item, index }) => (
++          <Animated.View
++            testID={`issue-899-item-${index}`}
++            accessibilityLabel={`issue-899-label-${index}`}
++            style={{
++              width: slideWidth,
++              height: slideHeight,
++              backgroundColor: item.color,
++            }}
++          />
++        )}
++      />
++    );
++
++    const findItem = (index: number) =>
++      screen.UNSAFE_root.find((node) => node.props.testID === `issue-899-item-${index}`);
++
++    await waitFor(() => {
++      expect(screen.getByTestId("issue-899-item-0")).toBeTruthy();
++    });
++
++    const prerenderedWrappedItem = findItem(29);
++    const prerenderedWrappedStyle = StyleSheet.flatten(prerenderedWrappedItem.props.style);
++
++    expect(prerenderedWrappedItem.props.accessibilityLabel).toBe("issue-899-label-29");
++    expect(prerenderedWrappedStyle.backgroundColor).toBe("#111111");
++
++    fireGestureHandler<LegacyPanGesture>(getByGestureTestId(gestureTestId), [
++      { state: State.BEGAN, translationX: 0, velocityX: slideWidth },
++      { state: State.ACTIVE, translationX: slideWidth * 0.7, velocityX: slideWidth },
++    ]);
++
++    const wrappedItem = findItem(29);
++    const flattenedStyle = StyleSheet.flatten(wrappedItem.props.style);
++
++    expect(wrappedItem.props.accessibilityLabel).toBe("issue-899-label-29");
++    expect(flattenedStyle.backgroundColor).toBe("#111111");
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/components/rnr-demo.test.tsx b/node_modules/react-native-reanimated-carousel/src/components/rnr-demo.test.tsx
+new file mode 100644
+index 0000000..30f9704
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/components/rnr-demo.test.tsx
+@@ -0,0 +1,53 @@
++import { render } from "@testing-library/react-native";
++import type { FC } from "react";
++import React from "react";
++import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
++
++describe("Carousel Animations", () => {
++  beforeEach(() => {
++    jest.useFakeTimers();
++  });
++
++  afterEach(() => {
++    jest.runOnlyPendingTimers();
++    jest.useRealTimers();
++  });
++
++  it("animates opacity with timing", () => {
++    const TestComponent: FC<{ value: number }> = ({ value }) => {
++      const sharedValue = useSharedValue(value);
++
++      // Using withTiming to wrap the value change, so it can be tested
++      const animatedStyle = useAnimatedStyle(() => ({
++        opacity: withTiming(sharedValue.value, { duration: 500 }),
++      }));
++
++      // When the prop changes, update the shared value
++      React.useEffect(() => {
++        sharedValue.value = value;
++      }, [value, sharedValue]);
++
++      return <Animated.View testID="animated-view" style={animatedStyle} />;
++    };
++
++    const initialValue = 0;
++    const updatedValue = 1;
++
++    const { getByTestId, rerender } = render(<TestComponent value={initialValue} />);
++    const view = getByTestId("animated-view");
++
++    // Verify the initial state
++    expect(view).toHaveAnimatedStyle({ opacity: initialValue });
++
++    // Trigger the value change
++    rerender(<TestComponent value={updatedValue} />);
++
++    // Advance the animation to the middle point
++    jest.advanceTimersByTime(250);
++    expect(view).toHaveAnimatedStyle({ opacity: 0.5 }); // Animation middle value
++
++    // Advance the animation to the completion
++    jest.advanceTimersByTime(250);
++    expect(view).toHaveAnimatedStyle({ opacity: updatedValue }); // Animation completion
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useAutoPlay.test.ts b/node_modules/react-native-reanimated-carousel/src/hooks/useAutoPlay.test.ts
+new file mode 100644
+index 0000000..1090fd5
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useAutoPlay.test.ts
+@@ -0,0 +1,198 @@
++import { act, renderHook } from "@testing-library/react-hooks";
++
++import { useAutoPlay } from "./useAutoPlay";
++
++describe("useAutoPlay", () => {
++  // Mock timer
++  beforeEach(() => {
++    jest.useFakeTimers();
++    jest.clearAllMocks();
++  });
++
++  afterEach(() => {
++    jest.clearAllTimers();
++    jest.useRealTimers();
++  });
++
++  // Mock carousel controller
++  const mockCarouselController = {
++    prev: jest.fn(),
++    next: jest.fn(),
++    getCurrentIndex: jest.fn(),
++    getSharedIndex: jest.fn(),
++    scrollTo: jest.fn(),
++    index: { value: 0 },
++    startMovement: jest.fn(),
++    cancelMovement: jest.fn(),
++    settle: jest.fn(),
++  };
++
++  it("should start autoplay when autoPlay is true", () => {
++    renderHook(() =>
++      useAutoPlay({
++        autoplay: true,
++        autoplayInterval: 1000,
++        carouselController: mockCarouselController,
++      })
++    );
++
++    act(() => {
++      jest.runOnlyPendingTimers();
++    });
++
++    expect(mockCarouselController.next).toHaveBeenCalledTimes(1);
++    expect(mockCarouselController.next).toHaveBeenCalledWith(
++      expect.objectContaining({
++        onFinished: expect.any(Function),
++      })
++    );
++  });
++
++  it("should not start autoplay when autoPlay is false", () => {
++    renderHook(() =>
++      useAutoPlay({
++        autoplay: false,
++        autoplayInterval: 1000,
++        carouselController: mockCarouselController,
++      })
++    );
++
++    act(() => {
++      jest.runOnlyPendingTimers();
++    });
++
++    expect(mockCarouselController.next).not.toHaveBeenCalled();
++  });
++
++  it("should play in reverse when autoPlayReverse is true", () => {
++    renderHook(() =>
++      useAutoPlay({
++        autoplay: true,
++        autoplayDirection: "backward",
++        autoplayInterval: 1000,
++        carouselController: mockCarouselController,
++      })
++    );
++
++    act(() => {
++      jest.runOnlyPendingTimers();
++    });
++
++    expect(mockCarouselController.prev).toHaveBeenCalledTimes(1);
++    expect(mockCarouselController.next).not.toHaveBeenCalled();
++  });
++
++  it("should clear timer on unmount", () => {
++    const { unmount } = renderHook(() =>
++      useAutoPlay({
++        autoplay: true,
++        autoplayInterval: 1000,
++        carouselController: mockCarouselController,
++      })
++    );
++
++    // Run the timer once to ensure it's set
++    act(() => {
++      jest.runOnlyPendingTimers();
++    });
++
++    // Clear previous call records
++    mockCarouselController.next.mockClear();
++
++    // Then unmount the component and run the timer again
++    act(() => {
++      unmount();
++      jest.runOnlyPendingTimers();
++    });
++
++    expect(mockCarouselController.next).not.toHaveBeenCalled();
++  });
++
++  it("should pause and resume autoplay", () => {
++    const { result } = renderHook(() =>
++      useAutoPlay({
++        autoplay: true,
++        autoplayInterval: 1000,
++        carouselController: mockCarouselController,
++      })
++    );
++
++    // Run the timer once to ensure it's set
++    act(() => {
++      jest.runOnlyPendingTimers();
++    });
++
++    // Clear previous call records
++    mockCarouselController.next.mockClear();
++
++    // Pause autoplay
++    act(() => {
++      result.current.pause();
++      jest.runOnlyPendingTimers();
++    });
++
++    expect(mockCarouselController.next).not.toHaveBeenCalled();
++
++    // Resume autoplay
++    act(() => {
++      result.current.start();
++      jest.runOnlyPendingTimers();
++    });
++
++    expect(mockCarouselController.next).toHaveBeenCalledTimes(1);
++  });
++
++  it("should respect autoPlayInterval timing", () => {
++    renderHook(() =>
++      useAutoPlay({
++        autoplay: true,
++        autoplayInterval: 2000,
++        carouselController: mockCarouselController,
++      })
++    );
++
++    // Advance less than interval
++    act(() => {
++      jest.advanceTimersByTime(1500);
++    });
++    expect(mockCarouselController.next).not.toHaveBeenCalled();
++
++    // Advance to complete interval
++    act(() => {
++      jest.advanceTimersByTime(500);
++    });
++    expect(mockCarouselController.next).toHaveBeenCalledTimes(1);
++  });
++
++  it("should chain autoplay calls correctly", () => {
++    renderHook(() =>
++      useAutoPlay({
++        autoplay: true,
++        autoplayInterval: 1000,
++        carouselController: mockCarouselController,
++      })
++    );
++
++    // First interval
++    act(() => {
++      jest.runOnlyPendingTimers();
++    });
++    expect(mockCarouselController.next).toHaveBeenCalledTimes(1);
++
++    // Trigger onFinished callback to start the next timer
++    const onFinished = mockCarouselController.next.mock.calls[0][0].onFinished;
++    act(() => {
++      onFinished();
++      jest.runOnlyPendingTimers();
++    });
++    expect(mockCarouselController.next).toHaveBeenCalledTimes(2);
++
++    // Trigger onFinished callback to start the next timer
++    const onFinished2 = mockCarouselController.next.mock.calls[1][0].onFinished;
++    act(() => {
++      onFinished2();
++      jest.runOnlyPendingTimers();
++    });
++    expect(mockCarouselController.next).toHaveBeenCalledTimes(3);
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useCarouselController.test.tsx b/node_modules/react-native-reanimated-carousel/src/hooks/useCarouselController.test.tsx
+new file mode 100644
+index 0000000..79dba3b
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useCarouselController.test.tsx
+@@ -0,0 +1,225 @@
++import { act, renderHook } from "@testing-library/react-hooks";
++import React from "react";
++import type { SharedValue } from "react-native-reanimated";
++
++import { GlobalStateContext } from "../store";
++import type { CarouselContext } from "../store";
++import type { CarouselRef } from "../types";
++import { useCarouselController } from "./useCarouselController";
++
++jest.mock("react-native-reanimated", () => {
++  const callbacks: Array<(finished: boolean) => void> = [];
++  const state = { finishImmediately: true };
++  const animate = jest.fn((value, _config, callback) => {
++    if (callback) {
++      callbacks.push(callback);
++      if (state.finishImmediately) callback(true);
++    }
++    return value;
++  });
++
++  return {
++    useSharedValue: jest.fn((initialValue) => ({ value: initialValue })),
++    useAnimatedReaction: jest.fn((prepare, react) => react(prepare())),
++    withTiming: animate,
++    withSpring: animate,
++    mockAnimationCallbacks: callbacks,
++    mockAnimationState: state,
++  };
++});
++
++jest.mock("react-native-worklets", () => ({
++  scheduleOnRN: jest.fn((fn, ...args) => fn(...args)),
++}));
++
++function shared<T>(value: T): SharedValue<T> {
++  return { value } as SharedValue<T>;
++}
++
++const movement = {
++  startMovement: jest.fn(),
++  cancelMovement: jest.fn(),
++  settleMovement: jest.fn(),
++};
++
++const context = {
++  props: {},
++  common: {
++    size: 300,
++    validLength: 4,
++    handlerOffset: shared(0),
++    resolvedSize: shared<number | null>(300),
++    sizePhase: shared("ready"),
++    sizeExplicit: true,
++    isMoving: shared(false),
++    ...movement,
++  },
++  layout: {
++    containerSize: shared({ width: 300, height: 300 }),
++    itemDimensions: shared({}),
++    updateContainerSize: jest.fn(),
++    updateItemDimensions: jest.fn(),
++  },
++} as unknown as CarouselContext;
++
++const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
++  <GlobalStateContext.Provider value={context}>{children}</GlobalStateContext.Provider>
++);
++
++function renderController(overrides: Partial<Parameters<typeof useCarouselController>[0]> = {}) {
++  const handlerOffset = overrides.handlerOffset ?? shared(0);
++  const ref = React.createRef<CarouselRef>();
++  const onScrollStart = jest.fn();
++  const onMovementEnd = jest.fn();
++  const options = {
++    ref,
++    loop: false,
++    size: 300,
++    dataLength: 5,
++    rawDataLength: 5,
++    handlerOffset,
++    animation: { type: "timing" as const, duration: 300 },
++    onScrollStart,
++    onMovementEnd,
++    ...overrides,
++  };
++
++  return {
++    ...renderHook(() => useCarouselController(options), { wrapper }),
++    handlerOffset,
++    ref,
++    onScrollStart,
++    onMovementEnd,
++  };
++}
++
++describe("useCarouselController", () => {
++  const { mockAnimationCallbacks, mockAnimationState } =
++    jest.requireMock("react-native-reanimated");
++
++  beforeEach(() => {
++    jest.clearAllMocks();
++    mockAnimationCallbacks.length = 0;
++    mockAnimationState.finishImmediately = true;
++    context.common.sizePhase.value = "ready";
++    context.common.resolvedSize.value = 300;
++    context.common.isMoving.value = false;
++  });
++
++  afterEach(() => {
++    jest.restoreAllMocks();
++  });
++
++  it("exposes the settled default index", () => {
++    const { result, ref } = renderController({
++      defaultIndex: 2,
++      handlerOffset: shared(-600),
++    });
++
++    expect(result.current.getCurrentIndex()).toBe(2);
++    expect(ref.current?.getCurrentIndex()).toBe(2);
++  });
++
++  it("moves from the nearest visual page and settles non-animated commands immediately", () => {
++    const { result, handlerOffset, onMovementEnd, onScrollStart } = renderController({
++      handlerOffset: shared(-780),
++    });
++
++    act(() => result.current.next({ animated: false }));
++
++    expect(handlerOffset.value).toBe(-1200);
++    expect(onScrollStart).toHaveBeenCalledTimes(1);
++    expect(onMovementEnd).toHaveBeenCalledWith(4);
++  });
++
++  it("clamps next and prev at non-loop boundaries", () => {
++    const atStart = renderController();
++    act(() => atStart.result.current.prev({ animated: false }));
++    expect(atStart.handlerOffset.value).toBe(0);
++    expect(atStart.onScrollStart).not.toHaveBeenCalled();
++
++    const atEnd = renderController({ handlerOffset: shared(-1200), defaultIndex: 4 });
++    act(() => atEnd.result.current.next({ animated: false }));
++    expect(atEnd.handlerOffset.value).toBe(-1200);
++    expect(atEnd.onScrollStart).not.toHaveBeenCalled();
++  });
++
++  it("keeps loop offsets unbounded for relative commands", () => {
++    const { result, handlerOffset } = renderController({
++      loop: true,
++      handlerOffset: shared(-1200),
++      defaultIndex: 4,
++    });
++
++    act(() => result.current.next({ animated: false }));
++
++    expect(handlerOffset.value).toBe(-1500);
++    expect(result.current.getCurrentIndex()).toBe(0);
++  });
++
++  it("uses the shortest loop path with forward tie-breaking", () => {
++    const shortest = renderController({ loop: true });
++    act(() => shortest.result.current.scrollTo({ index: 4, animated: false }));
++    expect(shortest.handlerOffset.value).toBe(300);
++
++    const tie = renderController({ loop: true, dataLength: 4, rawDataLength: 4 });
++    act(() => tie.result.current.scrollTo({ index: 2, animated: false }));
++    expect(tie.handlerOffset.value).toBe(-600);
++  });
++
++  it("defaults commands to animated and latches getCurrentIndex until settle", () => {
++    mockAnimationState.finishImmediately = false;
++    const { result, handlerOffset, onMovementEnd } = renderController();
++
++    act(() => result.current.next());
++    expect(handlerOffset.value).toBe(-300);
++    expect(result.current.getCurrentIndex()).toBe(0);
++    expect(onMovementEnd).not.toHaveBeenCalled();
++
++    act(() => mockAnimationCallbacks[0](true));
++    expect(result.current.getCurrentIndex()).toBe(1);
++    expect(onMovementEnd).toHaveBeenCalledWith(1);
++  });
++
++  it("cancels without producing a settled event", () => {
++    mockAnimationState.finishImmediately = false;
++    const { result, onMovementEnd } = renderController();
++
++    act(() => result.current.next());
++    act(() => mockAnimationCallbacks[0](false));
++
++    expect(result.current.getCurrentIndex()).toBe(0);
++    expect(onMovementEnd).not.toHaveBeenCalled();
++    expect(movement.cancelMovement).toHaveBeenCalled();
++  });
++
++  it("validates command arguments and warns only once per instance", () => {
++    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
++    const { result, handlerOffset } = renderController();
++
++    act(() => {
++      result.current.next({ count: -1 });
++      result.current.next({ count: 1.5 });
++      result.current.next({ count: 0 });
++      result.current.scrollTo({ index: 7 });
++      result.current.scrollTo({ index: -1 });
++    });
++
++    expect(handlerOffset.value).toBe(0);
++    expect(warnSpy).toHaveBeenCalledTimes(2);
++  });
++
++  it("is a no-op for empty and single-item data", () => {
++    const empty = renderController({ dataLength: 0, rawDataLength: 0 });
++    const single = renderController({ dataLength: 1, rawDataLength: 1 });
++
++    act(() => {
++      empty.result.current.next({ animated: false });
++      single.result.current.next({ animated: false });
++    });
++
++    expect(empty.handlerOffset.value).toBe(0);
++    expect(single.handlerOffset.value).toBe(0);
++    expect(Number.isNaN(empty.result.current.index.value)).toBe(false);
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useCarouselController.tsx b/node_modules/react-native-reanimated-carousel/src/hooks/useCarouselController.tsx
+index d511e3a..df0f0e8 100644
+--- a/node_modules/react-native-reanimated-carousel/src/hooks/useCarouselController.tsx
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useCarouselController.tsx
+@@ -18,6 +18,7 @@ import {
+   positiveModulo,
+ } from "../utils/carousel-math";
+ import { dealWithAnimation } from "../utils/deal-with-animation";
++import { webOnlyDependencies } from "../utils/web-only-dependencies";
+ 
+ interface CarouselControllerOptions {
+   ref: React.ForwardedRef<CarouselRef>;
+@@ -106,7 +107,7 @@ export function useCarouselController(options: CarouselControllerOptions): Carou
+       index.value = physicalIndex;
+       scheduleOnRN(setLiveRawIndex, rawIndex);
+     },
+-    [dataLength, handlerOffset, index, rawDataLength, size]
++    webOnlyDependencies([dataLength, handlerOffset, index, rawDataLength, size])
+   );
+ 
+   const settle = React.useCallback(
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useCheckMounted.test.ts b/node_modules/react-native-reanimated-carousel/src/hooks/useCheckMounted.test.ts
+new file mode 100644
+index 0000000..374d202
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useCheckMounted.test.ts
+@@ -0,0 +1,47 @@
++import { renderHook } from "@testing-library/react-hooks";
++
++import { useCheckMounted } from "./useCheckMounted";
++
++describe("useCheckMounted", () => {
++  it("should be mounted after initialization", () => {
++    const { result } = renderHook(() => useCheckMounted());
++
++    expect(result.current.current).toBe(true);
++  });
++
++  it("should be unmounted after cleanup", () => {
++    const { result, unmount } = renderHook(() => useCheckMounted());
++
++    expect(result.current.current).toBe(true);
++
++    unmount();
++
++    expect(result.current.current).toBe(false);
++  });
++
++  it("should maintain mounted state during component lifecycle", () => {
++    const { result, rerender } = renderHook(() => useCheckMounted());
++
++    expect(result.current.current).toBe(true);
++
++    rerender();
++
++    expect(result.current.current).toBe(true);
++  });
++
++  it("should handle multiple mount/unmount cycles", () => {
++    // First instance
++    const hook1 = renderHook(() => useCheckMounted());
++    expect(hook1.result.current.current).toBe(true);
++
++    hook1.unmount();
++    expect(hook1.result.current.current).toBe(false);
++
++    // Second instance
++    const hook2 = renderHook(() => useCheckMounted());
++    expect(hook2.result.current.current).toBe(true);
++
++    hook2.unmount();
++    expect(hook2.result.current.current).toBe(false);
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useCommonVariables.test.tsx b/node_modules/react-native-reanimated-carousel/src/hooks/useCommonVariables.test.tsx
+new file mode 100644
+index 0000000..3223fdc
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useCommonVariables.test.tsx
+@@ -0,0 +1,271 @@
++import { act, renderHook } from "@testing-library/react-hooks";
++import type { SharedValue } from "react-native-reanimated";
++
++import { useCommonVariables } from "./useCommonVariables";
++import type { InitializedCarouselProps } from "./useInitProps";
++
++function createProps(
++  overrides: Partial<InitializedCarouselProps<number>> = {}
++): InitializedCarouselProps<number> {
++  return {
++    data: [0, 1, 2, 3],
++    rawData: [0, 1, 2, 3],
++    dataLength: 4,
++    rawDataLength: 4,
++    renderItem: () => null,
++    defaultIndex: 0,
++    loop: false,
++    autoFillData: true,
++    autoplay: false,
++    autoplayInterval: 3000,
++    autoplayDirection: "forward",
++    orientation: "horizontal",
++    directionSign: 1,
++    scrollEnabled: true,
++    snapMode: "page",
++    overscrollEnabled: true,
++    animation: { type: "timing", duration: 500 },
++    style: { width: 700, height: 350 },
++    ...overrides,
++  };
++}
++
++describe("useCommonVariables", () => {
++  it("resolves the main-axis size from style", () => {
++    const horizontal = renderHook(() => useCommonVariables(createProps())).result.current;
++    const vertical = renderHook(() => useCommonVariables(createProps({ orientation: "vertical" })))
++      .result.current;
++
++    expect(horizontal.size).toBe(700);
++    expect(vertical.size).toBe(350);
++    expect(horizontal.sizePhase.value).toBe("ready");
++  });
++
++  it("gives itemSize precedence and marks it explicit", () => {
++    const { result } = renderHook(() => useCommonVariables(createProps({ itemSize: 280 })));
++
++    expect(result.current.size).toBe(280);
++    expect(result.current.sizeExplicit).toBe(true);
++  });
++
++  it("stays pending until an automatic size is measured", () => {
++    const { result } = renderHook(() =>
++      useCommonVariables(createProps({ style: { width: "100%" } }))
++    );
++
++    expect(result.current.size).toBe(0);
++    expect(result.current.resolvedSize.value).toBeNull();
++    expect(result.current.sizePhase.value).toBe("pending");
++  });
++
++  it("initializes internal and consumer offsets from defaultIndex", () => {
++    const external = { value: 999 } as SharedValue<number>;
++    const internal = renderHook(() => useCommonVariables(createProps({ defaultIndex: 2 }))).result
++      .current;
++    const consumer = renderHook(() =>
++      useCommonVariables(createProps({ defaultIndex: 2, scrollOffsetValue: external }))
++    ).result.current;
++
++    expect(internal.handlerOffset.value).toBe(-1400);
++    expect(consumer.handlerOffset).toBe(external);
++    expect(external.value).toBe(-1400);
++  });
++
++  it("handles empty data without producing NaN", () => {
++    const { result } = renderHook(() =>
++      useCommonVariables(createProps({ data: [], rawData: [], dataLength: 0, rawDataLength: 0 }))
++    );
++
++    expect(result.current.validLength).toBe(-1);
++    expect(result.current.handlerOffset.value).toBe(0);
++    expect(Number.isNaN(result.current.handlerOffset.value)).toBe(false);
++  });
++
++  it("clamps a non-loop offset immediately when data shrinks while idle", () => {
++    const hook = renderHook(({ props }) => useCommonVariables(props), {
++      initialProps: { props: createProps() },
++    });
++    hook.result.current.handlerOffset.value = -2100;
++
++    act(() => {
++      hook.rerender({
++        props: createProps({
++          data: [0, 1],
++          rawData: [0, 1],
++          dataLength: 2,
++          rawDataLength: 2,
++        }),
++      });
++    });
++
++    expect(hook.result.current.handlerOffset.value).toBe(-700);
++  });
++
++  it("defers data reconciliation until active movement settles", () => {
++    const hook = renderHook(({ props }) => useCommonVariables(props), {
++      initialProps: { props: createProps() },
++    });
++    hook.result.current.handlerOffset.value = -2100;
++
++    act(() => {
++      hook.result.current.startMovement();
++      hook.rerender({
++        props: createProps({
++          data: [0, 1],
++          rawData: [0, 1],
++          dataLength: 2,
++          rawDataLength: 2,
++        }),
++      });
++    });
++    expect(hook.result.current.handlerOffset.value).toBe(-2100);
++
++    act(() => hook.result.current.settleMovement());
++    expect(hook.result.current.handlerOffset.value).toBe(-700);
++  });
++
++  it.each([
++    {
++      name: "insertion",
++      initial: [10, 20, 30],
++      next: [5, 10, 20, 30],
++      initialOffset: -700,
++      expectedOffset: -1400,
++    },
++    {
++      name: "deletion",
++      initial: [10, 20, 30],
++      next: [20, 30],
++      initialOffset: -1400,
++      expectedOffset: -700,
++    },
++    {
++      name: "reorder",
++      initial: [10, 20, 30],
++      next: [20, 10, 30],
++      initialOffset: -700,
++      expectedOffset: 0,
++    },
++  ])("retains the keyed item across $name", ({ initial, next, initialOffset, expectedOffset }) => {
++    const keyExtractor = (item: number) => String(item);
++    const hook = renderHook(({ props }) => useCommonVariables(props), {
++      initialProps: {
++        props: createProps({
++          data: initial,
++          rawData: initial,
++          dataLength: initial.length,
++          rawDataLength: initial.length,
++          keyExtractor,
++        }),
++      },
++    });
++    hook.result.current.handlerOffset.value = initialOffset;
++
++    act(() => {
++      hook.rerender({
++        props: createProps({
++          data: next,
++          rawData: next,
++          dataLength: next.length,
++          rawDataLength: next.length,
++          keyExtractor,
++        }),
++      });
++    });
++
++    expect(hook.result.current.handlerOffset.value).toBe(expectedOffset);
++  });
++
++  it("clamps the numeric index when the keyed current item disappears", () => {
++    const keyExtractor = (item: number) => String(item);
++    const initial = [10, 20, 30];
++    const hook = renderHook(({ props }) => useCommonVariables(props), {
++      initialProps: {
++        props: createProps({
++          data: initial,
++          rawData: initial,
++          dataLength: initial.length,
++          rawDataLength: initial.length,
++          keyExtractor,
++        }),
++      },
++    });
++    hook.result.current.handlerOffset.value = -1400;
++
++    const next = [10, 20];
++    act(() => {
++      hook.rerender({
++        props: createProps({
++          data: next,
++          rawData: next,
++          dataLength: next.length,
++          rawDataLength: next.length,
++          keyExtractor,
++        }),
++      });
++    });
++
++    expect(hook.result.current.handlerOffset.value).toBe(-700);
++  });
++
++  it("defers keyed reconciliation until active movement settles", () => {
++    const keyExtractor = (item: number) => String(item);
++    const initial = [10, 20, 30];
++    const hook = renderHook(({ props }) => useCommonVariables(props), {
++      initialProps: {
++        props: createProps({
++          data: initial,
++          rawData: initial,
++          dataLength: initial.length,
++          rawDataLength: initial.length,
++          keyExtractor,
++        }),
++      },
++    });
++    hook.result.current.handlerOffset.value = -700;
++
++    const next = [20, 10, 30];
++    act(() => {
++      hook.result.current.startMovement();
++      hook.rerender({
++        props: createProps({
++          data: next,
++          rawData: next,
++          dataLength: next.length,
++          rawDataLength: next.length,
++          keyExtractor,
++        }),
++      });
++    });
++    expect(hook.result.current.handlerOffset.value).toBe(-700);
++
++    act(() => hook.result.current.settleMovement());
++    expect(hook.result.current.handlerOffset.value).toBe(0);
++  });
++
++  it("applies a deferred defaultIndex when data first becomes non-empty", () => {
++    const hook = renderHook(({ props }) => useCommonVariables(props), {
++      initialProps: {
++        props: createProps({
++          data: [],
++          rawData: [],
++          dataLength: 0,
++          rawDataLength: 0,
++          defaultIndex: 2,
++        }),
++      },
++    });
++
++    hook.rerender({
++      props: createProps({
++        data: [0, 1, 2],
++        rawData: [0, 1, 2],
++        dataLength: 3,
++        rawDataLength: 3,
++        defaultIndex: 2,
++      }),
++    });
++
++    expect(hook.result.current.handlerOffset.value).toBe(-1400);
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useCommonVariables.ts b/node_modules/react-native-reanimated-carousel/src/hooks/useCommonVariables.ts
+index 15200a6..c9f8c61 100644
+--- a/node_modules/react-native-reanimated-carousel/src/hooks/useCommonVariables.ts
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useCommonVariables.ts
+@@ -12,6 +12,7 @@ import {
+   reconcileOffsetAfterDataChange,
+ } from "../utils/carousel-math";
+ import { computeOffsetIfSizeChanged } from "../utils/compute-offset-if-size-changed";
++import { webOnlyDependencies } from "../utils/web-only-dependencies";
+ 
+ export type CarouselSizePhase = "pending" | "ready" | "updating";
+ 
+@@ -97,7 +98,7 @@ export function useCommonVariables(
+         scheduleOnRN(syncSize, current);
+       }
+     },
+-    [syncSize]
++    webOnlyDependencies([syncSize])
+   );
+ 
+   React.useEffect(() => {
+@@ -242,7 +243,7 @@ export function useCommonVariables(
+       prevSize.value = currentSize;
+       sizePhase.value = "ready";
+     },
+-    [dataLength, defaultIndex, hasInitializedOffset, resolvedSize, sizePhase]
++    webOnlyDependencies([dataLength, defaultIndex, hasInitializedOffset, resolvedSize, sizePhase])
+   );
+ 
+   return {
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useInitProps.test.tsx b/node_modules/react-native-reanimated-carousel/src/hooks/useInitProps.test.tsx
+new file mode 100644
+index 0000000..7582537
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useInitProps.test.tsx
+@@ -0,0 +1,155 @@
++import { renderHook } from "@testing-library/react-hooks";
++import { I18nManager } from "react-native";
++
++import type { CarouselProps } from "../types";
++import { useInitProps } from "./useInitProps";
++
++const originalIsRTL = I18nManager.isRTL;
++
++function setRTL(isRTL: boolean) {
++  Object.defineProperty(I18nManager, "isRTL", {
++    configurable: true,
++    value: isRTL,
++  });
++}
++
++function createProps(overrides: Partial<CarouselProps<number>> = {}): CarouselProps<number> {
++  return {
++    data: [0, 1, 2, 3],
++    renderItem: () => null,
++    ...overrides,
++  };
++}
++
++describe("useInitProps", () => {
++  afterEach(() => {
++    setRTL(originalIsRTL);
++    jest.restoreAllMocks();
++  });
++
++  it("applies the v5 defaults", () => {
++    const { result } = renderHook(() => useInitProps(createProps()));
++
++    expect(result.current).toMatchObject({
++      defaultIndex: 0,
++      loop: false,
++      autoplay: false,
++      autoplayInterval: 3000,
++      autoplayDirection: "forward",
++      orientation: "horizontal",
++      scrollEnabled: true,
++      snapMode: "page",
++      overscrollEnabled: true,
++      dataLength: 4,
++      rawDataLength: 4,
++      autoFillData: true,
++    });
++    expect(result.current.animation).toMatchObject({ type: "timing", duration: 500 });
++  });
++
++  it("preserves explicit v5 values", () => {
++    const props = createProps({
++      defaultIndex: 2,
++      loop: true,
++      autoplay: true,
++      autoplayInterval: 1200,
++      autoplayDirection: "backward",
++      orientation: "vertical",
++      scrollEnabled: false,
++      snapMode: "nearest",
++      overscrollEnabled: false,
++      animation: { type: "spring", damping: 18 },
++      style: { height: 320 },
++    });
++    const { result } = renderHook(() => useInitProps(props));
++
++    expect(result.current).toMatchObject({
++      defaultIndex: 2,
++      loop: true,
++      autoplay: true,
++      autoplayInterval: 1200,
++      autoplayDirection: "backward",
++      orientation: "vertical",
++      scrollEnabled: false,
++      snapMode: "nearest",
++      overscrollEnabled: false,
++      animation: { type: "spring", damping: 18 },
++    });
++  });
++
++  it("derives RTL direction only for horizontal carousels", () => {
++    setRTL(true);
++
++    const horizontal = renderHook(() => useInitProps(createProps())).result.current;
++    const vertical = renderHook(() => useInitProps(createProps({ orientation: "vertical" }))).result
++      .current;
++
++    expect(horizontal.directionSign).toBe(-1);
++    expect(vertical.directionSign).toBe(1);
++  });
++
++  it.each([
++    ["itemSize", { itemSize: 0 }],
++    ["autoplayInterval", { autoplayInterval: -1 }],
++    ["renderWindowSize", { renderWindowSize: 1.5 }],
++  ] as const)("rejects invalid %s", (_name, invalid) => {
++    jest.spyOn(console, "error").mockImplementation(() => {});
++    const { result } = renderHook(() => useInitProps(createProps(invalid)));
++    expect(result.error).toBeInstanceOf(Error);
++  });
++
++  it("rejects layout and itemAnimation together", () => {
++    jest.spyOn(console, "error").mockImplementation(() => {});
++    const { result } = renderHook(() =>
++      useInitProps(
++        createProps({
++          layout: { type: "parallax" },
++          itemAnimation: () => ({}),
++        } as never)
++      )
++    );
++
++    expect(result.error?.message).toContain("mutually exclusive");
++  });
++
++  it("throws synchronously for an invalid initial defaultIndex", () => {
++    jest.spyOn(console, "error").mockImplementation(() => {});
++    const { result } = renderHook(() => useInitProps(createProps({ defaultIndex: 4 })));
++
++    expect(result.error?.message).toContain("between 0 and 3");
++  });
++
++  it("defers a valid defaultIndex until data first becomes non-empty", () => {
++    const hook = renderHook(({ props }) => useInitProps(props), {
++      initialProps: { props: createProps({ data: [], defaultIndex: 2 }) },
++    });
++
++    expect(hook.result.current.defaultIndex).toBe(0);
++    hook.rerender({ props: createProps({ data: [0, 1, 2], defaultIndex: 2 }) });
++    expect(hook.result.current.defaultIndex).toBe(2);
++  });
++
++  it("warns and falls back when a deferred defaultIndex is invalid", () => {
++    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
++    const hook = renderHook(({ props }) => useInitProps(props), {
++      initialProps: { props: createProps({ data: [], defaultIndex: 3 }) },
++    });
++
++    hook.rerender({ props: createProps({ data: [0, 1], defaultIndex: 3 }) });
++    hook.rerender({ props: createProps({ data: [0, 1], defaultIndex: 3 }) });
++
++    expect(hook.result.current.defaultIndex).toBe(0);
++    expect(warnSpy).toHaveBeenCalledTimes(1);
++  });
++
++  it.each([
++    { data: [1], expected: [1, 1, 1] },
++    { data: [1, 2], expected: [1, 2, 1, 2] },
++    { data: [1, 2, 3], expected: [1, 2, 3] },
++  ])("auto-fills short loop data", ({ data, expected }) => {
++    const { result } = renderHook(() => useInitProps(createProps({ data, loop: true })));
++
++    expect(result.current.data).toEqual(expected);
++    expect(result.current.rawData).toEqual(data);
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useLayoutConfig.test.tsx b/node_modules/react-native-reanimated-carousel/src/hooks/useLayoutConfig.test.tsx
+new file mode 100644
+index 0000000..1681614
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useLayoutConfig.test.tsx
+@@ -0,0 +1,108 @@
++import { renderHook } from "@testing-library/react-hooks";
++
++import type { InitializedCarouselProps } from "./useInitProps";
++import { useLayoutConfig } from "./useLayoutConfig";
++
++function createProps(
++  overrides: Partial<InitializedCarouselProps<number>> = {}
++): InitializedCarouselProps<number> & { size: number } {
++  return {
++    data: [0, 1, 2],
++    rawData: [0, 1, 2],
++    dataLength: 3,
++    rawDataLength: 3,
++    renderItem: () => null,
++    defaultIndex: 0,
++    loop: false,
++    autoFillData: true,
++    autoplay: false,
++    autoplayInterval: 3000,
++    autoplayDirection: "forward",
++    orientation: "horizontal",
++    directionSign: 1,
++    scrollEnabled: true,
++    snapMode: "page",
++    overscrollEnabled: true,
++    animation: { type: "timing", duration: 500 },
++    style: { width: 300 },
++    size: 300,
++    ...overrides,
++  };
++}
++
++describe("useLayoutConfig", () => {
++  it("returns the normal layout by default", () => {
++    const { result } = renderHook(() => useLayoutConfig(createProps()));
++
++    expect(result.current(-1).transform).toContainEqual({ translateX: -300 });
++    expect(result.current(0).transform).toContainEqual({ translateX: 0 });
++  });
++
++  it("uses the vertical axis for normal vertical layouts", () => {
++    const { result } = renderHook(() => useLayoutConfig(createProps({ orientation: "vertical" })));
++
++    expect(result.current(1).transform).toContainEqual({ translateY: 300 });
++  });
++
++  it("mirrors only horizontal built-in transforms in RTL", () => {
++    const normal = renderHook(() => useLayoutConfig(createProps({ directionSign: -1 }))).result
++      .current;
++    const parallax = renderHook(() =>
++      useLayoutConfig(
++        createProps({
++          directionSign: -1,
++          layout: { type: "parallax", offset: 50 },
++        })
++      )
++    ).result.current;
++
++    expect(normal(1).transform).toContainEqual({ translateX: -300 });
++    expect(parallax(1).transform).toContainEqual({ translateX: -250 });
++  });
++
++  it("accepts a flat parallax layout", () => {
++    const { result } = renderHook(() =>
++      useLayoutConfig(
++        createProps({
++          layout: { type: "parallax", offset: 50, scale: 0.9, adjacentScale: 0.8 },
++        })
++      )
++    );
++    const style = result.current(0);
++
++    expect(style.transform).toContainEqual({ translateX: 0 });
++    expect(style.transform).toContainEqual({ scale: 0.9 });
++  });
++
++  it.each(["horizontal-stack", "vertical-stack"] as const)(
++    "accepts flat %s fields and supplies visibleCount",
++    (type) => {
++      const { result } = renderHook(() =>
++        useLayoutConfig(
++          createProps({
++            layout: { type, visibleCount: 3, exitDirection: "left" },
++          })
++        )
++      );
++
++      expect(result.current(0)).toMatchObject({
++        transform: expect.any(Array),
++        zIndex: expect.any(Number),
++        opacity: expect.any(Number),
++      });
++    }
++  );
++
++  it("memoizes until layout inputs change", () => {
++    const hook = renderHook(({ props }) => useLayoutConfig(props), {
++      initialProps: { props: createProps() },
++    });
++    const initial = hook.result.current;
++
++    hook.rerender({ props: createProps() });
++    expect(hook.result.current).toBe(initial);
++
++    hook.rerender({ props: createProps({ size: 400 }) });
++    expect(hook.result.current).not.toBe(initial);
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useOffsetX.test.ts b/node_modules/react-native-reanimated-carousel/src/hooks/useOffsetX.test.ts
+new file mode 100644
+index 0000000..0e36a2f
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useOffsetX.test.ts
+@@ -0,0 +1,54 @@
++import { useSharedValue } from "react-native-reanimated";
++
++import { renderHook } from "@testing-library/react-hooks";
++
++import type { OffsetOptions } from "./useOffsetX";
++import { useOffsetX } from "./useOffsetX";
++import type { VisibleRangesValue } from "./useVisibleRanges";
++
++describe("useSharedValue", () => {
++  it("should return the correct values", async () => {
++    const hook = renderHook(() => {
++      const range = useSharedValue({
++        negativeRange: [7, 9],
++        positiveRange: [0, 3],
++      }) as VisibleRangesValue;
++      const inputs: Array<{
++        config: OffsetOptions;
++        range: VisibleRangesValue;
++      }> = Array.from({ length: 10 }).map((_, index) => ({
++        config: {
++          dataLength: 10,
++          handlerOffset: useSharedValue(-0),
++          index,
++          loop: false,
++          size: 393,
++        },
++        range,
++      }));
++
++      return inputs.map((input) => {
++        const { config, range } = input;
++
++        return useOffsetX(config, range);
++      });
++    });
++
++    const expected = hook.result.current.map((v) => v.value).slice();
++
++    expect(expected).toMatchInlineSnapshot(`
++            [
++              0,
++              393,
++              786,
++              1179,
++              9007199254740991,
++              9007199254740991,
++              9007199254740991,
++              2751,
++              3144,
++              3537,
++            ]
++        `);
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useOffsetX.ts b/node_modules/react-native-reanimated-carousel/src/hooks/useOffsetX.ts
+index 37f6e7e..61fcbd7 100644
+--- a/node_modules/react-native-reanimated-carousel/src/hooks/useOffsetX.ts
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useOffsetX.ts
+@@ -1,6 +1,7 @@
+ import type { SharedValue } from "react-native-reanimated";
+ import { Extrapolation, interpolate, useDerivedValue } from "react-native-reanimated";
+ 
++import { webOnlyDependencies } from "../utils/web-only-dependencies";
+ import type { VisibleRangesValue } from "./useVisibleRanges";
+ 
+ export interface OffsetOptions {
+@@ -38,6 +39,15 @@ export const useOffsetX = (opts: OffsetOptions, visibleRanges: VisibleRangesValu
+   const MAX = positiveCount * size;
+   const MIN = -((VALID_LENGTH - positiveCount) * size);
+ 
++  const xDependencies = webOnlyDependencies([
++    loop,
++    dataLength,
++    viewCount,
++    type,
++    size,
++    visibleRanges,
++    handlerOffset,
++  ]);
+   const x = useDerivedValue(() => {
+     if (!size) return 0;
+ 
+@@ -75,7 +85,7 @@ export const useOffsetX = (opts: OffsetOptions, visibleRanges: VisibleRangesValu
+     }
+ 
+     return Number.MAX_SAFE_INTEGER;
+-  }, [loop, dataLength, viewCount, type, size, visibleRanges, handlerOffset]);
++  }, xDependencies);
+ 
+   return x;
+ };
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useOnProgressChange.test.tsx b/node_modules/react-native-reanimated-carousel/src/hooks/useOnProgressChange.test.tsx
+new file mode 100644
+index 0000000..d234c02
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useOnProgressChange.test.tsx
+@@ -0,0 +1,117 @@
++import { renderHook } from "@testing-library/react-hooks";
++import { useSharedValue } from "react-native-reanimated";
++
++import { useOnProgressChange } from "./useOnProgressChange";
++
++jest.mock("react-native-reanimated", () => {
++  const React = jest.requireActual("react");
++  let prepareReaction: (() => number | null) | null = null;
++  let runReaction: ((value: number | null) => void) | null = null;
++
++  return {
++    useSharedValue: jest.fn((initialValue) => ({ value: initialValue })),
++    useAnimatedReaction: jest.fn((prepare, react, dependencies) => {
++      React.useEffect(() => {
++        prepareReaction = prepare;
++        runReaction = react;
++        react(prepare());
++        return () => {
++          if (runReaction === react) {
++            prepareReaction = null;
++            runReaction = null;
++          }
++        };
++      }, dependencies);
++    }),
++    __flushReaction: () => {
++      if (prepareReaction && runReaction) runReaction(prepareReaction());
++    },
++  };
++});
++
++jest.mock("react-native-worklets", () => ({
++  scheduleOnRN: jest.fn((fn, ...args) => fn(...args)),
++}));
++
++describe("useOnProgressChange", () => {
++  const { __flushReaction } = jest.requireMock("react-native-reanimated");
++
++  it("reports one unbounded logical progress value", () => {
++    const offset = useSharedValue(0);
++    const ready = useSharedValue(true);
++    const callback = jest.fn();
++    renderHook(() =>
++      useOnProgressChange({
++        loop: true,
++        offset,
++        onProgressChange: callback,
++        rawDataLength: 5,
++        size: 300,
++        sizeReady: ready,
++      })
++    );
++
++    callback.mockClear();
++    offset.value = -1650;
++    __flushReaction();
++
++    expect(callback).toHaveBeenCalledWith(5.5);
++  });
++
++  it("writes the same value to the progress SharedValue", () => {
++    const offset = useSharedValue(-450);
++    const progress = useSharedValue(0);
++    const ready = useSharedValue(true);
++    renderHook(() =>
++      useOnProgressChange({
++        loop: true,
++        offset,
++        progress,
++        rawDataLength: 3,
++        size: 300,
++        sizeReady: ready,
++      })
++    );
++
++    expect(progress.value).toBe(1.5);
++  });
++
++  it("clamps non-loop progress to the data bounds", () => {
++    const offset = useSharedValue(300);
++    const progress = useSharedValue(99);
++    const ready = useSharedValue(true);
++    renderHook(() =>
++      useOnProgressChange({
++        loop: false,
++        offset,
++        progress,
++        rawDataLength: 3,
++        size: 300,
++        sizeReady: ready,
++      })
++    );
++    expect(progress.value).toBe(0);
++
++    offset.value = -900;
++    __flushReaction();
++    expect(progress.value).toBe(2);
++  });
++
++  it("does not emit before size readiness or for empty data", () => {
++    const offset = useSharedValue(-300);
++    const ready = useSharedValue(false);
++    const callback = jest.fn();
++    renderHook(() =>
++      useOnProgressChange({
++        loop: true,
++        offset,
++        onProgressChange: callback,
++        rawDataLength: 0,
++        size: 300,
++        sizeReady: ready,
++      })
++    );
++
++    expect(callback).not.toHaveBeenCalled();
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useOnProgressChange.ts b/node_modules/react-native-reanimated-carousel/src/hooks/useOnProgressChange.ts
+index ce4a578..5f0cc3a 100644
+--- a/node_modules/react-native-reanimated-carousel/src/hooks/useOnProgressChange.ts
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useOnProgressChange.ts
+@@ -4,6 +4,7 @@ import { scheduleOnRN } from "react-native-worklets";
+ 
+ import type { CarouselProgressChangeHandler } from "../types";
+ import { getLogicalProgress } from "../utils/carousel-math";
++import { webOnlyDependencies } from "../utils/web-only-dependencies";
+ 
+ export function useOnProgressChange(options: {
+   loop: boolean;
+@@ -28,6 +29,6 @@ export function useOnProgressChange(options: {
+       if (progress) progress.value = nextProgress;
+       if (onProgressChange) scheduleOnRN(onProgressChange, nextProgress);
+     },
+-    [loop, offset, onProgressChange, progress, rawDataLength, size, sizeReady]
++    webOnlyDependencies([loop, offset, onProgressChange, progress, rawDataLength, size, sizeReady])
+   );
+ }
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/usePanGestureProxy.test.tsx b/node_modules/react-native-reanimated-carousel/src/hooks/usePanGestureProxy.test.tsx
+new file mode 100644
+index 0000000..699fb40
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/usePanGestureProxy.test.tsx
+@@ -0,0 +1,406 @@
++import React from "react";
++import { Text } from "react-native";
++import type { PanGestureHandler } from "react-native-gesture-handler";
++import {
++  Gesture,
++  GestureDetector,
++  GestureHandlerRootView,
++  State,
++} from "react-native-gesture-handler";
++
++import { cleanup, render } from "@testing-library/react-native";
++import { fireGestureHandler, getByGestureTestId } from "react-native-gesture-handler/jest-utils";
++
++import { usePanGestureProxy } from "./usePanGestureProxy";
++
++beforeEach(cleanup);
++
++type LegacyPanGesture = ReturnType<typeof Gesture.Pan>;
++type LegacyTapGesture = ReturnType<typeof Gesture.Tap>;
++
++const mockedEventHandlers = () => {
++  return {
++    begin: jest.fn(),
++    start: jest.fn(),
++    active: jest.fn(),
++    end: jest.fn(),
++    fail: jest.fn(),
++    cancel: jest.fn(),
++    finish: jest.fn(),
++  };
++};
++
++const mockedEventHandlersFromUser = () => {
++  return {
++    begin: jest.fn(),
++    start: jest.fn(),
++    active: jest.fn(),
++    end: jest.fn(),
++    fail: jest.fn(),
++    cancel: jest.fn(),
++    finish: jest.fn(),
++  };
++};
++
++describe("Using RNGH v2 gesture API", () => {
++  interface SingleHandlerProps {
++    handlers: ReturnType<typeof mockedEventHandlers>;
++    handlersFromUser: ReturnType<typeof mockedEventHandlers>;
++    treatStartAsUpdate?: boolean;
++  }
++
++  function SingleHandler({ handlers, handlersFromUser, treatStartAsUpdate }: SingleHandlerProps) {
++    const pan = usePanGestureProxy({
++      onConfigurePanGesture: (gesture) => {
++        // This is user's customizations
++        gesture
++          .onBegin(handlersFromUser.begin)
++          .onUpdate(handlersFromUser.active)
++          .onEnd(handlersFromUser.end)
++          .onFinalize(handlers.finish)
++          .withTestId("pan");
++      },
++      onGestureStart: treatStartAsUpdate ? handlers.active : handlers.start,
++      onGestureUpdate: handlers.active,
++      onGestureEnd: handlers.end,
++      options: { enabled: true },
++    });
++
++    return (
++      <GestureHandlerRootView>
++        <GestureDetector gesture={pan}>
++          <Text>v2 API test</Text>
++        </GestureDetector>
++      </GestureHandlerRootView>
++    );
++  }
++
++  interface RacingHandlersProps {
++    tapHandlers: ReturnType<typeof mockedEventHandlers>;
++    panHandlers: ReturnType<typeof mockedEventHandlers>;
++  }
++
++  function RacingHandlers({ tapHandlers, panHandlers }: RacingHandlersProps) {
++    const tap = Gesture.Tap().onBegin(tapHandlers.begin).onEnd(tapHandlers.end).withTestId("tap");
++
++    const pan = usePanGestureProxy({
++      onConfigurePanGesture: (_) => {
++        _.onBegin(panHandlers.begin).onFinalize(panHandlers.finish).withTestId("pan");
++      },
++      onGestureStart: panHandlers.start,
++      onGestureUpdate: panHandlers.active,
++      onGestureEnd: panHandlers.end,
++      options: { enabled: true },
++    });
++
++    return (
++      <GestureHandlerRootView>
++        <GestureDetector gesture={Gesture.Race(tap, pan)}>
++          <Text>v2 API test</Text>
++        </GestureDetector>
++      </GestureHandlerRootView>
++    );
++  }
++
++  it("sends events to handlers", () => {
++    const tapHandlers = mockedEventHandlers();
++    const panHandlers = mockedEventHandlers();
++    render(<RacingHandlers tapHandlers={tapHandlers} panHandlers={panHandlers} />);
++
++    fireGestureHandler<LegacyPanGesture>(getByGestureTestId("pan"), [
++      { state: State.BEGAN },
++      { state: State.ACTIVE },
++      { state: State.END },
++    ]);
++    expect(panHandlers.begin).toBeCalledWith(expect.objectContaining({ state: State.BEGAN }));
++    expect(panHandlers.finish).toBeCalled();
++    expect(tapHandlers.begin).not.toBeCalled();
++  });
++
++  it("sends events with additional data to handlers", () => {
++    const panHandlers = mockedEventHandlers();
++    const panHandlersFromUser = mockedEventHandlersFromUser();
++    render(
++      <SingleHandler
++        handlers={panHandlers}
++        handlersFromUser={panHandlersFromUser}
++        treatStartAsUpdate
++      />
++    );
++    fireGestureHandler<LegacyPanGesture>(getByGestureTestId("pan"), [
++      { state: State.BEGAN, translationX: 0 },
++      { state: State.ACTIVE, translationX: 10 },
++      { translationX: 20 },
++      { translationX: 20 },
++      { state: State.END, translationX: 30 },
++    ]);
++
++    expect(panHandlersFromUser.begin).toBeCalledTimes(1);
++    expect(panHandlersFromUser.active).toBeCalledTimes(2);
++    expect(panHandlersFromUser.end).toBeCalledTimes(1);
++
++    expect(panHandlers.active).toBeCalledTimes(3);
++    expect(panHandlers.active).toHaveBeenLastCalledWith(
++      expect.objectContaining({ translationX: 20 })
++    );
++  });
++
++  it("does not include console.error in the output", () => {
++    // if react-native-gesture-handler detects that some handlers are
++    // workletized and some are not, it will log an error to the
++    // console. We'd like to make sure that this doesn't happen.
++
++    // The error that would be shown looks like:
++    // [react-native-gesture-handler] Some of the callbacks in the gesture are worklets and some are not. Either make sure that all calbacks are marked as 'worklet' if you wish to run them on the UI thread or use '.scheduleOnRN(true)' modifier on the gesture explicitly to run all callbacks on the JS thread.
++
++    const panHandlers = mockedEventHandlers();
++    const panHandlersFromUser = mockedEventHandlersFromUser();
++
++    jest.spyOn(console, "error");
++
++    render(
++      <SingleHandler
++        handlers={panHandlers}
++        handlersFromUser={panHandlersFromUser}
++        treatStartAsUpdate
++      />
++    );
++    fireGestureHandler<LegacyPanGesture>(getByGestureTestId("pan"), [
++      { state: State.BEGAN },
++      { state: State.ACTIVE },
++      { state: State.END },
++    ]);
++
++    expect(console.error).not.toBeCalled();
++  });
++});
++
++describe("Event list validation", () => {
++  interface SingleHandlerProps {
++    handlers: ReturnType<typeof mockedEventHandlers>;
++    handlersFromUser: ReturnType<typeof mockedEventHandlers>;
++    treatStartAsUpdate?: boolean;
++  }
++
++  function SingleHandler({ handlers, handlersFromUser, treatStartAsUpdate }: SingleHandlerProps) {
++    const pan = usePanGestureProxy({
++      onConfigurePanGesture: (_) => {
++        _.onBegin(handlersFromUser.begin)
++          .onUpdate(handlersFromUser.active)
++          .onEnd(handlersFromUser.end)
++          .onFinalize(handlers.finish)
++          .withTestId("pan");
++      },
++      onGestureStart: treatStartAsUpdate ? handlers.active : handlers.start,
++      onGestureUpdate: handlers.active,
++      onGestureEnd: handlers.end,
++      options: { enabled: true },
++    });
++
++    return (
++      <GestureHandlerRootView>
++        <GestureDetector gesture={pan}>
++          <Text>v2 API test</Text>
++        </GestureDetector>
++      </GestureHandlerRootView>
++    );
++  }
++
++  it("throws error when oldState doesn't correspond to previous event's state", () => {
++    const panHandlers = mockedEventHandlers();
++    const panHandlersFromUser = mockedEventHandlersFromUser();
++    render(<SingleHandler handlers={panHandlers} handlersFromUser={panHandlersFromUser} />);
++
++    expect(() => {
++      fireGestureHandler<LegacyPanGesture>(getByGestureTestId("pan"), [
++        { oldState: State.UNDETERMINED, state: State.BEGAN, x: 0, y: 10 },
++        { oldState: State.UNDETERMINED, state: State.ACTIVE, x: 1, y: 11 },
++      ]);
++    }).toThrow("when state changes, oldState should be the same as previous event' state");
++  });
++
++  it.each([[State.END], [State.FAILED], [State.CANCELLED]])(
++    "correctly handles events ending with state %s",
++    (lastState) => {
++      const panHandlers = mockedEventHandlers();
++      const panHandlersFromUser = mockedEventHandlersFromUser();
++      render(<SingleHandler handlers={panHandlers} handlersFromUser={panHandlersFromUser} />);
++      fireGestureHandler<LegacyPanGesture>(getByGestureTestId("pan"), [
++        { state: State.BEGAN },
++        { state: State.ACTIVE },
++        { state: lastState },
++      ]);
++
++      expect(panHandlersFromUser.begin).toBeCalledTimes(1);
++      expect(panHandlersFromUser.active).toBeCalledTimes(0);
++      expect(panHandlersFromUser.end).toBeCalledTimes(1);
++
++      if (lastState === State.END) expect(panHandlers.end).toBeCalled();
++      else expect(panHandlers.finish).toBeCalledWith(expect.any(Object), false);
++    }
++  );
++});
++
++describe("Filling event list with defaults", () => {
++  interface RacingTapAndPanProps {
++    handlers: ReturnType<typeof mockedEventHandlers>;
++    treatStartAsUpdate?: boolean;
++  }
++
++  function RacingTapAndPan({ handlers, treatStartAsUpdate }: RacingTapAndPanProps) {
++    const tap = Gesture.Tap().onBegin(handlers.begin).onEnd(handlers.end).withTestId("tap");
++
++    const pan = usePanGestureProxy({
++      onConfigurePanGesture: (_) => {
++        _.onBegin(handlers.begin).onFinalize(handlers.finish).withTestId("pan");
++      },
++      onGestureStart: treatStartAsUpdate ? handlers.active : handlers.start,
++      onGestureUpdate: handlers.active,
++      onGestureEnd: handlers.end,
++      options: { enabled: true },
++    });
++
++    return (
++      <GestureHandlerRootView>
++        <GestureDetector gesture={Gesture.Exclusive(pan, tap)}>
++          <Text>v2 API test</Text>
++        </GestureDetector>
++      </GestureHandlerRootView>
++    );
++  }
++
++  it("fills oldState if not passed", () => {
++    const handlers = mockedEventHandlers();
++    render(<RacingTapAndPan handlers={handlers} treatStartAsUpdate />);
++    fireGestureHandler<PanGestureHandler>(getByGestureTestId("pan"), [
++      { state: State.BEGAN },
++      { state: State.ACTIVE },
++      { state: State.ACTIVE },
++      { state: State.ACTIVE },
++      { state: State.END },
++    ]);
++
++    expect(handlers.begin).toBeCalledWith(
++      expect.objectContaining({ oldState: State.UNDETERMINED })
++    );
++    expect(handlers.active).nthCalledWith(1, expect.objectContaining({ oldState: State.BEGAN }));
++    expect(handlers.active).lastCalledWith(
++      expect.not.objectContaining({ oldState: expect.anything() })
++    );
++    expect(handlers.end).toBeCalledWith(expect.objectContaining({ oldState: State.ACTIVE }), true);
++  });
++
++  it("fills missing ACTIVE states", () => {
++    const panHandlers = mockedEventHandlers();
++    render(<RacingTapAndPan handlers={panHandlers} treatStartAsUpdate />);
++    fireGestureHandler<LegacyPanGesture>(getByGestureTestId("pan"), [
++      { state: State.BEGAN, x: 0, y: 10 },
++      { state: State.ACTIVE, x: 1, y: 11 },
++      { x: 2, y: 12 },
++      { x: 3, y: 13 },
++      { state: State.END, x: 4, y: 14 },
++    ]);
++
++    expect(panHandlers.active).toBeCalledTimes(3);
++    expect(panHandlers.active).toHaveBeenLastCalledWith(expect.objectContaining({ x: 3, y: 13 }));
++  });
++
++  it("fills BEGIN and END events for discrete handlers", () => {
++    const handlers = mockedEventHandlers();
++    render(<RacingTapAndPan handlers={handlers} treatStartAsUpdate />);
++    fireGestureHandler<LegacyTapGesture>(getByGestureTestId("tap"), [{ x: 5 }]);
++    expect(handlers.begin).toBeCalledTimes(1);
++    expect(handlers.end).toBeCalledTimes(1);
++  });
++
++  it("with FAILED event, fills BEGIN event for discrete handlers", () => {
++    const handlers = mockedEventHandlers();
++    render(<RacingTapAndPan handlers={handlers} treatStartAsUpdate />);
++    fireGestureHandler<LegacyTapGesture>(getByGestureTestId("tap"), [{ state: State.FAILED }]);
++    expect(handlers.begin).toBeCalledTimes(1);
++    expect(handlers.end).toBeCalledTimes(1);
++    expect(handlers.end).toBeCalledWith(expect.anything(), false);
++  });
++
++  it("uses event data from first event in filled BEGIN, ACTIVE events", () => {
++    const handlers = mockedEventHandlers();
++    render(<RacingTapAndPan handlers={handlers} treatStartAsUpdate />);
++    fireGestureHandler<LegacyPanGesture>(getByGestureTestId("pan"), [{ x: 120 }]);
++    expect(handlers.begin).toBeCalledWith(expect.objectContaining({ x: 120 }));
++    expect(handlers.active).toHaveBeenNthCalledWith(1, expect.objectContaining({ x: 120 }));
++  });
++
++  it("uses event data from last event in filled END events", () => {
++    const handlers = mockedEventHandlers();
++    render(<RacingTapAndPan handlers={handlers} treatStartAsUpdate />);
++    fireGestureHandler<LegacyPanGesture>(getByGestureTestId("pan"), [
++      { x: 120, state: State.FAILED },
++    ]);
++    expect(handlers.begin).toBeCalledTimes(1);
++    expect(handlers.active).toBeCalledTimes(1);
++    expect(handlers.end).toBeCalledWith(expect.objectContaining({ x: 120 }), false);
++  });
++
++  it("uses event data filled events", () => {
++    const handlers = mockedEventHandlers();
++    render(<RacingTapAndPan handlers={handlers} treatStartAsUpdate />);
++    fireGestureHandler<LegacyPanGesture>(getByGestureTestId("pan"), [
++      { x: 5, y: 15 },
++      { x: 6, y: 16 },
++      { x: 7, y: 17 },
++    ]);
++    expect(handlers.begin).toBeCalledWith(expect.objectContaining({ x: 5, y: 15 }));
++    expect(handlers.active).toBeCalledTimes(3);
++    expect(handlers.end).toBeCalledWith(expect.objectContaining({ x: 7, y: 17 }), true);
++  });
++
++  it("fills BEGIN and END events when they're not present, for discrete handlers", () => {
++    const handlers = mockedEventHandlers();
++    render(<RacingTapAndPan handlers={handlers} treatStartAsUpdate />);
++    fireGestureHandler<LegacyTapGesture>(getByGestureTestId("tap"));
++    expect(handlers.begin).toBeCalledTimes(1);
++    expect(handlers.end).toHaveBeenCalledTimes(1);
++  });
++
++  it("fills BEGIN, ACTIVE and END events when they're not present, for continuous handlers", () => {
++    const handlers = mockedEventHandlers();
++    render(<RacingTapAndPan handlers={handlers} treatStartAsUpdate />);
++    fireGestureHandler<LegacyPanGesture>(getByGestureTestId("pan"));
++    expect(handlers.begin).toBeCalledTimes(1);
++    expect(handlers.active).toBeCalledTimes(1);
++    expect(handlers.end).toHaveBeenCalledTimes(1);
++  });
++});
++
++describe("issue #942 touchAction configuration", () => {
++  it("applies config.touchAction set through the typed facade to the real gesture", () => {
++    let configuredPan: LegacyPanGesture | undefined;
++
++    function TouchActionCarousel() {
++      const pan = usePanGestureProxy({
++        onConfigurePanGesture: (gesture) => {
++          // Typed public path from issue #942 — no `as any` / PanGesture cast.
++          gesture.config.touchAction = "pan-y";
++        },
++        onGestureStart: jest.fn(),
++        onGestureUpdate: jest.fn(),
++        onGestureEnd: jest.fn(),
++      });
++      configuredPan = pan;
++
++      return (
++        <GestureDetector gesture={pan}>
++          <Text>touch-action</Text>
++        </GestureDetector>
++      );
++    }
++
++    render(
++      <GestureHandlerRootView>
++        <TouchActionCarousel />
++      </GestureHandlerRootView>
++    );
++
++    expect(configuredPan?.config.touchAction).toBe("pan-y");
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/usePropsErrorBoundary.test.tsx b/node_modules/react-native-reanimated-carousel/src/hooks/usePropsErrorBoundary.test.tsx
+new file mode 100644
+index 0000000..3b04a3c
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/usePropsErrorBoundary.test.tsx
+@@ -0,0 +1,77 @@
++import { renderHook } from "@testing-library/react-hooks";
++
++import type { InitializedCarouselProps } from "./useInitProps";
++import { usePropsErrorBoundary } from "./usePropsErrorBoundary";
++
++function createProps(
++  overrides: Partial<InitializedCarouselProps<number>> = {}
++): InitializedCarouselProps<number> {
++  return {
++    data: [0, 1, 2],
++    rawData: [0, 1, 2],
++    dataLength: 3,
++    rawDataLength: 3,
++    renderItem: () => null,
++    defaultIndex: 0,
++    loop: false,
++    autoFillData: true,
++    autoplay: false,
++    autoplayInterval: 3000,
++    autoplayDirection: "forward",
++    orientation: "horizontal",
++    directionSign: 1,
++    scrollEnabled: true,
++    snapMode: "page",
++    overscrollEnabled: true,
++    style: {},
++    contentContainerStyle: {},
++    animation: { type: "timing", duration: 500 },
++    ...overrides,
++  };
++}
++
++describe("usePropsErrorBoundary", () => {
++  afterEach(() => {
++    jest.restoreAllMocks();
++  });
++
++  it("accepts explicit and flexible main-axis sizing", () => {
++    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
++
++    renderHook(() => usePropsErrorBoundary(createProps({ style: { width: "100%", height: 190 } })));
++    renderHook(() =>
++      usePropsErrorBoundary(createProps({ orientation: "vertical", style: { flex: 1 } }))
++    );
++
++    expect(warnSpy).not.toHaveBeenCalled();
++  });
++
++  it("warns once when the main-axis size must be measured implicitly", () => {
++    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
++    const { rerender } = renderHook(() =>
++      usePropsErrorBoundary(createProps({ style: { height: 190 } }))
++    );
++
++    rerender();
++
++    expect(warnSpy).toHaveBeenCalledTimes(1);
++    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("horizontal Carousel"));
++  });
++
++  it("warns once when protected content style fields are supplied", () => {
++    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
++    const { rerender } = renderHook(() =>
++      usePropsErrorBoundary(
++        createProps({
++          style: { width: 300 },
++          contentContainerStyle: { opacity: 0.5 } as never,
++        })
++      )
++    );
++
++    rerender();
++
++    expect(warnSpy).toHaveBeenCalledTimes(1);
++    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("cannot set"));
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useUpdateGestureConfig.test.ts b/node_modules/react-native-reanimated-carousel/src/hooks/useUpdateGestureConfig.test.ts
+new file mode 100644
+index 0000000..c66566f
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useUpdateGestureConfig.test.ts
+@@ -0,0 +1,89 @@
++import { renderHook } from "@testing-library/react-hooks";
++
++import { useUpdateGestureConfig } from "./useUpdateGestureConfig";
++
++describe("useUpdateGestureConfig", () => {
++  const mockGesture = {
++    enabled: jest.fn().mockReturnThis(),
++  };
++
++  beforeEach(() => {
++    jest.clearAllMocks();
++  });
++
++  it("should update gesture enabled state", () => {
++    renderHook(() =>
++      useUpdateGestureConfig(mockGesture as any, {
++        enabled: true,
++      })
++    );
++
++    expect(mockGesture.enabled).toHaveBeenCalledWith(true);
++  });
++
++  it("should handle undefined enabled state", () => {
++    renderHook(() => useUpdateGestureConfig(mockGesture as any, {}));
++
++    expect(mockGesture.enabled).not.toHaveBeenCalled();
++  });
++
++  it("should update when enabled state changes", () => {
++    const { rerender } = renderHook((props) => useUpdateGestureConfig(mockGesture as any, props), {
++      initialProps: { enabled: true },
++    });
++
++    expect(mockGesture.enabled).toHaveBeenCalledWith(true);
++
++    rerender({ enabled: false });
++    expect(mockGesture.enabled).toHaveBeenCalledWith(false);
++  });
++
++  it("should not update when enabled state remains the same", () => {
++    const { rerender } = renderHook((props) => useUpdateGestureConfig(mockGesture as any, props), {
++      initialProps: { enabled: true },
++    });
++
++    mockGesture.enabled.mockClear();
++
++    rerender({ enabled: true });
++    expect(mockGesture.enabled).not.toHaveBeenCalled();
++  });
++
++  it("should handle gesture object changes", () => {
++    const newMockGesture = {
++      enabled: jest.fn().mockReturnThis(),
++    };
++
++    const { rerender } = renderHook(
++      ({ gesture, config }) => useUpdateGestureConfig(gesture as any, config),
++      {
++        initialProps: {
++          gesture: mockGesture,
++          config: { enabled: true },
++        },
++      }
++    );
++
++    expect(mockGesture.enabled).toHaveBeenCalledWith(true);
++
++    rerender({
++      gesture: newMockGesture,
++      config: { enabled: true },
++    });
++
++    expect(newMockGesture.enabled).toHaveBeenCalledWith(true);
++  });
++
++  it("should cleanup properly on unmount", () => {
++    const { unmount } = renderHook(() =>
++      useUpdateGestureConfig(mockGesture as any, {
++        enabled: true,
++      })
++    );
++
++    mockGesture.enabled.mockClear();
++    unmount();
++
++    expect(mockGesture.enabled).not.toHaveBeenCalled();
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useVisibleRanges.test.tsx b/node_modules/react-native-reanimated-carousel/src/hooks/useVisibleRanges.test.tsx
+new file mode 100644
+index 0000000..84c9b5d
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useVisibleRanges.test.tsx
+@@ -0,0 +1,347 @@
++import { useSharedValue } from "react-native-reanimated";
++
++import { renderHook } from "@testing-library/react-hooks";
++
++import { useVisibleRanges } from "./useVisibleRanges";
++
++const viewSize = 393;
++
++describe("useVisibleRanges", () => {
++  it("should only display the front of the list when loop is false", async () => {
++    const hook = renderHook(() => {
++      const translation = useSharedValue(-0);
++      const range = useVisibleRanges({
++        total: 10,
++        translation,
++        viewSize,
++        windowSize: 4,
++        loop: false,
++      });
++
++      return range;
++    });
++
++    const expected = hook.result.current.value;
++
++    expect(expected).toMatchInlineSnapshot(`
++            {
++              "negativeRange": [
++                0,
++                0,
++              ],
++              "positiveRange": [
++                0,
++                3,
++              ],
++            }
++        `);
++  });
++
++  it("should display the rear of the list and the front of the list when loop is true", async () => {
++    const hook = renderHook(() => {
++      const translation = useSharedValue(-0);
++      const range = useVisibleRanges({
++        total: 10,
++        translation,
++        viewSize,
++        windowSize: 4,
++        loop: true,
++      });
++
++      return range;
++    });
++
++    const expected = hook.result.current.value;
++
++    expect(expected).toMatchInlineSnapshot(`
++            {
++              "negativeRange": [
++                8,
++                9,
++              ],
++              "positiveRange": [
++                0,
++                2,
++              ],
++            }
++        `);
++  });
++
++  it.each([
++    { total: 1, windowSize: 1, currentIndex: 0 },
++    { total: 2, windowSize: 5, currentIndex: 1 },
++    { total: 3, windowSize: 3, currentIndex: 2 },
++    { total: 4, windowSize: 5, currentIndex: 1 },
++  ])(
++    "should display every item when windowSize=$windowSize is at least total=$total in loop mode",
++    ({ total, windowSize, currentIndex }) => {
++      const ranges = renderHook(() => {
++        const translation = useSharedValue(-currentIndex * viewSize);
++        return useVisibleRanges({
++          total,
++          translation,
++          viewSize,
++          windowSize,
++          loop: true,
++        });
++      }).result.current.value;
++
++      const visibleIndexes = Array.from({ length: total }, (_, index) => index).filter(
++        (index) =>
++          (index >= ranges.negativeRange[0] && index <= ranges.negativeRange[1]) ||
++          (index >= ranges.positiveRange[0] && index <= ranges.positiveRange[1])
++      );
++
++      expect(visibleIndexes).toEqual(Array.from({ length: total }, (_, index) => index));
++    }
++  );
++
++  it("should shows the increased range of the list when the loop is false and swiped the carousel.", async () => {
++    const slide0hook = renderHook(() => {
++      const translation = useSharedValue(-0 * viewSize);
++      const range = useVisibleRanges({
++        total: 10,
++        translation,
++        viewSize,
++        windowSize: 4,
++        loop: false,
++      });
++
++      return range;
++    }).result.current.value;
++
++    const slide1hook = renderHook(() => {
++      const translation = useSharedValue(-1 * viewSize);
++      const range = useVisibleRanges({
++        total: 10,
++        translation,
++        viewSize,
++        windowSize: 4,
++        loop: false,
++      });
++
++      return range;
++    }).result.current.value;
++
++    const slide2hook = renderHook(() => {
++      const translation = useSharedValue(-2 * viewSize);
++      const range = useVisibleRanges({
++        total: 10,
++        translation,
++        viewSize,
++        windowSize: 4,
++        loop: false,
++      });
++
++      return range;
++    }).result.current.value;
++
++    const slide3hook = renderHook(() => {
++      const translation = useSharedValue(-3 * viewSize);
++      const range = useVisibleRanges({
++        total: 10,
++        translation,
++        viewSize,
++        windowSize: 4,
++        loop: false,
++      });
++
++      return range;
++    }).result.current.value;
++
++    // [0,3] Display the 0,1,2,3 items.
++    expect(slide0hook).toMatchInlineSnapshot(`
++            {
++              "negativeRange": [
++                0,
++                0,
++              ],
++              "positiveRange": [
++                0,
++                3,
++              ],
++            }
++        `);
++
++    // [1,4] Display the 1,2,3,4 items.
++    expect(slide1hook).toMatchInlineSnapshot(`
++            {
++              "negativeRange": [
++                0,
++                1,
++              ],
++              "positiveRange": [
++                1,
++                4,
++              ],
++            }
++        `);
++
++    // [2,5] Display the 2,3,4,5 items.
++    expect(slide2hook).toMatchInlineSnapshot(`
++            {
++              "negativeRange": [
++                0,
++                2,
++              ],
++              "positiveRange": [
++                2,
++                5,
++              ],
++            }
++        `);
++
++    // [3.6] Display the 3,4,5,6 items.
++    expect(slide3hook).toMatchInlineSnapshot(`
++            {
++              "negativeRange": [
++                0,
++                3,
++              ],
++              "positiveRange": [
++                3,
++                6,
++              ],
++            }
++        `);
++  });
++
++  it("should clamp ranges on right overdrag in non-loop mode", () => {
++    const hook = renderHook(() => {
++      // Simulate overdrag to the right at the first page (positive translation)
++      const translation = useSharedValue(viewSize * 0.25);
++      const range = useVisibleRanges({
++        total: 5,
++        translation,
++        viewSize,
++        windowSize: 3,
++        loop: false,
++      });
++
++      return range;
++    });
++
++    expect(hook.result.current.value).toEqual({
++      negativeRange: [0, 0],
++      positiveRange: [0, 2],
++    });
++  });
++
++  it("should return empty positive range when total is 0", () => {
++    const hook = renderHook(() => {
++      const translation = useSharedValue(0);
++      const range = useVisibleRanges({
++        total: 0,
++        translation,
++        viewSize,
++        windowSize: 4,
++        loop: false,
++      });
++      return range;
++    });
++
++    expect(hook.result.current.value).toEqual({
++      negativeRange: [0, 0],
++      positiveRange: [0, -1],
++    });
++  });
++
++  describe("viewSize boundary conditions", () => {
++    it("should return safe defaults when viewSize is NaN", () => {
++      const hook = renderHook(() => {
++        const translation = useSharedValue(0);
++        const range = useVisibleRanges({
++          total: 6,
++          translation,
++          // Invalid runtime value should not break range calculation
++          viewSize: Number.NaN,
++          windowSize: 4,
++          loop: false,
++        });
++        return range;
++      });
++
++      expect(hook.result.current.value).toEqual({
++        negativeRange: [0, 0],
++        positiveRange: [0, 3],
++      });
++    });
++
++    it("should return safe defaults when viewSize is 0", () => {
++      const hook = renderHook(() => {
++        const translation = useSharedValue(0);
++        const range = useVisibleRanges({
++          total: 10,
++          translation,
++          viewSize: 0,
++          windowSize: 4,
++          loop: false,
++        });
++        return range;
++      });
++
++      // Should not crash and return sensible defaults
++      expect(hook.result.current.value).toEqual({
++        negativeRange: [0, 0],
++        positiveRange: [0, 3], // Math.min(10-1, 4-1) = 3
++      });
++    });
++
++    it("should return safe defaults when viewSize is negative", () => {
++      const hook = renderHook(() => {
++        const translation = useSharedValue(0);
++        const range = useVisibleRanges({
++          total: 5,
++          translation,
++          viewSize: -100,
++          windowSize: 3,
++          loop: true,
++        });
++        return range;
++      });
++
++      expect(hook.result.current.value).toEqual({
++        negativeRange: [0, 0],
++        positiveRange: [0, 2], // Math.min(5-1, 3-1) = 2
++      });
++    });
++
++    it("should handle small total with viewSize 0", () => {
++      const hook = renderHook(() => {
++        const translation = useSharedValue(0);
++        const range = useVisibleRanges({
++          total: 2,
++          translation,
++          viewSize: 0,
++          windowSize: 5,
++          loop: false,
++        });
++        return range;
++      });
++
++      expect(hook.result.current.value).toEqual({
++        negativeRange: [0, 0],
++        positiveRange: [0, 1], // Math.min(2-1, 5-1) = 1
++      });
++    });
++
++    it("should handle loop mode with viewSize 0", () => {
++      const hook = renderHook(() => {
++        const translation = useSharedValue(0);
++        const range = useVisibleRanges({
++          total: 6,
++          translation,
++          viewSize: 0,
++          windowSize: 4,
++          loop: true,
++        });
++        return range;
++      });
++
++      expect(hook.result.current.value).toEqual({
++        negativeRange: [0, 0],
++        positiveRange: [0, 3], // Math.min(6-1, 4-1) = 3
++      });
++    });
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/hooks/useVisibleRanges.tsx b/node_modules/react-native-reanimated-carousel/src/hooks/useVisibleRanges.tsx
+index c8c563b..c17737f 100644
+--- a/node_modules/react-native-reanimated-carousel/src/hooks/useVisibleRanges.tsx
++++ b/node_modules/react-native-reanimated-carousel/src/hooks/useVisibleRanges.tsx
+@@ -2,6 +2,8 @@ import { useRef } from "react";
+ import type { SharedValue } from "react-native-reanimated";
+ import { useDerivedValue } from "react-native-reanimated";
+ 
++import { webOnlyDependencies } from "../utils/web-only-dependencies";
++
+ type Range = [number, number];
+ 
+ export interface VisibleRanges {
+@@ -100,6 +102,7 @@ export function useVisibleRanges(options: {
+   const windowSize = normalizeWindowSize(total, _windowSize);
+   const cachedRanges = useRef<VisibleRanges | null>(null);
+ 
++  const rangesDependencies = webOnlyDependencies([loop, total, windowSize, translation, viewSize]);
+   const ranges = useDerivedValue(() => {
+     if (total <= 0) {
+       return computeVisibleRanges({ total, currentIndex: 0, windowSize, loop });
+@@ -128,7 +131,7 @@ export function useVisibleRanges(options: {
+ 
+     cachedRanges.current = newRanges;
+     return newRanges;
+-  }, [loop, total, windowSize, translation, viewSize]);
++  }, rangesDependencies);
+ 
+   return ranges;
+ }
+diff --git a/node_modules/react-native-reanimated-carousel/src/utils/carousel-direction.test.ts b/node_modules/react-native-reanimated-carousel/src/utils/carousel-direction.test.ts
+new file mode 100644
+index 0000000..4816370
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/utils/carousel-direction.test.ts
+@@ -0,0 +1,53 @@
++import {
++  getCarouselDirectionSign,
++  getHorizontalStackOffsetType,
++  toLogicalGestureValue,
++  toPhysicalHorizontalValue,
++} from "./carousel-direction";
++
++describe("carousel direction helpers", () => {
++  it.each([
++    [{ isRTL: false, orientation: "horizontal" }, 1],
++    [{ isRTL: true, orientation: "horizontal" }, -1],
++    [{ isRTL: false, orientation: "vertical" }, 1],
++    [{ isRTL: true, orientation: "vertical" }, 1],
++  ] as const)("derives the physical direction sign from %o", (options, expected) => {
++    expect(getCarouselDirectionSign(options)).toBe(expected);
++  });
++
++  it.each([
++    [-120, 1, -120],
++    [120, 1, 120],
++    [-120, -1, 120],
++    [120, -1, -120],
++  ] as const)(
++    "maps physical gesture value %i with directionSign=%i to %i",
++    (physicalValue, directionSign, expected) => {
++      expect(toLogicalGestureValue(physicalValue, directionSign)).toBe(expected);
++    }
++  );
++
++  it.each([
++    [-2, 1, -2],
++    [2, 1, 2],
++    [-2, -1, 2],
++    [2, -1, -2],
++  ] as const)(
++    "maps logical horizontal value %i with directionSign=%i to %i",
++    (logicalValue, directionSign, expected) => {
++      expect(toPhysicalHorizontalValue(logicalValue, directionSign)).toBe(expected);
++    }
++  );
++
++  it.each([
++    ["left", 1, "positive"],
++    ["right", 1, "negative"],
++    ["left", -1, "negative"],
++    ["right", -1, "positive"],
++  ] as const)(
++    "keeps stack exitDirection=%s physical when directionSign=%i",
++    (exitDirection, directionSign, expectedType) => {
++      expect(getHorizontalStackOffsetType(exitDirection, directionSign)).toBe(expectedType);
++    }
++  );
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/utils/carousel-math.test.ts b/node_modules/react-native-reanimated-carousel/src/utils/carousel-math.test.ts
+new file mode 100644
+index 0000000..31653fc
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/utils/carousel-math.test.ts
+@@ -0,0 +1,146 @@
++import {
++  getBoundedLoopOffset,
++  getLogicalProgress,
++  getNearestLogicalPage,
++  getNearestLoopPosition,
++  getOffsetForLogicalPage,
++  getRelativeProgress,
++  getSettledRawIndex,
++  getShortestLoopTargetPage,
++  positiveModulo,
++  reconcileOffsetAfterDataChange,
++} from "./carousel-math";
++
++describe("carousel logical-coordinate math", () => {
++  it("keeps forward movement negative in offset space and positive in progress space", () => {
++    expect(getOffsetForLogicalPage(3, 320)).toBe(-960);
++    expect(getLogicalProgress(-960, 320)).toBe(3);
++    expect(getNearestLogicalPage(-1000, 320)).toBe(3);
++  });
++
++  it("uses positive modulo for raw indexes", () => {
++    expect(positiveModulo(-1, 5)).toBe(4);
++    expect(getSettledRawIndex(-1, 5)).toBe(4);
++    expect(getSettledRawIndex(6, 5)).toBe(1);
++    expect(getSettledRawIndex(Number.NaN, 0)).toBe(0);
++  });
++
++  it("selects the nearest loop copy and resolves an exact tie forward", () => {
++    expect(getNearestLoopPosition(0, 4.8, 5)).toBe(5);
++    expect(getNearestLoopPosition(4, 5.2, 5)).toBe(4);
++    expect(getNearestLoopPosition(0, 2.5, 5)).toBe(5);
++
++    expect(getRelativeProgress({ rawIndex: 0, progress: 4.8, count: 5, loop: true })).toBeCloseTo(
++      0.2
++    );
++    expect(getRelativeProgress({ rawIndex: 4, progress: 4.8, count: 5, loop: true })).toBeCloseTo(
++      -0.8
++    );
++  });
++
++  it("chooses the shortest scrollTo route and resolves a tie forward", () => {
++    expect(getShortestLoopTargetPage({ currentPage: 4, targetIndex: 1, count: 5 })).toBe(6);
++    expect(getShortestLoopTargetPage({ currentPage: 1, targetIndex: 4, count: 5 })).toBe(-1);
++    expect(getShortestLoopTargetPage({ currentPage: 0, targetIndex: 2, count: 4 })).toBe(2);
++  });
++
++  it("keeps view-facing translations bounded during a long-running loop", () => {
++    const itemSize = 390;
++    const count = 7;
++    const progress = 10_000_000.375;
++    const offset = getOffsetForLogicalPage(progress, itemSize);
++    const boundedOffset = getBoundedLoopOffset(offset, itemSize, count);
++
++    expect(getLogicalProgress(offset, itemSize)).toBe(progress);
++    expect(Math.abs(boundedOffset)).toBeLessThan(itemSize * count);
++    expect(getSettledRawIndex(progress, count)).toBe(3);
++
++    const distances = Array.from({ length: count }, (_, rawIndex) =>
++      Math.abs(getRelativeProgress({ rawIndex, progress, count, loop: true }))
++    );
++    expect(Math.min(...distances)).toBeCloseTo(0.375);
++    expect(distances.every(Number.isFinite)).toBe(true);
++  });
++
++  it("reconciles empty, shrinking, and looped data without invalid offsets", () => {
++    expect(
++      reconcileOffsetAfterDataChange({
++        offset: -640,
++        itemSize: 320,
++        previousCount: 4,
++        nextCount: 0,
++        defaultIndex: 0,
++        loop: false,
++      })
++    ).toBe(0);
++
++    expect(
++      reconcileOffsetAfterDataChange({
++        offset: -960,
++        itemSize: 320,
++        previousCount: 5,
++        nextCount: 2,
++        defaultIndex: 0,
++        loop: false,
++      })
++    ).toBe(-320);
++
++    expect(
++      reconcileOffsetAfterDataChange({
++        offset: getOffsetForLogicalPage(9, 320),
++        itemSize: 320,
++        previousCount: 5,
++        nextCount: 3,
++        defaultIndex: 0,
++        loop: true,
++      })
++    ).toBe(getOffsetForLogicalPage(8, 320));
++
++    expect(
++      reconcileOffsetAfterDataChange({
++        offset: 0,
++        itemSize: 320,
++        previousCount: 0,
++        nextCount: 5,
++        defaultIndex: 3,
++        loop: false,
++      })
++    ).toBe(-960);
++  });
++
++  it("reconciles to a retained keyed item index", () => {
++    expect(
++      reconcileOffsetAfterDataChange({
++        offset: -320,
++        itemSize: 320,
++        previousCount: 3,
++        nextCount: 4,
++        defaultIndex: 0,
++        loop: false,
++        retainedIndex: 2,
++      })
++    ).toBe(-640);
++
++    expect(
++      reconcileOffsetAfterDataChange({
++        offset: getOffsetForLogicalPage(9, 320),
++        itemSize: 320,
++        previousCount: 4,
++        nextCount: 3,
++        defaultIndex: 0,
++        loop: true,
++        retainedIndex: 1,
++      })
++    ).toBe(getOffsetForLogicalPage(10, 320));
++  });
++
++  it.each([
++    [Number.NaN, 320],
++    [Number.POSITIVE_INFINITY, 320],
++    [100, 0],
++    [100, -1],
++  ])("returns neutral values for invalid offset inputs", (offset, itemSize) => {
++    expect(getLogicalProgress(offset, itemSize)).toBe(0);
++    expect(getNearestLogicalPage(offset, itemSize)).toBe(0);
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/utils/compute-gesture-translation.test.ts b/node_modules/react-native-reanimated-carousel/src/utils/compute-gesture-translation.test.ts
+new file mode 100644
+index 0000000..01d51b6
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/utils/compute-gesture-translation.test.ts
+@@ -0,0 +1,70 @@
++import { computeGestureTranslation } from "./compute-gesture-translation";
++
++describe("computeGestureTranslation", () => {
++  it("should clamp right overdrag when overscrollEnabled is false", () => {
++    const next = computeGestureTranslation({
++      loop: false,
++      overscrollEnabled: false,
++      currentTranslation: 0,
++      panOffset: 0,
++      panTranslation: 120,
++      max: 500,
++    });
++
++    expect(next).toBe(0);
++  });
++
++  it("should keep damping behavior when overscrollEnabled is true and dragging past start", () => {
++    const next = computeGestureTranslation({
++      loop: false,
++      overscrollEnabled: true,
++      currentTranslation: 20,
++      panOffset: 0,
++      panTranslation: 120,
++      max: 500,
++    });
++
++    expect(next).toBe(60);
++  });
++
++  it("should apply damping when overscrollEnabled is true and dragging past end", () => {
++    const next = computeGestureTranslation({
++      loop: false,
++      overscrollEnabled: true,
++      currentTranslation: -600,
++      panOffset: -500,
++      panTranslation: -100,
++      max: 500,
++    });
++
++    // boundary = -max = -500, fixed = -500 - (-500) = 0, dynamic = -100 - 0 = -100
++    // result = -500 + (-100 * 0.5) = -550
++    expect(next).toBe(-550);
++  });
++
++  it("should pass through raw value in loop mode", () => {
++    const next = computeGestureTranslation({
++      loop: true,
++      overscrollEnabled: false,
++      currentTranslation: 0,
++      panOffset: 0,
++      panTranslation: 300,
++      max: 500,
++    });
++
++    expect(next).toBe(300);
++  });
++
++  it("should return raw value when within bounds and not looping", () => {
++    const next = computeGestureTranslation({
++      loop: false,
++      overscrollEnabled: true,
++      currentTranslation: -200,
++      panOffset: -100,
++      panTranslation: -50,
++      max: 500,
++    });
++
++    expect(next).toBe(-150);
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/utils/compute-offset-if-size-changed.test.ts b/node_modules/react-native-reanimated-carousel/src/utils/compute-offset-if-size-changed.test.ts
+new file mode 100644
+index 0000000..4254026
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/utils/compute-offset-if-size-changed.test.ts
+@@ -0,0 +1,78 @@
++import { computeOffsetIfSizeChanged } from "./compute-offset-if-size-changed";
++
++describe("computeOffsetIfSizeChanged", () => {
++  it("[CASE 1] should return the correct values when size does not change", () => {
++    const prevIndex = 1;
++    const prevSize = 500;
++    const size = 500;
++    const handlerOffset = prevIndex * size;
++    const result = computeOffsetIfSizeChanged({
++      prevSize,
++      size,
++      handlerOffset,
++    });
++
++    const finallyIndex = result / size;
++    expect(finallyIndex).toEqual(prevIndex);
++  });
++
++  it("[CASE 2] should return the correct values when size changes from 500 to 400", () => {
++    const prevIndex = 1;
++    const prevSize = 500;
++    const size = 400;
++    const handlerOffset = prevIndex * prevSize;
++    const result = computeOffsetIfSizeChanged({
++      prevSize,
++      size,
++      handlerOffset,
++    });
++
++    const finallyIndex = result / size;
++    expect(finallyIndex).toEqual(prevIndex);
++  });
++
++  it("[CASE 3] should return the correct values when size changes from 500 to 499", () => {
++    const prevIndex = 1;
++    const prevSize = 500;
++    const size = 499;
++    const handlerOffset = prevIndex * prevSize;
++    const result = computeOffsetIfSizeChanged({
++      prevSize,
++      size,
++      handlerOffset,
++    });
++
++    const finallyIndex = result / size;
++    expect(finallyIndex).toEqual(prevIndex);
++  });
++
++  it("[CASE 4] should return the correct values when size changes from 500 to 501", () => {
++    const prevIndex = 1;
++    const prevSize = 500;
++    const size = 501;
++    const handlerOffset = prevIndex * prevSize;
++    const result = computeOffsetIfSizeChanged({
++      prevSize,
++      size,
++      handlerOffset,
++    });
++
++    const finallyIndex = result / size;
++    expect(finallyIndex).toEqual(prevIndex);
++  });
++
++  it("[CASE 5] should return the correct values when size changes from 224 to 524", () => {
++    const prevIndex = 1;
++    const prevSize = 224;
++    const size = 524;
++    const handlerOffset = prevIndex * prevSize;
++    const result = computeOffsetIfSizeChanged({
++      prevSize,
++      size,
++      handlerOffset,
++    });
++
++    const finallyIndex = result / size;
++    expect(finallyIndex).toEqual(prevIndex);
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/utils/computed-with-auto-fill-data.test.ts b/node_modules/react-native-reanimated-carousel/src/utils/computed-with-auto-fill-data.test.ts
+new file mode 100644
+index 0000000..f0b6428
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/utils/computed-with-auto-fill-data.test.ts
+@@ -0,0 +1,298 @@
++import {
++  computedFillDataWithAutoFillData,
++  computedOffsetXValueWithAutoFillData,
++  computedRealIndexWithAutoFillData,
++  convertToSharedIndex,
++} from "./computed-with-auto-fill-data";
++
++import { DATA_LENGTH } from "../constants";
++
++const { SINGLE_ITEM, DOUBLE_ITEM } = DATA_LENGTH;
++
++describe("computed-with-auto-fill-data utilities", () => {
++  describe("computedFillDataWithAutoFillData", () => {
++    it("should handle single item", () => {
++      const data = [1];
++      const result = computedFillDataWithAutoFillData({
++        data,
++        loop: true,
++        autoFillData: true,
++        dataLength: SINGLE_ITEM,
++      });
++
++      expect(result).toEqual([1, 1, 1]);
++    });
++
++    it("should handle double items", () => {
++      const data = [1, 2];
++      const result = computedFillDataWithAutoFillData({
++        data,
++        loop: true,
++        autoFillData: true,
++        dataLength: DOUBLE_ITEM,
++      });
++
++      expect(result).toEqual([1, 2, 1, 2]);
++    });
++
++    it("should return original data when autoFillData is false", () => {
++      const data = [1, 2, 3];
++      const result = computedFillDataWithAutoFillData({
++        data,
++        loop: true,
++        autoFillData: false,
++        dataLength: 3,
++      });
++
++      expect(result).toEqual(data);
++    });
++
++    it("should return original data when loop is false", () => {
++      const data = [1, 2, 3];
++      const result = computedFillDataWithAutoFillData({
++        data,
++        loop: false,
++        autoFillData: true,
++        dataLength: 3,
++      });
++
++      expect(result).toEqual(data);
++    });
++
++    it("should handle empty data array", () => {
++      const data: any[] = [];
++      const result = computedFillDataWithAutoFillData({
++        data,
++        loop: true,
++        autoFillData: true,
++        dataLength: 0,
++      });
++
++      expect(result).toEqual([]);
++    });
++
++    it("should handle data length greater than 2", () => {
++      const data = [1, 2, 3, 4, 5];
++      const result = computedFillDataWithAutoFillData({
++        data,
++        loop: true,
++        autoFillData: true,
++        dataLength: 5,
++      });
++
++      expect(result).toEqual(data);
++    });
++
++    it("should handle both loop and autoFillData false", () => {
++      const data = [1];
++      const result = computedFillDataWithAutoFillData({
++        data,
++        loop: false,
++        autoFillData: false,
++        dataLength: SINGLE_ITEM,
++      });
++
++      expect(result).toEqual(data);
++    });
++  });
++
++  describe("computedOffsetXValueWithAutoFillData", () => {
++    const size = 300;
++
++    it("should handle single item", () => {
++      const result = computedOffsetXValueWithAutoFillData({
++        value: size * 2,
++        size,
++        rawDataLength: SINGLE_ITEM,
++        loop: true,
++        autoFillData: true,
++      });
++
++      expect(result).toBe(0); // value % size
++    });
++
++    it("should handle double items", () => {
++      const result = computedOffsetXValueWithAutoFillData({
++        value: size * 3,
++        size,
++        rawDataLength: DOUBLE_ITEM,
++        loop: true,
++        autoFillData: true,
++      });
++
++      expect(result).toBe(size * 1); // value % (size * 2)
++    });
++
++    it("should return original value when autoFillData is false", () => {
++      const value = size * 2;
++      const result = computedOffsetXValueWithAutoFillData({
++        value,
++        size,
++        rawDataLength: 3,
++        loop: true,
++        autoFillData: false,
++      });
++
++      expect(result).toBe(value);
++    });
++
++    it("should return original value when loop is false", () => {
++      const value = size * 2;
++      const result = computedOffsetXValueWithAutoFillData({
++        value,
++        size,
++        rawDataLength: 3,
++        loop: false,
++        autoFillData: true,
++      });
++
++      expect(result).toBe(value);
++    });
++
++    it("should handle zero value", () => {
++      const result = computedOffsetXValueWithAutoFillData({
++        value: 0,
++        size,
++        rawDataLength: SINGLE_ITEM,
++        loop: true,
++        autoFillData: true,
++      });
++
++      expect(result).toBe(0);
++    });
++
++    it("should handle negative values", () => {
++      const result = computedOffsetXValueWithAutoFillData({
++        value: -size,
++        size,
++        rawDataLength: SINGLE_ITEM,
++        loop: true,
++        autoFillData: true,
++      });
++
++      // JavaScript's modulo can return -0 for negative numbers
++      expect(result).toBe(-0); // -size % size = -0
++    });
++
++    it("should handle fractional values", () => {
++      const result = computedOffsetXValueWithAutoFillData({
++        value: size * 1.5,
++        size,
++        rawDataLength: DOUBLE_ITEM,
++        loop: true,
++        autoFillData: true,
++      });
++
++      expect(result).toBe(size * 1.5); // This should work with modulo
++    });
++
++    it("should handle both conditions false", () => {
++      const value = size * 3;
++      const result = computedOffsetXValueWithAutoFillData({
++        value,
++        size,
++        rawDataLength: 3,
++        loop: false,
++        autoFillData: false,
++      });
++
++      expect(result).toBe(value);
++    });
++  });
++
++  describe("computedRealIndexWithAutoFillData", () => {
++    it("should handle single item", () => {
++      const result = computedRealIndexWithAutoFillData({
++        index: 2,
++        dataLength: SINGLE_ITEM,
++        loop: true,
++        autoFillData: true,
++      });
++
++      expect(result).toBe(0); // index % 1
++    });
++
++    it("should handle double items", () => {
++      const result = computedRealIndexWithAutoFillData({
++        index: 3,
++        dataLength: DOUBLE_ITEM,
++        loop: true,
++        autoFillData: true,
++      });
++
++      expect(result).toBe(1); // index % 2
++    });
++
++    it("should return original index when autoFillData is false", () => {
++      const index = 2;
++      const result = computedRealIndexWithAutoFillData({
++        index,
++        dataLength: 3,
++        loop: true,
++        autoFillData: false,
++      });
++
++      expect(result).toBe(index);
++    });
++
++    it("should return original index when loop is false", () => {
++      const index = 2;
++      const result = computedRealIndexWithAutoFillData({
++        index,
++        dataLength: 3,
++        loop: false,
++        autoFillData: true,
++      });
++
++      expect(result).toBe(index);
++    });
++  });
++
++  describe("convertToSharedIndex", () => {
++    it("should handle single item", () => {
++      const result = convertToSharedIndex({
++        index: 2,
++        rawDataLength: SINGLE_ITEM,
++        loop: true,
++        autoFillData: true,
++      });
++
++      expect(result).toBe(0);
++    });
++
++    it("should handle double items", () => {
++      const result = convertToSharedIndex({
++        index: 3,
++        rawDataLength: DOUBLE_ITEM,
++        loop: true,
++        autoFillData: true,
++      });
++
++      expect(result).toBe(1); // index % 2
++    });
++
++    it("should return original index when autoFillData is false", () => {
++      const index = 2;
++      const result = convertToSharedIndex({
++        index,
++        rawDataLength: 3,
++        loop: true,
++        autoFillData: false,
++      });
++
++      expect(result).toBe(index);
++    });
++
++    it("should return original index when loop is false", () => {
++      const index = 2;
++      const result = convertToSharedIndex({
++        index,
++        rawDataLength: 3,
++        loop: false,
++        autoFillData: true,
++      });
++
++      expect(result).toBe(index);
++    });
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/utils/deal-with-animation.test.ts b/node_modules/react-native-reanimated-carousel/src/utils/deal-with-animation.test.ts
+new file mode 100644
+index 0000000..677a039
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/utils/deal-with-animation.test.ts
+@@ -0,0 +1,179 @@
++import { withSpring, withTiming } from "react-native-reanimated";
++
++import { dealWithAnimation } from "./deal-with-animation";
++
++// Mock Reanimated
++jest.mock("react-native-reanimated", () => ({
++  withSpring: jest.fn((value, _config, callback) => {
++    callback?.(true);
++    return value;
++  }),
++  withTiming: jest.fn((value, _config, callback) => {
++    callback?.(true);
++    return value;
++  }),
++}));
++
++describe("dealWithAnimation", () => {
++  beforeEach(() => {
++    jest.clearAllMocks();
++  });
++
++  it("should handle spring animation", () => {
++    const callback = jest.fn();
++    const springConfig = {
++      damping: 20,
++      stiffness: 90,
++    };
++
++    const animation = dealWithAnimation({
++      type: "spring",
++      ...springConfig,
++    });
++
++    const result = animation(100, callback);
++
++    expect(withSpring).toHaveBeenCalledWith(100, springConfig, expect.any(Function));
++    expect(callback).toHaveBeenCalledWith(true);
++    expect(result).toBe(100);
++  });
++
++  it("should handle timing animation", () => {
++    const callback = jest.fn();
++    const timingConfig = {
++      duration: 300,
++    };
++
++    const animation = dealWithAnimation({
++      type: "timing",
++      ...timingConfig,
++    });
++
++    const result = animation(100, callback);
++
++    expect(withTiming).toHaveBeenCalledWith(100, timingConfig, expect.any(Function));
++    expect(callback).toHaveBeenCalledWith(true);
++    expect(result).toBe(100);
++  });
++
++  it("should pass animation config correctly", () => {
++    const springConfig = {
++      damping: 10,
++      mass: 1,
++      stiffness: 100,
++    };
++
++    const animation = dealWithAnimation({
++      type: "spring",
++      ...springConfig,
++    });
++
++    animation(100, jest.fn());
++
++    expect(withSpring).toHaveBeenCalledWith(
++      100,
++      expect.objectContaining(springConfig),
++      expect.any(Function)
++    );
++  });
++
++  it("should handle animation completion", () => {
++    const callback = jest.fn();
++    const animation = dealWithAnimation({
++      type: "timing",
++      duration: 300,
++    });
++
++    animation(100, callback);
++
++    expect(callback).toHaveBeenCalledWith(true);
++  });
++
++  it("should handle spring animation with different values", () => {
++    const callback = jest.fn();
++    const animation = dealWithAnimation({
++      type: "spring",
++      damping: 15,
++    });
++
++    animation(0, callback);
++    animation(-100, callback);
++    animation(500, callback);
++
++    expect(withSpring).toHaveBeenCalledWith(0, { damping: 15 }, expect.any(Function));
++    expect(withSpring).toHaveBeenCalledWith(-100, { damping: 15 }, expect.any(Function));
++    expect(withSpring).toHaveBeenCalledWith(500, { damping: 15 }, expect.any(Function));
++    expect(callback).toHaveBeenCalledTimes(3);
++  });
++
++  it("should handle timing animation with different values", () => {
++    const callback = jest.fn();
++    const animation = dealWithAnimation({
++      type: "timing",
++      duration: 500,
++    });
++
++    animation(0, callback);
++    animation(-50, callback);
++    animation(1000, callback);
++
++    expect(withTiming).toHaveBeenCalledWith(0, { duration: 500 }, expect.any(Function));
++    expect(withTiming).toHaveBeenCalledWith(-50, { duration: 500 }, expect.any(Function));
++    expect(withTiming).toHaveBeenCalledWith(1000, { duration: 500 }, expect.any(Function));
++    expect(callback).toHaveBeenCalledTimes(3);
++  });
++
++  it("should handle empty spring config", () => {
++    const callback = jest.fn();
++    const animation = dealWithAnimation({
++      type: "spring",
++    });
++
++    animation(100, callback);
++
++    expect(withSpring).toHaveBeenCalledWith(100, {}, expect.any(Function));
++    expect(callback).toHaveBeenCalledWith(true);
++  });
++
++  it("should handle empty timing config", () => {
++    const callback = jest.fn();
++    const animation = dealWithAnimation({
++      type: "timing",
++    });
++
++    animation(100, callback);
++
++    expect(withTiming).toHaveBeenCalledWith(100, {}, expect.any(Function));
++    expect(callback).toHaveBeenCalledWith(true);
++  });
++
++  it("should handle fractional values", () => {
++    const callback = jest.fn();
++    const animation = dealWithAnimation({
++      type: "spring",
++      damping: 10,
++    });
++
++    animation(50.5, callback);
++    animation(-25.75, callback);
++
++    expect(withSpring).toHaveBeenCalledWith(50.5, { damping: 10 }, expect.any(Function));
++    expect(withSpring).toHaveBeenCalledWith(-25.75, { damping: 10 }, expect.any(Function));
++  });
++
++  it("should create different animation functions for different configs", () => {
++    const animation1 = dealWithAnimation({
++      type: "spring",
++      damping: 10,
++    });
++
++    const animation2 = dealWithAnimation({
++      type: "timing",
++      duration: 200,
++    });
++
++    expect(animation1).not.toBe(animation2);
++    expect(typeof animation1).toBe("function");
++    expect(typeof animation2).toBe("function");
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/utils/log.test.ts b/node_modules/react-native-reanimated-carousel/src/utils/log.test.ts
+new file mode 100644
+index 0000000..93f24a1
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/utils/log.test.ts
+@@ -0,0 +1,134 @@
++import { log, round } from "./log";
++
++describe("log utilities", () => {
++  describe("log", () => {
++    const mockConsoleLog = jest.fn();
++    const originalConsoleLog = console.log;
++
++    beforeEach(() => {
++      console.log = mockConsoleLog;
++    });
++
++    afterEach(() => {
++      mockConsoleLog.mockClear();
++      console.log = originalConsoleLog;
++    });
++
++    it("should call console.log with provided arguments", () => {
++      const args = ["test", 123, { key: "value" }];
++      log(...args);
++
++      expect(mockConsoleLog).toHaveBeenCalledWith(...args);
++    });
++
++    it("should handle single argument", () => {
++      log("test");
++      expect(mockConsoleLog).toHaveBeenCalledWith("test");
++    });
++
++    it("should handle multiple arguments", () => {
++      log("test", 123, true);
++      expect(mockConsoleLog).toHaveBeenCalledWith("test", 123, true);
++    });
++
++    it("should handle no arguments", () => {
++      log();
++      expect(mockConsoleLog).toHaveBeenCalledWith();
++    });
++
++    it("should handle null and undefined", () => {
++      log(null, undefined);
++      expect(mockConsoleLog).toHaveBeenCalledWith(null, undefined);
++    });
++
++    it("should handle complex objects", () => {
++      const complexObj = {
++        nested: { array: [1, 2, 3] },
++        func: () => "test",
++        date: new Date("2023-01-01"),
++      };
++      log(complexObj);
++      expect(mockConsoleLog).toHaveBeenCalledWith(complexObj);
++    });
++
++    it("should handle arrays", () => {
++      const arr = [1, "two", { three: 3 }];
++      log(arr);
++      expect(mockConsoleLog).toHaveBeenCalledWith(arr);
++    });
++
++    it("should handle mixed types", () => {
++      log("string", 42, true, null, undefined, { key: "value" }, [1, 2, 3]);
++      expect(mockConsoleLog).toHaveBeenCalledWith(
++        "string",
++        42,
++        true,
++        null,
++        undefined,
++        { key: "value" },
++        [1, 2, 3]
++      );
++    });
++  });
++
++  describe("round", () => {
++    it("should round positive numbers correctly", () => {
++      expect(round(1.4)).toBe(1);
++      expect(round(1.5)).toBe(2);
++      expect(round(1.6)).toBe(2);
++    });
++
++    it("should round negative numbers correctly", () => {
++      expect(round(-1.4)).toBe(-1);
++      expect(round(-1.5)).toBe(-1);
++      expect(round(-1.6)).toBe(-2);
++    });
++
++    it("should handle zero values", () => {
++      expect(round(0)).toBe(0);
++      expect(round(-0)).toBe(-0);
++      expect(1 / round(-0)).toBe(Number.NEGATIVE_INFINITY);
++    });
++
++    it("should handle integers", () => {
++      expect(round(5)).toBe(5);
++      expect(round(-5)).toBe(-5);
++    });
++
++    it("should handle decimal places", () => {
++      expect(round(Math.PI)).toBe(3);
++      expect(round(-Math.PI)).toBe(-3);
++    });
++
++    it("should handle edge cases", () => {
++      expect(round(0.5)).toBe(1);
++      expect(round(-0.5)).toBe(-0);
++      expect(round(1.999999)).toBe(2);
++      expect(round(-1.999999)).toBe(-2);
++    });
++
++    it("should handle very large numbers", () => {
++      expect(round(1e10 + 0.4)).toBe(1e10);
++      expect(round(1e10 + 0.6)).toBe(1e10 + 1);
++    });
++
++    it("should handle very small numbers", () => {
++      expect(round(0.00001)).toBe(0);
++      expect(round(-0.00001)).toBe(-0);
++    });
++
++    it("should handle Infinity", () => {
++      expect(round(Number.POSITIVE_INFINITY)).toBe(Number.POSITIVE_INFINITY);
++      expect(round(Number.NEGATIVE_INFINITY)).toBe(Number.NEGATIVE_INFINITY);
++    });
++
++    it("should handle NaN", () => {
++      expect(round(Number.NaN)).toBe(Number.NaN);
++    });
++
++    it("should handle floating point precision issues", () => {
++      expect(round(0.1 + 0.2)).toBe(0); // 0.1 + 0.2 = 0.30000000000000004
++      expect(round(1.1 + 1.2)).toBe(2); // Should round to 2
++    });
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/utils/sanitize-animation-style.test.ts b/node_modules/react-native-reanimated-carousel/src/utils/sanitize-animation-style.test.ts
+new file mode 100644
+index 0000000..bd97d05
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/utils/sanitize-animation-style.test.ts
+@@ -0,0 +1,40 @@
++import { sanitizeAnimationStyle } from "./sanitize-animation-style";
++
++describe("sanitizeAnimationStyle", () => {
++  it("rounds zIndex to an integer", () => {
++    const style = sanitizeAnimationStyle({
++      transform: [{ translateX: 12 }],
++      zIndex: 3.7,
++    });
++
++    expect(style.zIndex).toBe(4);
++  });
++
++  it("drops invalid zIndex values", () => {
++    const style = sanitizeAnimationStyle({
++      // invalid value from userland worklet should not flow to native styles
++      zIndex: Number.NaN,
++    });
++
++    expect(style).not.toHaveProperty("zIndex");
++  });
++
++  it("returns empty object for null/undefined input", () => {
++    // eslint-disable-next-line @typescript-eslint/no-explicit-any
++    expect(sanitizeAnimationStyle(null as any)).toEqual({});
++    // eslint-disable-next-line @typescript-eslint/no-explicit-any
++    expect(sanitizeAnimationStyle(undefined as any)).toEqual({});
++  });
++
++  it("strips non-number zIndex (e.g. string)", () => {
++    // eslint-disable-next-line @typescript-eslint/no-explicit-any
++    const style = sanitizeAnimationStyle({ opacity: 1, zIndex: "auto" as any });
++    expect(style).not.toHaveProperty("zIndex");
++    expect(style).toHaveProperty("opacity", 1);
++  });
++
++  it("preserves style without zIndex unchanged", () => {
++    const style = sanitizeAnimationStyle({ opacity: 0.5 });
++    expect(style).toEqual({ opacity: 0.5 });
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/utils/web-only-dependencies.test.ts b/node_modules/react-native-reanimated-carousel/src/utils/web-only-dependencies.test.ts
+new file mode 100644
+index 0000000..fb13f6e
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/utils/web-only-dependencies.test.ts
+@@ -0,0 +1,24 @@
++import { Platform } from "react-native";
++
++import { webOnlyDependencies } from "./web-only-dependencies";
++
++describe("webOnlyDependencies", () => {
++  const originalOS = Platform.OS;
++
++  afterEach(() => {
++    Platform.OS = originalOS;
++  });
++
++  it("should omit dependencies on native platforms", () => {
++    for (const os of ["ios", "android"] as const) {
++      Platform.OS = os;
++      expect(webOnlyDependencies([1, "two"])).toBeUndefined();
++    }
++  });
++
++  it("should pass dependencies through on web", () => {
++    Platform.OS = "web";
++    const dependencies = [1, "two"];
++    expect(webOnlyDependencies(dependencies)).toBe(dependencies);
++  });
++});
+diff --git a/node_modules/react-native-reanimated-carousel/src/utils/web-only-dependencies.ts b/node_modules/react-native-reanimated-carousel/src/utils/web-only-dependencies.ts
+new file mode 100644
+index 0000000..8374ee2
+--- /dev/null
++++ b/node_modules/react-native-reanimated-carousel/src/utils/web-only-dependencies.ts
+@@ -0,0 +1,10 @@
++import { Platform } from "react-native";
++
++/**
++ * Reanimated only reads hook dependency arrays in its Web implementation when the
++ * worklets Babel plugin is not used. Native derives them from the worklet closure
++ * and, since Reanimated 4.6, warns on every render when an array is passed.
++ */
++export function webOnlyDependencies<T extends unknown[]>(dependencies: T): T | undefined {
++  return Platform.OS === "web" ? dependencies : undefined;
++}

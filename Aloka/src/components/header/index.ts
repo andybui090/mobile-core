@@ -1,3 +1,4 @@
 import CHeader from './CHeader';
 import HeaderBar from './HeaderBar';
-export { CHeader, HeaderBar };
+import ImageHeader from './ImageHeader';
+export { CHeader, HeaderBar, ImageHeader };

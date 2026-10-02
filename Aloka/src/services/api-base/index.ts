@@ -2,7 +2,15 @@ import { create } from 'apisauce';
 
 import Config from 'react-native-config';
 import apiMonitor from './monitor';
-import { GLOBAL, HOME, SETTINGS, PROFILE, CARELY } from './uris';
+import {
+  GLOBAL,
+  HOME,
+  SETTINGS,
+  PROFILE,
+  CARELY,
+  ONBOARD,
+  LOCATION,
+} from './uris';
 import i18n from 'i18next';
 
 const createApiClient = (baseURL = Config.BASE_API_URL) => {
@@ -55,7 +63,9 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   const getLanguage = (payload: object) => {
     return api.get(GLOBAL.GET_LAGUAGES, payload);
   };
-
+  const getCountries = (payload: object) => {
+    return api.get(GLOBAL.GET_COUNTRY, payload);
+  };
   /*
     HOME
   */
@@ -79,11 +89,46 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     return api.get(PROFILE.GET_PROFILE, payload);
   };
 
+  const logoutApp = (payload?: object) => {
+    return api.post(PROFILE.LOGOUT_APP, payload || {});
+  };
+
+  const deleteAccount = (payload: object) => {
+    return api.delete(PROFILE.DELETE_ACCOUNT);
+  };
+
+  /*
+    ONBOARD
+  */
+  const getMedicalTypes = (payload: object) => {
+    return api.get(ONBOARD.GET_MEDICAL_TYPE, payload);
+  };
+  const signupUser = (payload: object) => {
+    return api.post(ONBOARD.SIGN_UP, payload);
+  };
+  const getCategories = (payload: any) => {
+    return api.get(GLOBAL.GET_CATEGORIES, payload);
+  };
+  const expertRegister = (payload: object) => {
+    return api.post(ONBOARD.EXPERT_REGISTER, payload);
+  };
+  const getSpecializations = (payload: object) => {
+    return api.get(ONBOARD.GET_SPECIALIZATIONS, payload);
+  };
+  const getTitleInfomations = (payload: object) => {
+    return api.get(ONBOARD.GET_TITLE_INFORMATION, payload);
+  };
   /*
     CARELY
   */
   const getCarelyServices = (payload: any) => {
     return api.get(CARELY.SERVICES, payload);
+  };
+  /*
+    LOCATION
+  */
+  const getListSearch = (payload: object) => {
+    return api.get(LOCATION.SEARCH_LOCATION, payload);
   };
 
   return {
@@ -100,6 +145,7 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     */
     getTutorials,
     getLanguage,
+    getCountries,
     /*
       HOME
     */
@@ -114,10 +160,26 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
       PROFILE
     */
     getProfile,
+    logoutApp,
+    deleteAccount,
+
+    /*
+      ONBOARD
+    */
+    getMedicalTypes,
+    signupUser,
+    getCategories,
+    expertRegister,
+    getSpecializations,
+    getTitleInfomations,
     /*
       CARELY
     */
     getCarelyServices,
+    /*
+      LOCATION
+    */
+    getListSearch,
   };
 };
 

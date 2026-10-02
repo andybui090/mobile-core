@@ -1,7 +1,7 @@
 import { ScreenWidth, images, screenStyles } from '@/configs';
 import { AppContext } from '@/contexts';
 import { CText, Row } from '@/utils';
-import { useNavigation } from '@react-navigation/native';
+// import { useNavigation } from '@react-navigation/native';
 import { makeStyles, useTheme } from '@rneui/themed';
 import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,17 +9,6 @@ import { Image, Pressable, View } from 'react-native';
 import CHeader from './CHeader';
 
 const useStyles = makeStyles(({ colors }) => ({
-  rightWrapper: {
-    position: 'absolute' as const,
-    right: 16,
-    ...screenStyles.rowCenter,
-  },
-  leftWrapper: {
-    position: 'absolute' as const,
-    left: 16,
-    ...screenStyles.rowCenter,
-    alignItems: 'center' as const,
-  },
   row: {
     maxWidth: ScreenWidth / 1.7,
   },
@@ -38,8 +27,8 @@ type HeaderProps = {
   isBorderBottom?: boolean;
 };
 
-const HeaderBarCarely: React.FC<HeaderProps> = props => {
-  const navigation = useNavigation();
+const HeaderBar: React.FC<HeaderProps> = props => {
+  // const navigation = useNavigation();
   const { isBorderBottom = false } = props;
 
   const {
@@ -101,7 +90,7 @@ const HeaderBarCarely: React.FC<HeaderProps> = props => {
 
   //render
   const renderRightHead = () => (
-    <View style={styles.rightWrapper}>
+    <View style={screenStyles.rightWrapper}>
       <Pressable
         hitSlop={screenStyles.hitSlop20}
         onPress={handleNotify}
@@ -118,7 +107,7 @@ const HeaderBarCarely: React.FC<HeaderProps> = props => {
   );
 
   const renderLeftHead = () => (
-    <View style={styles.leftWrapper}>
+    <View style={screenStyles.leftWrapper}>
       <Image
         source={images.global.logo_app_trans}
         style={screenStyles.box28}
@@ -149,4 +138,4 @@ const HeaderBarCarely: React.FC<HeaderProps> = props => {
   );
 };
 
-export default HeaderBarCarely;
+export default HeaderBar;

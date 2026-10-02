@@ -20,9 +20,9 @@ function ContainerApp(): ReactElement {
         <ThemeProvider theme={theme}>
           <Provider store={store}>
             <BottomSheetModalProvider>
-                <NavigationContainer ref={navigationRef}>
-                  <App />
-                </NavigationContainer>
+              <NavigationContainer ref={navigationRef}>
+                <App />
+              </NavigationContainer>
             </BottomSheetModalProvider>
           </Provider>
         </ThemeProvider>

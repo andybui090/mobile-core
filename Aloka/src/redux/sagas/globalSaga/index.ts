@@ -3,6 +3,10 @@ import {
   getTutorialsCallback,
   getLanguages,
   getLanguagesCallback,
+  getCountries,
+  getCountriesCallback,
+  getCategories,
+  getCategoriesCallback,
 } from '@/redux/slices/globalSlice';
 import { takeLatest } from 'redux-saga/effects';
 import { processAPISaga } from '../function/commonProcess';
@@ -13,6 +17,14 @@ interface actionGetTutorials {
 }
 interface actionGetLanguages {
   payload: { fq: string };
+}
+
+interface actionGetCountries {
+  payload: null;
+}
+
+interface actionGetCategories {
+  payload: null;
 }
 
 function* fetchTutorials(action: actionGetTutorials) {
@@ -31,7 +43,25 @@ function* fetchListLanguage(action: actionGetLanguages) {
   );
 }
 
+function* fetchCountries(action: actionGetCountries) {
+  yield* processAPISaga(
+    ApiService.getCountries,
+    action.payload,
+    getCountriesCallback,
+  );
+}
+
+function* fetchCategories(action: actionGetCategories) {
+  yield* processAPISaga(
+    ApiService.getCategories,
+    action.payload,
+    getCategoriesCallback,
+  );
+}
+
 export default [
   takeLatest(getTutorials, fetchTutorials),
   takeLatest(getLanguages, fetchListLanguage),
+  takeLatest(getCountries, fetchCountries),
+  takeLatest(getCategories, fetchCategories),
 ];

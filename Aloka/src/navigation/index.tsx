@@ -69,6 +69,7 @@ import { getProfile } from '@/redux/slices/profileSlice';
 import AuthScreen from '@/screens/auth-screen';
 import ApiSSO from '@/services/api-sso';
 import MainNavigator from './app-navigator/main-navigator';
+import { Loader } from '@/utils';
 interface RootNavigatorProps {
   onCompleteLoading: () => Promise<void>;
 }
@@ -267,7 +268,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
   };
 
   const logoutAppWhenLostNetwork = async () => {
-    // ApiSSO.deleteAuthorizationHeader();
+    ApiSSO.deleteAuthorizationHeader();
     ApiService.deleteAuthorizationHeader();
     // APIUpload.deleteAuthorizationHeader();
     // APIECommerceService.deleteAuthorizationHeader();
@@ -289,32 +290,39 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       login: async (userInfo: any) => {
         console.log('🚀 ~ RootNavigator ~ userInfo SSO:', userInfo);
         // await initConfigDefault();
-        // rootDispatch({
-        //   type: TYPES.SET_USER,
-        //   payload: userInfo,
-        // });
+
+        // Cho nay cheat de load man hinh nhanh chong.
+        rootDispatch({
+          type: TYPES.SET_USER,
+          payload: userInfo,
+        });
+
         // setFirstStart(true);
         appDispatch(getProfile(null));
       },
-      // registerComplete: async (userInfo: any, loginType: any) => {
-      //   GALogEvent(GAEvents.REGISTER_COMPLETE, {
-      //     method: 'App register complete',
-      //   });
-      //   GALogEvent(GAEvents.REGISTER, {method: 'App register'});
-      //   AppEventsLogger.logEvent('Register', {
-      //     [AppEventsLogger.AppEventParams.RegistrationMethod]: loginType || '',
-      //   });
-      //   setWaitingRegisterComplete(true);
-      //   rootDispatch({
-      //     type: TYPES.SET_USER,
-      //     payload: userInfo,
-      //   });
-      //   // set lai gia tri de nhan notify luc dau
-      //   setFirstStart(true);
-      //   appDispatch(getProfile(null));
-      //   // Delete firebase dynamic link
-      //   // removeValue(STORAGEKEY.FIREBASE_DYNAMIC_LINK);
-      // },
+      registerComplete: async (userInfo: any, loginType: any) => {
+        // GALogEvent(GAEvents.REGISTER_COMPLETE, {
+        //   method: 'App register complete',
+        // });
+        // GALogEvent(GAEvents.REGISTER, {method: 'App register'});
+        // AppEventsLogger.logEvent('Register', {
+        //   [AppEventsLogger.AppEventParams.RegistrationMethod]: loginType || '',
+        // });
+
+        setWaitingRegisterComplete(true);
+
+        // Cho nay cheat de load man hinh nhanh chong.
+        rootDispatch({
+          type: TYPES.SET_USER,
+          payload: userInfo,
+        });
+
+        // set lai gia tri de nhan notify luc dau
+        setFirstStart(true);
+        appDispatch(getProfile(null));
+        // Delete firebase dynamic link
+        // removeValue(STORAGEKEY.FIREBASE_DYNAMIC_LINK);
+      },
       // setGlobalLocation: async (location: any) => {
       //   rootDispatch({
       //     type: TYPES.SET_LOCATION,
@@ -322,14 +330,14 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       //   });
       // },
       // register: () => {},
-      // logout: async () => {
-      //   GALogEvent(GAEvents.LOGOUT, {method: 'App Logout'});
-      //   logoutApp();
-      // },
+      logout: async () => {
+        // GALogEvent(GAEvents.LOGOUT, {method: 'App Logout'});
+        logoutApp();
+      },
       // showModalAuth: async () => {
       //   setShowModalAuth(true);
       // },
-      onCompleteAuth: async () => {
+      onCompleteAuth: () => {
         setWaitingRegisterComplete(false);
       },
       // setAdmodData: (data: any) => {
@@ -405,7 +413,6 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
       if (stateRoot.isGetting) {
         return <GettingApp />;
       } else {
-        // return <AuthScreen />;
         const userTemp: any = stateRoot.user;
         if (userTemp.username && !waitingRegisterComplete) {
           return <MainNavigator />;
@@ -415,13 +422,17 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
     } else {
       return <View />;
     }
-  }, [stateRoot, waitingRegisterComplete, firebaseConfig.isReviewApp]);
+  }, [stateRoot, firebaseConfig.isReviewApp, waitingRegisterComplete]);
 
   return (
     <AppContext.Provider
       value={{ ...rootAction, ...stateRoot, isModalAuth: isShowModalAuth }}
     >
       {renderRootApp}
+      {/* Cho nay de loading khi goi login context va khong co usename  */}
+      {/* {!waitingRegisterComplete && !stateRoot.isLoading && !stateRoot.user?.username 
+        && profileData.loading 
+        && <Loader visible />} */}
     </AppContext.Provider>
   );
 };
