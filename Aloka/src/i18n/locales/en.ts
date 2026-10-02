@@ -2198,6 +2198,7 @@ export default {
     "cannotEmail": "Cannot open email client to {{email}}",
     "menuSchedule": "Work Schedule Management",
     "menuPackages": "Service Packages & Promotions",
+    "managePackages": "Manage Packages",
     "packageUpdating": "Service Packages & Promotions feature is coming soon",
     "menuIncome": "Income Management",
     "menuSupport": "Support",

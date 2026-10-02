@@ -354,6 +354,20 @@ export const PartnerProfileScreen: React.FC = () => {
         navigation.navigate('WorkScheduleManageScreen', { channelId });
       },
     },
+    ...(isDoctorType
+      ? [
+          {
+            id: 'packages-manage',
+            title: t('partnerProfile.managePackages', 'Quản lý gói'),
+            iconName: 'cube',
+            iconType: 'ionicons' as const,
+            iconBgColor: '#12B76A',
+            onPress: () => {
+              navigation.navigate('PackageManageScreen');
+            },
+          },
+        ]
+      : []),
     {
       id: 'packages-promotions',
       title: t('partnerProfile.menuPackages', 'Gói dịch vụ & khuyến mãi'),

@@ -48,6 +48,16 @@ export const ProfileMenu = [
     iconBg: '#F79009',
   },
   {
+    id: 301,
+    title: 'partnerProfile.managePackages',
+    nameAlias: 'Quản lý gói',
+    icon: 'cube',
+    iconType: ICON_TYPE.IONICONS,
+    screen: mainRoute.packageManageScreen,
+    iconBg: '#12B76A',
+    isOnlyDoctor: true,
+  },
+  {
     id: 4,
     title: 'profile.appoints',
     nameAlias: '',

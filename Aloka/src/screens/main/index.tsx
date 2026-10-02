@@ -20,6 +20,11 @@ import {
   ChatScreen,
   BookingChat,
 } from '../layout/chat';
+import {
+  PackageManageScreen,
+  CreatePackageScreen,
+  PreviewPackageScreen,
+} from '../layout/package-manage';
 
 export {
   NotificationScreen,
@@ -44,4 +49,7 @@ export {
   ChatScreen,
   BookingChat,
   MCNDetailScreen,
+  PackageManageScreen,
+  CreatePackageScreen,
+  PreviewPackageScreen,
 };

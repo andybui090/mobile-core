@@ -59,6 +59,9 @@ const AccountScreen: React.FC<any> = ({ navigation }: any) => {
   const currentUser =
     (profileData as any)?.data?.result || (profileData as any)?.data || user || {};
 
+  const userType = user?.personalization?.type.toLowerCase();
+  const isDoctorType = userType === 'doctor' || userType === 'nurse';
+
   // ACTION
   const renderItemList = (item: any) => {
     const {
@@ -71,9 +74,11 @@ const AccountScreen: React.FC<any> = ({ navigation }: any) => {
       caption,
       id,
       nameAlias,
+      isOnlyDoctor,
     } = item?.item || {};
 
     if (firebaseConfig?.isReviewApp && id === 3) return null;
+    if (isOnlyDoctor && !isDoctorType) return null;
 
     return (
       <RenderItem

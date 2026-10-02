@@ -13,6 +13,11 @@ import { ChatScreen } from '@/screens/layout/chat';
 import WorkScheduleManageScreen from '@/screens/layout/work-schedule';
 import WorkingHoursScreen from '@/screens/layout/work-schedule/WorkingHoursScreen';
 import WorkScheduleScreen from '@/screens/layout/work-schedule/WorkScheduleScreen';
+import {
+  PackageManageScreen,
+  CreatePackageScreen,
+  PreviewPackageScreen,
+} from '@/screens/layout/package-manage';
 import { mainStack } from '@/screens';
 
 export type PartnerAppStackParamList = {
@@ -31,6 +36,9 @@ export type PartnerAppStackParamList = {
   WorkHistoryScreen: undefined;
   WithdrawScreen: undefined;
   TransactionSuccessScreen: { amount?: string | number } | undefined;
+  PackageManageScreen: undefined;
+  CreatePackageScreen: undefined;
+  PreviewPackageScreen: { packageData?: any } | undefined;
 };
 
 const Stack = createNativeStackNavigator<PartnerAppStackParamList>();
@@ -103,6 +111,18 @@ export const PartnerAppNavigator: React.FC = () => {
       <Stack.Screen
         name="TransactionSuccessScreen"
         component={TransactionSuccessScreen}
+      />
+      <Stack.Screen
+        name="PackageManageScreen"
+        component={PackageManageScreen}
+      />
+      <Stack.Screen
+        name="CreatePackageScreen"
+        component={CreatePackageScreen}
+      />
+      <Stack.Screen
+        name="PreviewPackageScreen"
+        component={PreviewPackageScreen}
       />
     </Stack.Navigator>
   );

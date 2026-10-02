@@ -2198,6 +2198,7 @@ export default {
     "cannotEmail": "Không thể mở ứng dụng gửi thư tới {{email}}",
     "menuSchedule": "Quản lý lịch làm việc",
     "menuPackages": "Gói dịch vụ & khuyến mãi",
+    "managePackages": "Quản lý gói",
     "packageUpdating": "Tính năng Gói dịch vụ & khuyến mãi đang được cập nhật",
     "menuIncome": "Quản lý thu nhập",
     "menuSupport": "Hỗ trợ",

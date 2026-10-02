@@ -7,3 +7,4 @@ export * from './work-schedule';
 export * from './notification';
 export * from './partner-profile';
 export * from './chat';
+export * from './package-manage';

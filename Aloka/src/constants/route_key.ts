@@ -23,10 +23,16 @@ export const appointmentTabRoute = {
 export const accountTabRoute = {
   partnerProfileScreen: 'PartnerProfileScreen',
   accountScreen: 'AccountScreen',
+  packageManageScreen: 'PackageManageScreen',
+  createPackageScreen: 'CreatePackageScreen',
+  previewPackageScreen: 'PreviewPackageScreen',
 };
 
 export const mainRoute = {
   partnerProfileScreen: 'PartnerProfileScreen',
+  packageManageScreen: 'PackageManageScreen',
+  createPackageScreen: 'CreatePackageScreen',
+  previewPackageScreen: 'PreviewPackageScreen',
   notificationScreen: 'NotificationScreen',
   settingScreen: 'SettingScreen',
   aboutUsScreen: 'AboutUsScreen',
