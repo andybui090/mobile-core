@@ -22,8 +22,6 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
-	<key>GIDClientID</key>
-	<string>453220095309-dbj5s39km5esbg3ec5ptkvj6608ketbl.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -39,6 +37,10 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>GIDClientID</key>
+	<string>453220095309-dbj5s39km5esbg3ec5ptkvj6608ketbl.apps.googleusercontent.com</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -48,8 +50,6 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>Need to access your camera to take a photo then update profile picture and other support in the application</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
@@ -68,6 +68,25 @@
 	<string>Aloka needs speech recognition to convert your voice into text for chat messages.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Inter-Medium.ttf</string>
+		<string>Inter-Light.ttf</string>
+		<string>Inter-Thin.ttf</string>
+		<string>Inter-Bold.ttf</string>
+		<string>Inter-Regular.ttf</string>
+		<string>Inter-ExtraBold.ttf</string>
+		<string>Inter-ExtraLight.ttf</string>
+		<string>Inter-Black.ttf</string>
+		<string>Inter-SemiBold.ttf</string>
+		<string>Ionicons.ttf</string>
+		<string>Fontisto.ttf</string>
+		<string>AntDesign.ttf</string>
+		<string>MaterialIcons.ttf</string>
+		<string>Octicons.ttf</string>
+		<string>Entypo.ttf</string>
+		<string>MaterialDesignIcons.ttf</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
@@ -92,24 +111,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>UIAppFonts</key>
-	<array>
-		<string>Inter-Medium.ttf</string>
-		<string>Inter-Light.ttf</string>
-		<string>Inter-Thin.ttf</string>
-		<string>Inter-Bold.ttf</string>
-		<string>Inter-Regular.ttf</string>
-		<string>Inter-ExtraBold.ttf</string>
-		<string>Inter-ExtraLight.ttf</string>
-		<string>Inter-Black.ttf</string>
-		<string>Inter-SemiBold.ttf</string>
-		<string>Ionicons.ttf</string>
-		<string>Fontisto.ttf</string>
-		<string>AntDesign.ttf</string>
-		<string>MaterialIcons.ttf</string>
-		<string>Octicons.ttf</string>
-		<string>Entypo.ttf</string>
-		<string>MaterialDesignIcons.ttf</string>
-	</array>
 </dict>
 </plist>

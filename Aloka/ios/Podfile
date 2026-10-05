@@ -75,9 +75,13 @@ target 'Aloka' do
 
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
+        # Fix non-modular headers for Firebase
         config.build_settings[
           'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'
         ] = 'YES'
+
+        # Xcode requires iOS Simulator deployment target >= 15.0
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
       end
     end
   end

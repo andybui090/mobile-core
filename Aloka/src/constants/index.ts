@@ -9,4 +9,8 @@ export {
   appointmentTabRoute,
   accountTabRoute,
   mainRoute,
+  partnerRoute,
+  partnerWorkTabRoute,
+  partnerProfileTabRoute,
+  partnerWalletTabRoute,
 } from './route_key';

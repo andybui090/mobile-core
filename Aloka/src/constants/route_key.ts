@@ -1,5 +1,6 @@
 export const rootRoute = 'rootRoute';
 
+// Group 1
 export const homeTabRoute = {
   homeScreen: 'HomeScreen',
 };
@@ -16,6 +17,22 @@ export const accountTabRoute = {
   accountScreen: 'AccountScreen',
 };
 
+// Group 2
+export const partnerRoute = 'partnerRoute';
+
+export const partnerWorkTabRoute = {
+  partnerWorkScreen: 'PartnerWorkScreen',
+};
+
+export const partnerProfileTabRoute = {
+  partnerProfileScreen: 'PartnerProfileScreen',
+};
+
+export const partnerWalletTabRoute = {
+  partnerWalletScreen: 'PartnerWalletScreen',
+};
+
+// Group 3
 export const mainRoute = {
   notificationScreen: 'NotificationScreen',
   settingScreen: 'SettingScreen',

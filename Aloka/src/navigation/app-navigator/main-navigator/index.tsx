@@ -1,10 +1,11 @@
-import { mainRoute, rootRoute } from '@/constants';
+import { mainRoute, rootRoute, partnerRoute } from '@/constants';
 import {
   StackNavigationOptions,
   createStackNavigator,
 } from '@react-navigation/stack';
 import { AppTab } from '../tab-navigator';
 import { mainStack } from '@/screens';
+import { PartnerTab } from '../partner-navigator';
 
 const Stack = createStackNavigator();
 
@@ -17,7 +18,7 @@ const MainNavigator = () => {
   return (
     <Stack.Navigator initialRouteName={rootRoute} screenOptions={screenOptions}>
       <Stack.Screen name={rootRoute} component={AppTab} />
-
+      <Stack.Screen name={partnerRoute} component={PartnerTab} />
       {Object.values(mainRoute).map(item => {
         return (
           <Stack.Screen

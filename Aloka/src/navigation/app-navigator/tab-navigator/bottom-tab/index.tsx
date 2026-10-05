@@ -12,12 +12,16 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { BottomMenuItem } from './BottomMenuItem';
 import registercustomAnimations from './animations';
 import withPressAnimated from './animations/withPressAnimated';
+import { AppContext } from '@/contexts/AppContext';
+import { useContext } from 'react';
+import { partnerRoute } from '@/constants';
 
 registercustomAnimations();
 const AnimatedTouch = withPressAnimated(TouchableOpacity);
 
 export const TabBar = ({ state, descriptors, navigation }: any) => {
   const { t } = useTranslation();
+  const { isNurse } = useContext(AppContext);
   const renderItem = (route: any, index: number) => {
     const { options } = descriptors[route.key];
     const isFocused = state.index === index;
@@ -30,7 +34,15 @@ export const TabBar = ({ state, descriptors, navigation }: any) => {
         target: route.key,
       });
       if (!isFocused && !event.defaultPrevented) {
-        navigation.navigate(route.name);
+        if (route.name == 'AccountTab') {
+          if (isNurse) {
+            navigation.navigate(partnerRoute);
+          } else {
+            navigation.navigate(route.name);
+          }
+        } else {
+          navigation.navigate(route.name);
+        }
       } else {
         // if (route.name == 'HomeTab') {
         //   dispatch(reloadHomeScreen({ isReload: true }));
@@ -57,10 +69,7 @@ export const TabBar = ({ state, descriptors, navigation }: any) => {
         onLongPress={onLongPress}
         style={styles.container}
       >
-        <BottomMenuItem
-          isFocused={isFocused}
-          index={index}
-        />
+        <BottomMenuItem isFocused={isFocused} index={index} />
       </AnimatedTouch>
     );
   };
