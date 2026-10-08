@@ -130,6 +130,9 @@ export const screenStyles = StyleSheet.create({
   mH16: {
     marginHorizontal: 16,
   },
+  mL3: {
+    marginLeft: 3,
+  },
   mL5: {
     marginLeft: 5,
   },
@@ -181,6 +184,9 @@ export const screenStyles = StyleSheet.create({
   },
   pH20: {
     paddingHorizontal: 20,
+  },
+  pV8: {
+    paddingVertical: 8,
   },
   pV10: {
     paddingVertical: 10,

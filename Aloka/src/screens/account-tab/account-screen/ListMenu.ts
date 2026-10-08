@@ -1,7 +1,3 @@
-// import { ICON_TYPE } from '@/components';
-// import { images } from '@/configs';
-// import { mainRoute } from '@/constants/route_key';
-
 export const ListMenu = [
   {
     id: 0,

@@ -1,2 +1,3 @@
 import PartnerProfileScreen from './partner-profile-screen';
-export { PartnerProfileScreen };
+import PartnerEditProfileScreen from './partner-edit-profile-screen';
+export { PartnerProfileScreen, PartnerEditProfileScreen };

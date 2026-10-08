@@ -7,4 +7,9 @@ export const bottomTab = {
   appointment_unactive: require('../../assets/images/bottom-tab/appointment_unactive.png'),
   account_active: require('../../assets/images/bottom-tab/account_active.png'),
   account_unactive: require('../../assets/images/bottom-tab/account_unactive.png'),
+  //account tab child
+  work_active: require('../../assets/images/bottom-tab/work_active.png'),
+  work_unactive: require('../../assets/images/bottom-tab/work_unactive.png'),
+  wallet_active: require('../../assets/images/bottom-tab/wallet_active.png'),
+  wallet_unactive: require('../../assets/images/bottom-tab/wallet_unactive.png'),
 };

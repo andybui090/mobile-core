@@ -9,7 +9,7 @@ export const BottomMenuItem = ({ isFocused, index }: any) => {
   const renderItemUnactive = (src: any, title: string) => {
     return (
       <View style={style.wrapItem}>
-        <Image source={src} style={screenStyles.box18} resizeMode="contain" />
+        <Image source={src} style={screenStyles.box20} resizeMode="contain" />
         <CText h7 color={'#959598'} style={screenStyles.mT3}>
           {title}
         </CText>
@@ -20,7 +20,7 @@ export const BottomMenuItem = ({ isFocused, index }: any) => {
   const renderItemActive = (src: any, title: string) => {
     return (
       <View style={style.wrapItem}>
-        <Image source={src} style={screenStyles.box18} resizeMode="contain" />
+        <Image source={src} style={screenStyles.box20} resizeMode="contain" />
         <CText h7 color={'#19A2A7'} style={screenStyles.mT3}>
           {title}
         </CText>
@@ -32,29 +32,14 @@ export const BottomMenuItem = ({ isFocused, index }: any) => {
     case 0:
       return isFocused
         ? renderItemActive(
-            images.bottomTab.home_active,
-            t('common.home', 'Home'),
+            images.bottomTab.work_active,
+            t('common.work', 'Công việc'),
           )
         : renderItemUnactive(
-            images.bottomTab.home_unactive,
-            t('common.home', 'Home'),
+            images.bottomTab.work_unactive,
+            t('common.work', 'Công việc'),
           );
     case 1:
-      return isFocused
-        ? renderItemActive(images.bottomTab.drnetwork, 'Doctor Network')
-        : renderItemUnactive(images.bottomTab.drnetwork, 'Doctor Network');
-    case 2:
-      return isFocused
-        ? renderItemActive(
-            images.bottomTab.appointment_active,
-            t('common.appointment', 'Appointment'),
-          )
-        : renderItemUnactive(
-            images.bottomTab.appointment_unactive,
-            t('common.appointment', 'Appointment'),
-          );
-
-    case 3:
       return isFocused
         ? renderItemActive(
             images.bottomTab.account_active,
@@ -63,6 +48,16 @@ export const BottomMenuItem = ({ isFocused, index }: any) => {
         : renderItemUnactive(
             images.bottomTab.account_unactive,
             t('common.account', 'Account'),
+          );
+    case 2:
+      return isFocused
+        ? renderItemActive(
+            images.bottomTab.wallet_active,
+            t('common.wallet', 'Wallet'),
+          )
+        : renderItemUnactive(
+            images.bottomTab.wallet_unactive,
+            t('common.wallet', 'Wallet'),
           );
     default:
       break;

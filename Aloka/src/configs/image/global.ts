@@ -12,4 +12,7 @@ export const global = {
   ico_rules: require('../../assets/images/global/ico_rules.png'),
   ico_success: require('../../assets/images/global/ico_success.png'),
   complete: require('../../assets/images/global/complete.png'),
+  kyc_0: require('../../assets/images/global/kyc_0.png'),
+  kyc_1: require('../../assets/images/global/kyc_1.png'),
+  kyc_2: require('../../assets/images/global/kyc_2.png'),
 };

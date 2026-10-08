@@ -1,5 +1,7 @@
 import { CHeader, Wrapper } from '@/components';
+import { goBack } from '@/navigation/RootNavigation';
 import { useAppDispatch } from '@/redux/store/customReduxHook';
+import { CEmptyData } from '@/utils';
 import { makeStyles, useTheme } from '@rneui/themed';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -30,7 +32,7 @@ const NotificationScreen: React.FC<any> = ({ navigation, route }: any) => {
   // -------------------------------
 
   const renderContent = () => {
-    return null;
+    return <CEmptyData />;
   };
 
   const renderLeftHead = () => null;
@@ -40,8 +42,11 @@ const NotificationScreen: React.FC<any> = ({ navigation, route }: any) => {
   return (
     <Wrapper>
       <CHeader
+        title={t('settings.notifications')}
         rightComponent={renderRightHead()}
         leftComponent={renderLeftHead()}
+        leftComponentOnPress={goBack}
+        isBorderBottom
       />
       {renderContent()}
     </Wrapper>

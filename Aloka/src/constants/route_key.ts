@@ -26,6 +26,7 @@ export const partnerWorkTabRoute = {
 
 export const partnerProfileTabRoute = {
   partnerProfileScreen: 'PartnerProfileScreen',
+  partnerEditProfileScreen: 'PartnerEditProfileScreen',
 };
 
 export const partnerWalletTabRoute = {

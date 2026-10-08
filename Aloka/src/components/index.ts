@@ -19,3 +19,5 @@ export { ModalCountry } from './modal-country';
 export { ModalOTP } from './modal-otp';
 export { OTPType } from './modal-otp';
 export { ModalServiceRadius } from './modal-service-radius';
+import AnimatedReadMore from './react-native-read-more/AnimatedReadMore';
+export {AnimatedReadMore};

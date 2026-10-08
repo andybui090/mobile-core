@@ -4,23 +4,16 @@ import {
   ifIphoneX,
   screenStyles,
 } from '@/configs';
-// import { reloadHomeScreen } from '@/redux/slices/homeSlice';
-// import { useAppDispatch } from '@/redux/store/customReduxHook';
 import { Row } from '@/utils';
-import { useTranslation } from 'react-i18next';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { BottomMenuItem } from './BottomMenuItem';
 import registercustomAnimations from './animations';
 import withPressAnimated from './animations/withPressAnimated';
-// import { AppContext } from '@/contexts/AppContext';
-// import { useContext } from 'react';
 
 registercustomAnimations();
 const AnimatedTouch = withPressAnimated(TouchableOpacity);
 
 export const TabBar = ({ state, descriptors, navigation }: any) => {
-  const { t } = useTranslation();
-  // const { isNurse } = useContext(AppContext);
   const renderItem = (route: any, index: number) => {
     const { options } = descriptors[route.key];
     const isFocused = state.index === index;
@@ -34,15 +27,6 @@ export const TabBar = ({ state, descriptors, navigation }: any) => {
       });
       if (!isFocused && !event.defaultPrevented) {
         navigation.navigate(route.name);
-        // if (route.name == 'AccountTab') {
-        //   if (isNurse) {
-        //     navigation.navigate('PartnerAppNavigator');
-        //   } else {
-        //     navigation.navigate(route.name);
-        //   }
-        // } else {
-        //   navigation.navigate(route.name);
-        // }
       } else {
         // if (route.name == 'HomeTab') {
         //   dispatch(reloadHomeScreen({ isReload: true }));

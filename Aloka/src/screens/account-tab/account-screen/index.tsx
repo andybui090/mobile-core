@@ -1,16 +1,16 @@
 import { CHeader, ImageHelper, Wrapper } from '@/components';
 import ImageHeader from '@/components/header/ImageHeader';
-import { screenStyles, images, keyExtractor } from '@/configs';
+import { images, screenStyles } from '@/configs';
+import { mainRoute } from '@/constants';
+import { AppContext } from '@/contexts';
 import { useAppDispatch } from '@/redux/store/customReduxHook';
+import { Container, CScrollView, CText, Row } from '@/utils';
 import { makeStyles, useTheme } from '@rneui/themed';
-import { Pressable, Image, View, FlatList } from 'react-native';
 import React, { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { mainRoute } from '@/constants';
-import { Container, CScrollView, CText, Row } from '@/utils';
-import { AppContext } from '@/contexts';
-import { ListMenu } from './ListMenu';
+import { Image, Pressable, View } from 'react-native';
 import { getVersion } from 'react-native-device-info';
+import { ListMenu } from './ListMenu';
 import MenuItem from './MenuItem';
 
 const useStyles = makeStyles(({ colors }) => ({
@@ -167,23 +167,23 @@ const AccountScreen: React.FC<any> = ({ navigation, route }: any) => {
     );
   };
 
-  const renderItemList = (item: any) => {
-    return <MenuItem {...item.item} onPress={handlePressMenuItem} />;
-  };
+  // const renderItemList = (item: any) => {
+  //   return <MenuItem {...item.item} onPress={handlePressMenuItem} />;
+  // };
 
-  const renderListMenu = () => {
-    return (
-      <FlatList
-        style={{ flex: 1, paddingHorizontal: 16 }}
-        data={ListMenu as IMenuProfile[]}
-        extraData={ListMenu}
-        keyExtractor={keyExtractor}
-        renderItem={renderItemList}
-        ListFooterComponent={renderVersion()}
-        scrollsToTop={false}
-      />
-    );
-  };
+  // const renderListMenu = () => {
+  //   return (
+  //     <FlatList
+  //       style={{ flex: 1, paddingHorizontal: 16 }}
+  //       data={ListMenu as IMenuProfile[]}
+  //       extraData={ListMenu}
+  //       keyExtractor={keyExtractor}
+  //       renderItem={renderItemList}
+  //       ListFooterComponent={renderVersion()}
+  //       scrollsToTop={false}
+  //     />
+  //   );
+  // };
 
   const renderSession = (title: string) => {
     return (

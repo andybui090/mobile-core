@@ -104,10 +104,10 @@ function BottomTab(props: any) {
   }
 
   // Thay doi logic tren de an bottom tab doi voi tung loai tai khoan
-  const hideBottomTab = isHide || tabIndex == 5;
+  // const hideBottomTab = isHide || tabIndex == 5;
 
   return (
-    !hideBottomTab && (
+    !isHide && (
       <TabBar state={state} descriptors={descriptors} navigation={navigation} />
     )
   );
@@ -117,7 +117,7 @@ export function PartnerTab() {
   // const { userType } = useContext(AppContext);
   return (
     <Tab.Navigator
-      initialRouteName="PartnerWorkTab"
+      initialRouteName="PartnerProfileTab"
       screenOptions={screenTabOption}
       tabBar={props => <BottomTab {...props} />}
     >
