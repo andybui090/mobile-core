@@ -66,6 +66,9 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   const getCountries = (payload: object) => {
     return api.get(GLOBAL.GET_COUNTRY, payload);
   };
+  const postFeedback = (payload: object) => {
+    return api.post(GLOBAL.FEEDBACK, payload);
+  };
   /*
     HOME
   */
@@ -146,6 +149,7 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     getTutorials,
     getLanguage,
     getCountries,
+    postFeedback,
     /*
       HOME
     */

@@ -7,6 +7,8 @@ import {
   getCountriesCallback,
   getCategories,
   getCategoriesCallback,
+  postFeedbackData,
+  postFeedbackDataCallback,
 } from '@/redux/slices/globalSlice';
 import { takeLatest } from 'redux-saga/effects';
 import { processAPISaga } from '../function/commonProcess';
@@ -25,6 +27,14 @@ interface actionGetCountries {
 
 interface actionGetCategories {
   payload: null;
+}
+
+interface actionFeedBack {
+  payload: {
+    content: string;
+    type: string;
+    report_images?: any;
+  };
 }
 
 function* fetchTutorials(action: actionGetTutorials) {
@@ -59,9 +69,18 @@ function* fetchCategories(action: actionGetCategories) {
   );
 }
 
+function* fetchFeedback(action: actionFeedBack) {
+  yield* processAPISaga(
+    ApiService.postFeedback,
+    action.payload,
+    postFeedbackDataCallback,
+  );
+}
+
 export default [
   takeLatest(getTutorials, fetchTutorials),
   takeLatest(getLanguages, fetchListLanguage),
   takeLatest(getCountries, fetchCountries),
   takeLatest(getCategories, fetchCategories),
+  takeLatest(postFeedbackData, fetchFeedback),
 ];

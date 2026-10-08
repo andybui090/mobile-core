@@ -6,6 +6,7 @@ interface GlobalState {
   languageList: responseProps;
   countryList: responseProps;
   categoryList: responseProps;
+  feedbackData: responseProps;
 }
 
 const initialState: GlobalState = {
@@ -33,6 +34,11 @@ const initialState: GlobalState = {
     error: undefined,
   },
   categoryList: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
+  feedbackData: {
     loading: false,
     data: undefined,
     error: undefined,
@@ -86,6 +92,22 @@ const globalSlice = createSlice({
       categoryList.data = data;
       categoryList.error = error;
     },
+    postFeedbackData: (state, _action) => {
+      state.feedbackData.loading = true;
+    },
+    postFeedbackDataCallback: (state, { payload: { data, error } }) => {
+      const { feedbackData } = state;
+      feedbackData.loading = false;
+      feedbackData.data = data;
+      feedbackData.error = error;
+    },
+    resetGlobal: (state, _action) => {
+      const { feedbackData } = state;
+
+      feedbackData.loading = false;
+      feedbackData.data = undefined;
+      feedbackData.error = undefined;
+    },
   },
 });
 
@@ -99,6 +121,9 @@ export const {
   getCountriesCallback,
   getCategories,
   getCategoriesCallback,
+  postFeedbackData,
+  postFeedbackDataCallback,
+  resetGlobal,
 } = globalSlice.actions;
 
 export default globalSlice.reducer;

@@ -12,7 +12,7 @@ const initialState: settingState = {
     loading: false,
     data: undefined,
     error: undefined,
-  }
+  },
 };
 
 const settingSlice = createSlice({

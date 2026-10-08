@@ -127,6 +127,9 @@ export const screenStyles = StyleSheet.create({
   mH12: {
     marginHorizontal: 12,
   },
+  mR10:{
+    marginRight:10
+  },
   mH16: {
     marginHorizontal: 16,
   },

@@ -37,6 +37,8 @@ export const partnerWalletTabRoute = {
 export const mainRoute = {
   notificationScreen: 'NotificationScreen',
   settingScreen: 'SettingScreen',
+  aboutUsScreen:'AboutUsScreen',
+  feedbackScreen: 'FeedbackScreen',
 };
 
 // export const gettingRoute = {

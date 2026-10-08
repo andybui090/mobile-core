@@ -4,6 +4,7 @@ import {
   IconType,
   ToggleSwitch,
   Wrapper,
+  ModalLanguage,
 } from '@/components';
 import { getDeviceId, images, screenStyles, statusSuccess } from '@/configs';
 import { AppContext } from '@/contexts';
@@ -18,9 +19,11 @@ import { CScrollView } from '@/utils';
 import { makeStyles, useTheme } from '@rneui/themed';
 import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, Keyboard, View } from 'react-native';
+import { Image, Keyboard, Linking, View } from 'react-native';
 import { PopupConfirm, PopupSuccess, SettingItem } from './components';
 import ModalOTP, { OTPType } from '@/components/modal-otp';
+import useI18n from '@/hooks/useI18n';
+import { LINKS, mainRoute } from '@/constants';
 
 const useStyles = makeStyles(({ colors }) => ({
   container: {
@@ -43,6 +46,7 @@ const useStyles = makeStyles(({ colors }) => ({
 
 const SettingScreen: React.FC<any> = ({ navigation, route }: any) => {
   const { t } = useTranslation();
+  const {lang, setLang} = useI18n();
   const styles = useStyles();
   const {
     theme: { colors },
@@ -71,6 +75,14 @@ const SettingScreen: React.FC<any> = ({ navigation, route }: any) => {
     isVisible: false,
     phoneShow: '',
     phoneSend: '',
+  });
+
+  const [isVisibleLanguage, setIsVisibleLanguage] = useState<boolean>(false);
+  const [language, setLanguage] = useState({
+    flag: 'https://flagsapi.com/GB/flat/64.png',
+    id: 31,
+    lang: 'en',
+    locale: 'English',
   });
 
   // -------------------------------
@@ -163,6 +175,36 @@ const SettingScreen: React.FC<any> = ({ navigation, route }: any) => {
     }, 300);
   };
 
+  const handleChooseLanguage = (languageChange: any) => {
+    setLanguage(languageChange);
+    setLang(languageChange?.lang || lang);
+    setIsVisibleLanguage(false);
+  };
+
+  const handleTerm = () => {
+    Linking.openURL(LINKS.TERMS);
+  };
+
+  const handlePolicy = () => {
+    Linking.openURL(LINKS.POLICY);
+  };
+
+  const handlePaymentPolicy = () => {
+    Linking.openURL(LINKS.PAYMENT);
+  };
+
+  const handlePaymentGuide = () => {
+    Linking.openURL(LINKS.GUIDE_PAYMENT);
+  };
+
+  const handleRefundPolicy = () => {
+    Linking.openURL(LINKS.REFUND);
+  };
+
+  const handleGuideApp = () => {
+    Linking.openURL(LINKS.GUIDE_APP);
+  };
+
   // -------------------------------
   // RENDER UI
   // -------------------------------
@@ -215,7 +257,7 @@ const SettingScreen: React.FC<any> = ({ navigation, route }: any) => {
             iconName={'language'}
             iconType={IconType.IONICONS}
             iconBg={colors.primary}
-            onPress={() => {}}
+            onPress={() => setIsVisibleLanguage(true)}
           />
         </View>
         <View style={styles.sessionWrapper}>
@@ -224,7 +266,7 @@ const SettingScreen: React.FC<any> = ({ navigation, route }: any) => {
             iconName={'help-buoy-outline'}
             iconType={IconType.IONICONS}
             iconBg={'#F79009'}
-            onPress={() => {}}
+            onPress={() => navigation.navigate(mainRoute.feedbackScreen)}
             isBorderBottom
           />
           <SettingItem
@@ -232,7 +274,7 @@ const SettingScreen: React.FC<any> = ({ navigation, route }: any) => {
             iconName={'privacy-tip'}
             iconType={IconType.MATERIAL_ICONS}
             iconBg={'#34C7D0'}
-            onPress={() => {}}
+            onPress={handlePaymentPolicy}
             isBorderBottom
           />
           <SettingItem
@@ -240,7 +282,7 @@ const SettingScreen: React.FC<any> = ({ navigation, route }: any) => {
             iconName={'privacy-tip'}
             iconType={IconType.MATERIAL_ICONS}
             iconBg={'#34C7D0'}
-            onPress={() => {}}
+            onPress={handleRefundPolicy}
             isBorderBottom
           />
           <SettingItem
@@ -248,7 +290,7 @@ const SettingScreen: React.FC<any> = ({ navigation, route }: any) => {
             iconName={'privacy-tip'}
             iconType={IconType.MATERIAL_ICONS}
             iconBg={'#34C7D0'}
-            onPress={() => {}}
+            onPress={handlePaymentGuide}
             isBorderBottom
           />
           <SettingItem
@@ -256,7 +298,7 @@ const SettingScreen: React.FC<any> = ({ navigation, route }: any) => {
             customIconLeft={() =>
               renderIcon(images.global.ico_rules, '#4AB95C')
             }
-            onPress={() => {}}
+            onPress={handleTerm}
             isBorderBottom
           />
           <SettingItem
@@ -264,7 +306,7 @@ const SettingScreen: React.FC<any> = ({ navigation, route }: any) => {
             iconName={'information-circle'}
             iconType={IconType.IONICONS}
             iconBg={'#19A2A7'}
-            onPress={() => {}}
+            onPress={() => navigation.navigate(mainRoute.aboutUsScreen)}
           />
         </View>
 
@@ -300,7 +342,12 @@ const SettingScreen: React.FC<any> = ({ navigation, route }: any) => {
         isBorderBottom
       />
       {renderContent()}
-
+      <ModalLanguage
+        isVisible={isVisibleLanguage}
+        hideModal={() => setIsVisibleLanguage(false)}
+        chooseLanguage={handleChooseLanguage}
+        languageChoose={language}
+      />
       {/* Popup xác nhận Đăng xuất */}
       {logoutVisible && (
         <PopupConfirm

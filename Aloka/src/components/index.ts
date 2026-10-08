@@ -21,3 +21,4 @@ export { OTPType } from './modal-otp';
 export { ModalServiceRadius } from './modal-service-radius';
 import AnimatedReadMore from './react-native-read-more/AnimatedReadMore';
 export {AnimatedReadMore};
+export * from './agree-form';
