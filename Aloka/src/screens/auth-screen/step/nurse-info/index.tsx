@@ -967,54 +967,54 @@ export const NurseInfo = ({
 
   const renderBottomSheetModal = () => {
     return (
-      <BottomSheetModalProvider>
-        <BottomSheetModal
-          onDismiss={() => bottomSheetModalRef.current?.close()}
-          backdropComponent={(props: any) => (
-            <BottomSheetBackdrop
-              {...props}
-              onPress={() => bottomSheetModalRef.current?.close()}
-              appearsOnIndex={1}
-            />
-          )}
-          ref={bottomSheetModalRef}
-          index={1}
-          snapPoints={snapPoints}
-          // onChange={handleSheetChanges}
-        >
-          <BottomSheetView style={screenStyles.pH24}>
-            <CText h3 w600 color={colors.c101828} style={screenStyles.pV12}>
-              {t('common.addAvatar', 'Add avatar')}
-            </CText>
-            <Pressable onPress={handleCamera}>
-              <Row start style={screenStyles.pV12}>
-                <IconX
-                  type={IconType.MATERIAL_ICONS}
-                  name="camera-alt"
-                  size={26}
-                  color={colors.primary}
-                />
-                <CText h4 color={colors.c344054} style={screenStyles.mL10}>
-                  {t('common.takePicture', 'Take picture')}
-                </CText>
-              </Row>
-            </Pressable>
-            <Pressable onPress={handlePhoto}>
-              <Row start style={screenStyles.pV12}>
-                <IconX
-                  type={IconType.MATERIAL_DESIGN_ICONS}
-                  name="image-multiple"
-                  size={26}
-                  color={colors.primary}
-                />
-                <CText h4 color={colors.c344054} style={screenStyles.mL10}>
-                  {t('common.chooseFromGallery', 'Choose from Gallery')}
-                </CText>
-              </Row>
-            </Pressable>
-          </BottomSheetView>
-        </BottomSheetModal>
-      </BottomSheetModalProvider>
+      <BottomSheetModal
+        ref={bottomSheetModalRef}
+        index={0}
+        snapPoints={snapPoints}
+        enablePanDownToClose
+        backdropComponent={props => (
+          <BottomSheetBackdrop
+            {...props}
+            appearsOnIndex={0}
+            disappearsOnIndex={-1}
+            pressBehavior="close"
+          />
+        )}
+      >
+        <BottomSheetView style={screenStyles.pH24}>
+          <CText h3 w600 color={colors.c101828} style={screenStyles.pV12}>
+            {t('common.addAvatar', 'Add avatar')}
+          </CText>
+
+          <Pressable onPress={handleCamera}>
+            <Row start style={screenStyles.pV12}>
+              <IconX
+                type={IconType.MATERIAL_ICONS}
+                name="camera-alt"
+                size={26}
+                color={colors.primary}
+              />
+              <CText h4 color={colors.c344054} style={screenStyles.mL10}>
+                {t('common.takePicture', 'Take picture')}
+              </CText>
+            </Row>
+          </Pressable>
+
+          <Pressable onPress={handlePhoto}>
+            <Row start style={screenStyles.pV12}>
+              <IconX
+                type={IconType.MATERIAL_DESIGN_ICONS}
+                name="image-multiple"
+                size={26}
+                color={colors.primary}
+              />
+              <CText h4 color={colors.c344054} style={screenStyles.mL10}>
+                {t('common.chooseFromGallery', 'Choose from Gallery')}
+              </CText>
+            </Row>
+          </Pressable>
+        </BottomSheetView>
+      </BottomSheetModal>
     );
   };
 

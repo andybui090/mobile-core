@@ -7,6 +7,7 @@ interface OnboardState {
   expertRegister: responseProps;
   specializationsList: responseProps;
   titleInfomationsList: responseProps;
+  expertUpdateData: responseProps;
   // clinicTypesList: responseListProps;
   // doctorUpdate: responseCreateProps;
   // studentRegister: responseCreateProps;
@@ -37,6 +38,11 @@ const initialState: OnboardState = {
     error: undefined,
   },
   titleInfomationsList: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
+  expertUpdateData: {
     loading: false,
     data: undefined,
     error: undefined,
@@ -138,15 +144,15 @@ const onboardSlice = createSlice({
     //   clinicTypesList.error = error;
     // },
     //
-    // updateDoctorProfile: (state, _action) => {
-    //   state.doctorUpdate.loading = true;
-    // },
-    // updateDoctorProfileCallback: (state, { payload: { data, error } }) => {
-    //   const { doctorUpdate } = state;
-    //   doctorUpdate.loading = false;
-    //   doctorUpdate.data = data;
-    //   doctorUpdate.error = error;
-    // },
+    updateExpertProfile: (state, _action) => {
+      state.expertUpdateData.loading = true;
+    },
+    updateExpertProfileCallback: (state, { payload: { data, error } }) => {
+      const { expertUpdateData } = state;
+      expertUpdateData.loading = false;
+      expertUpdateData.data = data;
+      expertUpdateData.error = error;
+    },
     //
     // createClinic: (state, _action) => {
     //   state.clinicCreate.loading = true;
@@ -190,7 +196,7 @@ const onboardSlice = createSlice({
     resetOnboardUnused: (state, _action) => {
       const {
         // doctorRegister,
-        // doctorUpdate,
+        expertUpdateData,
         // studentRegister,
         // studentUpdate,
         signupNormal,
@@ -200,9 +206,9 @@ const onboardSlice = createSlice({
       // doctorRegister.loading = false;
       // doctorRegister.data = undefined;
       // doctorRegister.error = undefined;
-      // doctorUpdate.loading = false;
-      // doctorUpdate.data = undefined;
-      // doctorUpdate.error = undefined;
+      expertUpdateData.loading = false;
+      expertUpdateData.data = undefined;
+      expertUpdateData.error = undefined;
       // studentRegister.loading = false;
       // studentRegister.data = undefined;
       // studentRegister.error = undefined;
@@ -239,8 +245,8 @@ export const {
   // createClinicCallback,
   registerExpert,
   registerExpertCallback,
-  // updateDoctorProfile,
-  // updateDoctorProfileCallback,
+  updateExpertProfile,
+  updateExpertProfileCallback,
   // registerStudent,
   // registerStudentCallback,
   // updateStudentProfile,

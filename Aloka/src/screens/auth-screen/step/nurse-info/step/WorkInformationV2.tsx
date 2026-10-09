@@ -22,7 +22,7 @@ import { isArray } from 'lodash';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, KeyboardAvoidingView, Pressable, View } from 'react-native';
-import ItemWorkInformation from './ItemWorkInformation';
+// import ItemWorkInformation from './ItemWorkInformation';
 import ModalSearchNearby from '../../components/ModalSearchNearby';
 import { STORAGEKEY } from '@/constants/storage_key';
 import { getObjectData, storeObjectData } from '@/storages';
@@ -197,10 +197,10 @@ export const WorkInformationV2 = ({
     }
   };
 
-  const handlePressItemS2 = (itemChoose: any, index: number) => {
-    // console.log('🚀 ~ handlePressItemS2 ~ itemChoose:', itemChoose);
-    showModalCommon(itemChoose, index);
-  };
+  // const handlePressItemS2 = (itemChoose: any, index: number) => {
+  //   // console.log('🚀 ~ handlePressItemS2 ~ itemChoose:', itemChoose);
+  //   showModalCommon(itemChoose, index);
+  // };
 
   const handleRemoveFile = (index: number) => {
     let arr = [...dataNurseInfo.attachments];
@@ -472,9 +472,9 @@ export const WorkInformationV2 = ({
   const renderItemNewDoc = (index: number) => {
     return (
       <View key={index}>
-        <CText h5 color={colors.c344054} style={screenStyles.mT15}>
+        {/* <CText h5 color={colors.c344054} style={screenStyles.mT15}>
           {t('onboarding.otherAttachment', 'Other license')}
-        </CText>
+        </CText> */}
         <Row>
           <Pressable
             style={[

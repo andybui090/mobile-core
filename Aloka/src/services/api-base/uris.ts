@@ -20,6 +20,7 @@ export const SETTINGS = {
 
 export const PROFILE = {
   GET_PROFILE: '/me',
+  UPDATE_PROFILE: '/me',
   LOGOUT_APP: '/logout',
   DELETE_ACCOUNT: '/me',
 };

@@ -12,6 +12,10 @@ export const screenStyles = StyleSheet.create({
   flexGrow1: {
     flexGrow: 1,
   },
+  flex1Center: {
+    flex: 1,
+    alignItems: 'center',
+  },
   flex1EndBottom: {
     flex: 1,
     alignItems: 'center',
@@ -127,8 +131,8 @@ export const screenStyles = StyleSheet.create({
   mH12: {
     marginHorizontal: 12,
   },
-  mR10:{
-    marginRight:10
+  mR10: {
+    marginRight: 10,
   },
   mH16: {
     marginHorizontal: 16,

@@ -1,0 +1,70 @@
+diff --git a/node_modules/@gorhom/bottom-sheet/src/hooks/useScrollHandler.ts b/node_modules/@gorhom/bottom-sheet/src/hooks/useScrollHandler.ts
+index a791083..1008657 100644
+--- a/node_modules/@gorhom/bottom-sheet/src/hooks/useScrollHandler.ts
++++ b/node_modules/@gorhom/bottom-sheet/src/hooks/useScrollHandler.ts
+@@ -30,43 +30,31 @@ export const useScrollHandler = (
+   } = useScrollEventsHandlers(scrollableRef, scrollableContentOffsetY);
+ 
+   // callbacks
+-  const scrollHandler = useAnimatedScrollHandler(
+-    {
+-      onScroll: (event, context) => {
+-        handleOnScroll(event, context);
++  const scrollHandler = useAnimatedScrollHandler({
++    onScroll: (event, context) => {
++      handleOnScroll(event, context);
+ 
+-        if (onScroll) {
+-          runOnJS(onScroll)({ nativeEvent: event });
+-        }
+-      },
+-      onBeginDrag: (event, context) => {
+-        handleOnBeginDrag(event, context);
++      if (onScroll) {
++        runOnJS(onScroll)({ nativeEvent: event });
++      }
++    },
++    onBeginDrag: (event, context) => {
++      handleOnBeginDrag(event, context);
+ 
+-        if (onScrollBeginDrag) {
+-          runOnJS(onScrollBeginDrag)({ nativeEvent: event });
+-        }
+-      },
+-      onEndDrag: (event, context) => {
+-        handleOnEndDrag(event, context);
++      if (onScrollBeginDrag) {
++        runOnJS(onScrollBeginDrag)({ nativeEvent: event });
++      }
++    },
++    onEndDrag: (event, context) => {
++      handleOnEndDrag(event, context);
+ 
+-        if (onScrollEndDrag) {
+-          runOnJS(onScrollEndDrag)({ nativeEvent: event });
+-        }
+-      },
+-      onMomentumBegin: handleOnMomentumBegin,
+-      onMomentumEnd: handleOnMomentumEnd,
++      if (onScrollEndDrag) {
++        runOnJS(onScrollEndDrag)({ nativeEvent: event });
++      }
+     },
+-    [
+-      handleOnScroll,
+-      handleOnBeginDrag,
+-      handleOnEndDrag,
+-      handleOnMomentumBegin,
+-      handleOnMomentumEnd,
+-      onScroll,
+-      onScrollBeginDrag,
+-      onScrollEndDrag,
+-    ]
+-  );
++    onMomentumBegin: handleOnMomentumBegin,
++    onMomentumEnd: handleOnMomentumEnd,
++  });
+ 
+   return { scrollHandler, scrollableRef, scrollableContentOffsetY };
+ };
+\ No newline at end of file

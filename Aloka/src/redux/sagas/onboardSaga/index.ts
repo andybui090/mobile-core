@@ -9,6 +9,8 @@ import {
   getSpecializationsCallback,
   getTitleInfomations,
   getTitleInfomationsCallback,
+  updateExpertProfile,
+  updateExpertProfileCallback,
   // getClinics,
   // getClinicsCallback,
   // getClinicTypes,
@@ -118,9 +120,9 @@ interface actionTitleInfomations {
 //   };
 // }
 
-// interface actionUpdateDoctor {
-//   payload: any;
-// }
+interface actionUpdateExpert {
+  payload: any;
+}
 
 // interface actionUpdateStudent {
 //   payload: any;
@@ -151,7 +153,11 @@ function* fetchSpecializations(action: actionSpecializations) {
 }
 
 function* fetchTitleInfomations(action: actionTitleInfomations) {
-  yield* processAPISaga(ApiService.getTitleInfomations, action.payload, getTitleInfomationsCallback);
+  yield* processAPISaga(
+    ApiService.getTitleInfomations,
+    action.payload,
+    getTitleInfomationsCallback,
+  );
 }
 
 // function* fetchClinics(action: actionClinics) {
@@ -174,9 +180,9 @@ function* fetchRegisterDoctor(action: actionRegisterExpert) {
   );
 }
 
-// function* fetchUpdateDoctor(action: actionUpdateDoctor) {
-//   yield* processAPISaga(ApiService.updateDoctorProfile, action.payload, updateDoctorProfileCallback, 3);
-// }
+function* fetchUpdateExpert(action: actionUpdateExpert) {
+  yield* processAPISaga(ApiService.updateExpertProfile, action.payload, updateExpertProfileCallback);
+}
 
 // function* fetchRegisterStudent(action: actionRegisterStudent) {
 //   yield* processAPISaga(ApiService.studentRegister, action.payload, registerStudentCallback, 3);
@@ -196,7 +202,7 @@ export default [
   // takeLatest(getClinicTypes, fetchClinicTypes),
   // takeLatest(createClinic, fetchCreateClinic),
   // takeLatest(registerDoctor, fetchRegisterDoctor),
-  // takeLatest(updateDoctorProfile, fetchUpdateDoctor),
+  takeLatest(updateExpertProfile, fetchUpdateExpert),
   // takeLatest(registerStudent, fetchRegisterStudent),
   // takeLatest(updateStudentProfile, fetchUpdateStudent),
 ];

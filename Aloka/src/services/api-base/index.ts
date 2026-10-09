@@ -121,6 +121,10 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   const getTitleInfomations = (payload: object) => {
     return api.get(ONBOARD.GET_TITLE_INFORMATION, payload);
   };
+  const updateExpertProfile = (payload: object) => {
+    return api.put(PROFILE.UPDATE_PROFILE, payload);
+  };
+
   /*
     CARELY
   */
@@ -176,6 +180,7 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     expertRegister,
     getSpecializations,
     getTitleInfomations,
+    updateExpertProfile,
     /*
       CARELY
     */

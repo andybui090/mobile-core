@@ -4,6 +4,7 @@ import { auth } from './auth';
 import { intro } from './intro';
 import { home } from './home';
 import { account } from './account';
+import { work } from './work';
 
 export const images = {
   intro,
@@ -12,4 +13,5 @@ export const images = {
   global,
   bottomTab,
   auth,
+  work,
 };

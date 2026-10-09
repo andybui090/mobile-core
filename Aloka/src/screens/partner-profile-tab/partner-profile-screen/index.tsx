@@ -3,6 +3,7 @@ import {
   CHeader,
   IconType,
   ImageHelper,
+  IconX,
   Wrapper,
 } from '@/components';
 import ImageHeader from '@/components/header/ImageHeader';
@@ -10,55 +11,84 @@ import { images, screenStyles } from '@/configs';
 import { mainRoute, partnerProfileTabRoute } from '@/constants';
 import { AppContext } from '@/contexts';
 import { UserTypes } from '@/navigation/root-store';
-import { useAppDispatch } from '@/redux/store/customReduxHook';
 import { Container, CScrollView, CText, Row } from '@/utils';
-import { Divider } from '@rneui/base';
 import { makeStyles, useTheme } from '@rneui/themed';
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, Pressable, View } from 'react-native';
 import { getVersion } from 'react-native-device-info';
-// import { ListMenu } from './ListMenu';
-// import MenuItem from './MenuItem';
 import { Rating } from 'react-native-ratings';
-import MenuItem from './MenuItem';
 
 const useStyles = makeStyles(({ colors }) => ({
-  hasNoti: {
-    position: 'absolute' as const,
-    right: 3,
-    top: 1,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.error,
-  },
+  container: { flex: 1 },
+  content: { paddingHorizontal: 12, paddingBottom: 24 },
+  profile: { paddingVertical: 12 },
   imgWrap: {
     ...screenStyles.centerWrap,
     height: 64,
     width: 64,
-    borderRadius: 50,
+    borderRadius: 42,
     overflow: 'hidden' as const,
+    backgroundColor: colors.cEAECF0,
   },
-  line: { height: 7, backgroundColor: colors.cF9FAFB, marginTop: 16 },
+  profileInfo: { flex: 1, marginLeft: 14 },
+  badge: {
+    alignSelf: 'flex-start' as const,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginTop: 4,
+  },
+  contactCard: {
+    padding: 12,
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.cF9FAFB,
+  },
+  contactList: { flex: 1, marginRight: 8, gap: 4 },
+  contactItem: { flexDirection: 'row' as const, alignItems: 'center' as const },
+  contactText: { flex: 1, marginLeft: 6 },
   btnWrap: {
-    marginTop: 20,
     borderColor: colors.primary,
     borderRadius: 8,
-    paddingVertical: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
     borderWidth: 1,
     ...screenStyles.rowCenter,
   },
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: colors.cFCFCFD,
+  statRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    marginTop: 16,
   },
-  sessionWrapper: {
-    // backgroundColor: colors.white,
-    // borderRadius: 8,
-    // marginBottom: 16,
+  statDivider: { width: 1, height: 16, backgroundColor: colors.cEAECF0 },
+  about: { marginTop: 18, marginBottom: 12 },
+  description: {
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: colors.cF9FAFB,
   },
+  menuRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    minHeight: 74,
+    paddingHorizontal: 4,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.cF9FAFB,
+  },
+  communityRow: {
+    backgroundColor: '#EDF9FF',
+    borderRadius: 12,
+    borderBottomWidth: 0,
+    paddingHorizontal: 12,
+    marginTop: 6,
+  },
+  menuIcon: { width: 44, height: 44, borderRadius: 10 },
+  menuText: { flex: 1, marginLeft: 16, marginRight: 8 },
 }));
 
 export interface IMenuProfile {
@@ -71,7 +101,7 @@ export interface IMenuProfile {
   screenName: string;
 }
 
-const PartnerProfileScreen: React.FC<any> = ({ navigation, route }: any) => {
+const PartnerProfileScreen: React.FC<any> = ({ navigation }: any) => {
   const { t } = useTranslation();
   const styles = useStyles();
   const {
@@ -80,17 +110,6 @@ const PartnerProfileScreen: React.FC<any> = ({ navigation, route }: any) => {
 
   const { user, userType }: any = useContext(AppContext);
 
-  const dispatch = useAppDispatch();
-
-  // -------------------------------
-  // STATE
-  // -------------------------------
-
-  const [totalUnread, setTotalUnread] = useState<number>(0);
-
-  // -------------------------------
-  // ACTION
-  // -------------------------------
   const handleSetting = () => {
     navigation.navigate(mainRoute.settingScreen);
   };
@@ -99,54 +118,37 @@ const PartnerProfileScreen: React.FC<any> = ({ navigation, route }: any) => {
     navigation.navigate(mainRoute.notificationScreen);
   };
 
-  const handleShowFollowingList = () => {
-    // navigation.navigate(mainRoute.followingList);
-  };
-
   const handleEditProfile = () => {
     navigation.navigate(partnerProfileTabRoute.partnerEditProfileScreen);
   };
 
-  const handlePressMenuItem = (item: IMenuProfile) => {
-    if (item.screenName) {
-      navigation.navigate(item.screenName);
-    }
-  };
+  const renderKYCStatus = (status: number) => {
+    const verified = status === 1;
+    const failed = status === 2;
+    const color = verified ? '#12B76A' : failed ? colors.error : colors.warning;
+    const label = verified
+      ? t('profile.verified', 'Hồ sơ đã xác minh')
+      : failed
+      ? t('profile.verifyingFailed', 'Xác minh thất bại')
+      : t('profile.verifying', 'Đang xác minh');
 
-  // -------------------------------
-  // RENDER UI
-  // -------------------------------
-
-  const renderKYCStatus = (status: number, rejected_reason: string) => {
-    let statusText = t('profile.verifying', 'Verifying');
-    let iconKYC = images.global.kyc_0;
-    let textColor = colors.warning;
-    if (status == 1) {
-      statusText = t('profile.verified', 'Verified');
-      iconKYC = images.global.kyc_1;
-      textColor = colors.primary;
-    } else if (status == 2) {
-      statusText = t('profile.verifyingFailed', 'Verifying Failed');
-      iconKYC = images.global.kyc_2;
-      textColor = colors.error;
-    }
     return (
-      <Row start style={screenStyles.mT3}>
-        <Image
-          source={iconKYC}
-          style={screenStyles.box14}
-          resizeMode="contain"
-        />
-        <CText
-          h6
-          w400
-          color={textColor}
-          style={screenStyles.mL3}
-          numberOfLines={2}
-        >
-          {statusText}
+      <View
+        style={[
+          styles.badge,
+          {
+            backgroundColor: verified
+              ? '#DCFAE6'
+              : failed
+              ? '#FEE4E2'
+              : '#FEF0C7',
+          },
+        ]}
+      >
+        <CText h6 w600 color={color}>
+          {label}
         </CText>
-      </Row>
+      </View>
     );
   };
 
@@ -160,114 +162,132 @@ const PartnerProfileScreen: React.FC<any> = ({ navigation, route }: any) => {
     );
   };
 
-  const renderDescription = (des: string) => {
-    if (des) {
-      return (
-        <View style={screenStyles.mT15}>
-          <CText color={colors.c101828} h5 w500>
-            {t('doctorProfile.about', 'About')}
-          </CText>
-          <View style={screenStyles.mT5}>
-            <AnimatedReadMore
-              text={des}
-              numberOfLines={2}
-              seeMoreText={t('common.seeMore', 'See more')}
-              seeLessText={t('common.viewLess', 'View less')}
-              seeStyle={{ color: colors.c98A2B3 }}
-            />
-          </View>
-        </View>
-      );
-    }
-  };
-
   const renderProfileMenu = () => {
-    const { avatar } = user?.personalization ?? {};
-    // const { username, full_name } = user ?? {};
-    // const { total_following } = user?.statistics ?? {};
-    const { personalization, full_name, username, numRating } = user;
-    let position = '';
-    if (userType === UserTypes.doctor) {
-      position = personalization?.position || '';
-    } else if (userType === UserTypes.nurse) {
-      position = t('account.nurse', 'Nurse');
-    }
+    const {
+      personalization: profile,
+      full_name,
+      username,
+      numRating,
+    } = user ?? {};
+    const personalization = profile ?? {};
+    const position =
+      userType === UserTypes.doctor
+        ? personalization.position
+        : userType === UserTypes.nurse
+        ? t('account.nurse', 'Nurse')
+        : '';
+    const contacts = [
+      { icon: 'phone', value: user?.phone_number || user?.phone },
+      { icon: 'mail', value: user?.email },
+    ];
+
     return (
-      <View style={screenStyles.pH24}>
+      <View style={styles.profile}>
         <Row start>
-          <View
-            style={[
-              styles.imgWrap,
-              {
-                backgroundColor: colors.cEAECF0,
-              },
-            ]}
-          >
+          <View style={styles.imgWrap}>
             <ImageHelper
-              source={{
-                uri: avatar || '',
-              }}
+              source={{ uri: personalization.avatar || '' }}
               renderErrorImage={renderErrorImage}
             />
           </View>
-          <View style={{ flex: 1, marginLeft: 16 }}>
+          <View style={styles.profileInfo}>
             <CText h4 w600 color={colors.c101828}>
               {full_name || username}
             </CText>
-            {position && (
-              <CText
-                h5
-                w400
-                color={colors.c98A2B3}
-                style={screenStyles.mT3}
-                numberOfLines={2}
-              >
+            {renderKYCStatus(personalization.status)}
+            {!!position && (
+              <CText h56 color={colors.c667085} style={screenStyles.mT3}>
                 {position}
               </CText>
             )}
-            <Row start style={{ marginTop: 4 }}>
-              <Pressable onPress={handleShowFollowingList}>
-                <CText color={colors.c101828} h5>
-                  {'BV Nhi Đồng 2'}
-                </CText>
-              </Pressable>
-            </Row>
-            {renderKYCStatus(
-              personalization?.status,
-              personalization?.rejected_reason,
+            <CText h56 color={colors.c667085} style={screenStyles.mT3}>
+              {personalization.hospital_name || 'BV Nhi Đồng 2'}
+            </CText>
+            {!!personalization.practicing_certificate_number && (
+              <CText h56 color={colors.c667085} style={screenStyles.mT3}>
+                CCHN: {personalization.practicing_certificate_number}
+              </CText>
             )}
           </View>
         </Row>
-        {/* Line */}
-        {/* <Divider color={colors.cEAECF0} width={1} style={screenStyles.pV10} /> */}
-        {/* Phone */}
-        <Pressable style={styles.btnWrap} onPress={handleEditProfile}>
-          <Image source={images.global.ico_edit} style={screenStyles.box16} />
-          <CText h5 w500 color={colors.primary} style={screenStyles.mL10}>
-            {t('profile.editProfile', 'Edit Profile')}
-          </CText>
-        </Pressable>
-        <Row start style={screenStyles.mT15}>
-          <Rating
-            startingValue={5}
-            readonly
-            showRating={false}
-            imageSize={14}
-            jumpValue={0.5}
-            ratingColor={'#FDB022'}
-            ratingCount={1}
-          />
-          <CText style={screenStyles.mL5} color={'#FDB022'} h56>
-            {numRating || 5}
-          </CText>
-          <CText style={screenStyles.mL5} color={colors.cEAECF0} h56 w500>
-            {'|'}
-          </CText>
-          <CText style={screenStyles.mL5} color={colors.c101828} h56 w500>
-            {'Công việc đã nhận: 100'}
-          </CText>
-        </Row>
-        {renderDescription(personalization?.description || '')}
+        <View style={styles.contactCard}>
+          <Row start>
+            <View style={styles.contactList}>
+              {contacts.map(({ icon, value }) =>
+                value ? (
+                  <View key={icon} style={styles.contactItem}>
+                    <IconX
+                      type={IconType.ANT_DESIGN}
+                      name={icon}
+                      size={14}
+                      color={colors.c667085}
+                    />
+                    <CText
+                      h6
+                      color={colors.c667085}
+                      style={styles.contactText}
+                      numberOfLines={1}
+                    >
+                      {value}
+                    </CText>
+                  </View>
+                ) : null,
+              )}
+            </View>
+            <Pressable style={styles.btnWrap} onPress={handleEditProfile}>
+              <Image
+                source={images.global.ico_edit}
+                style={screenStyles.box16}
+              />
+              <CText h6 w600 color={colors.primary} style={screenStyles.mL5}>
+                {t('profile.editProfile', 'Sửa hồ sơ')}
+              </CText>
+            </Pressable>
+          </Row>
+          <View style={styles.statRow}>
+            <Row start>
+              <Rating
+                startingValue={5}
+                readonly
+                showRating={false}
+                imageSize={18}
+                ratingColor="#FDB022"
+                ratingCount={1}
+              />
+              <CText h56 w600 color={colors.c101828} style={screenStyles.mL5}>
+                {numRating || 5}
+              </CText>
+              {user?.statistics?.total_reviews != null && (
+                <CText h6 color={colors.c667085} style={screenStyles.mL10}>
+                  {user.statistics.total_reviews} Đánh giá
+                </CText>
+              )}
+            </Row>
+            <View style={styles.statDivider} />
+            <CText h6 color={colors.c667085}>
+              Công việc đã nhận{' '}
+              <CText h56 w600 color={colors.c101828}>
+                100
+              </CText>
+            </CText>
+          </View>
+        </View>
+        {!!personalization.description && (
+          <View style={styles.about}>
+            <CText h56 w600 color={colors.c101828}>
+              {t('doctorProfile.about', 'Giới thiệu')}
+            </CText>
+            <View style={styles.description}>
+              <AnimatedReadMore
+                text={personalization.description}
+                numberOfLines={3}
+                seeMoreText={t('common.seeMore', 'See more')}
+                seeLessText={t('common.viewLess', 'View less')}
+                seeStyle={{ color: colors.c98A2B3 }}
+              />
+            </View>
+          </View>
+        )}
       </View>
     );
   };
@@ -281,80 +301,6 @@ const PartnerProfileScreen: React.FC<any> = ({ navigation, route }: any) => {
       </Row>
     );
   };
-
-  // const renderItemList = (item: any) => {
-  //   return <MenuItem {...item.item} onPress={handlePressMenuItem} />;
-  // };
-
-  // const renderListMenu = () => {
-  //   return (
-  //     <FlatList
-  //       style={{ flex: 1, paddingHorizontal: 16 }}
-  //       data={ListMenu as IMenuProfile[]}
-  //       extraData={ListMenu}
-  //       keyExtractor={keyExtractor}
-  //       renderItem={renderItemList}
-  //       ListFooterComponent={renderVersion()}
-  //       scrollsToTop={false}
-  //     />
-  //   );
-  // };
-
-  const renderSession = (title: string) => {
-    return (
-      <View
-        style={{
-          backgroundColor: '#50CACF33',
-          paddingVertical: 12,
-          paddingHorizontal: 16,
-        }}
-      >
-        <CText h5 w500 color={colors.c101828}>
-          {title}
-        </CText>
-      </View>
-    );
-  };
-
-  // const renderContent = () => {
-  //   return (
-  //     <Container>
-  //       {renderProfileMenu()}
-  //       <View style={styles.line} />
-  //       <CScrollView>
-  //         {/* <MenuSection title="Hoạt động của tôi" items={activityItems} /> */}
-  //         {renderSession('Hoạt động của tôi')}
-  //         <MenuItem
-  //           {...ListMenu[0]}
-  //           onPress={handlePressMenuItem}
-  //           isBorderBottom
-  //         />
-  //         <MenuItem {...ListMenu[1]} onPress={handlePressMenuItem} />
-  //         {/* {renderSession('Lưu trữ')}
-  //         <MenuItem
-  //           {...ListMenu[2]}
-  //           onPress={handlePressMenuItem}
-  //           isBorderBottom
-  //         />
-  //         <MenuItem {...ListMenu[3]} onPress={handlePressMenuItem} /> */}
-  //         {renderSession('Kết nối & Khác')}
-  //         <MenuItem
-  //           {...ListMenu[4]}
-  //           onPress={handlePressMenuItem}
-  //           isBorderBottom
-  //         />
-  //         {/* <MenuItem {...ListMenu[5]} onPress={handlePressMenuItem} isBorderBottom/> */}
-  //         <MenuItem
-  //           {...ListMenu[6]}
-  //           onPress={handlePressMenuItem}
-  //           isBorderBottom
-  //         />
-  //         {renderVersion()}
-  //       </CScrollView>
-  //       {/* {renderListMenu()} */}
-  //     </Container>
-  //   );
-  // };
 
   const renderLeftHead = () => {
     return (
@@ -378,7 +324,6 @@ const PartnerProfileScreen: React.FC<any> = ({ navigation, route }: any) => {
           style={screenStyles.box26}
           resizeMode="contain"
         />
-        {totalUnread != 0 && <View style={styles.hasNoti} />}
       </Pressable>
       <Pressable
         hitSlop={screenStyles.hitSlop20}
@@ -391,62 +336,92 @@ const PartnerProfileScreen: React.FC<any> = ({ navigation, route }: any) => {
   );
 
   const renderContent = () => {
+    const menuItems = [
+      {
+        key: 'mySpecialistPage',
+        description: 'mySpecialistPageDes',
+        image: images.account.my_specialist,
+      },
+      {
+        key: 'myServices',
+        description: 'myServicesDes',
+        image: images.account.my_services,
+      },
+      {
+        key: 'myContent',
+        description: 'myContentDes',
+        image: images.account.my_content,
+      },
+      {
+        key: 'myWorkSchedule',
+        description: 'myWorkScheduleDes',
+        image: images.account.my_work_schedule,
+      },
+      {
+        key: 'myIncome',
+        description: 'myIncomeDes',
+        image: images.account.my_income_management,
+      },
+      {
+        key: 'myDr',
+        description: 'myDrDes',
+        image: images.account.my_doctor_network,
+      },
+      {
+        key: 'mySupport',
+        description: 'mySupportDes',
+        image: images.account.my_support,
+      },
+    ];
+
     return (
       <Container>
-        {renderProfileMenu()}
-        <View style={styles.line} />
-        <CScrollView style={styles.container}>
-          <View style={styles.sessionWrapper}>
-            <MenuItem
-              label={t('expert.mySpecialistPage')}
-              des={t('expert.mySpecialistPageDes')}
-              imgSrc={images.account.my_specialist}
-              isBorderBottom
+        <CScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+        >
+          {renderProfileMenu()}
+          {menuItems.map(({ key, description, image }) => (
+            <Pressable
+              key={key}
+              style={[styles.menuRow, key === 'myDr' && styles.communityRow]}
               onPress={() => {}}
-            />
-            <MenuItem
-              label={t('expert.myServices')}
-              des={t('expert.myServicesDes')}
-              imgSrc={images.account.my_services}
-              isBorderBottom
-              onPress={() => {}}
-            />
-            <MenuItem
-              label={t('expert.myContent')}
-              des={t('expert.myContentDes')}
-              imgSrc={images.account.my_content}
-              isBorderBottom
-              onPress={() => {}}
-            />
-            <MenuItem
-              label={t('expert.myWorkSchedule')}
-              des={t('expert.myWorkScheduleDes')}
-              imgSrc={images.account.my_work_schedule}
-              isBorderBottom
-              onPress={() => {}}
-            />
-            <MenuItem
-              label={t('expert.myIncome')}
-              des={t('expert.myIncomeDes')}
-              imgSrc={images.account.my_income_management}
-              isBorderBottom
-              onPress={() => {}}
-            />
-            <MenuItem
-              label={'Doctor Network'}
-              des={t('expert.myDrDes')}
-              imgSrc={images.account.my_doctor_network}
-              isBorderBottom
-              onPress={() => {}}
-            />
-            <MenuItem
-              label={t('onboarding.support')}
-              des={t('expert.mySupportDes')}
-              imgSrc={images.account.my_support}
-              isBorderBottom
-              onPress={() => {}}
-            />
-          </View>
+            >
+              <Image
+                source={image}
+                style={styles.menuIcon}
+                resizeMode="contain"
+              />
+              <View style={styles.menuText}>
+                <CText h56 w600 color={colors.c101828}>
+                  {key === 'myDr'
+                    ? 'Doctor Network'
+                    : key === 'mySupport'
+                    ? t('onboarding.support')
+                    : t(`expert.${key}`)}
+                </CText>
+                <CText h56 color={colors.c667085} style={screenStyles.mT3}>
+                  {t(`expert.${description}`)}
+                </CText>
+              </View>
+              {key !== 'mySupport' &&
+                (key == 'myDr' ? (
+                  <IconX
+                    type={IconType.ANT_DESIGN}
+                    name={'export'}
+                    size={18}
+                    color={'#00A6E8'}
+                  />
+                ) : (
+                  <IconX
+                    name={'chevron-right'}
+                    type={'octicons'}
+                    color={colors.c98A2B3}
+                    size={24}
+                  />
+                ))}
+            </Pressable>
+          ))}
           {renderVersion()}
         </CScrollView>
       </Container>
@@ -461,7 +436,6 @@ const PartnerProfileScreen: React.FC<any> = ({ navigation, route }: any) => {
         leftComponent={renderLeftHead()}
       />
       {renderContent()}
-      {/* {renderVersion()} */}
     </Wrapper>
   );
 };

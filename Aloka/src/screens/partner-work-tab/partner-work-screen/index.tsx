@@ -1,10 +1,19 @@
 import { CHeader, Wrapper } from '@/components';
+import { ScreenWidth } from '@/configs';
+import { goBack } from '@/navigation/RootNavigation';
 import { useAppDispatch } from '@/redux/store/customReduxHook';
+import { CText } from '@/utils';
 import { makeStyles, useTheme } from '@rneui/themed';
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TabBar, TabView } from 'react-native-tab-view';
+import WorkInformation from './work-information';
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles(({ colors }) => ({
+  indicatorStyle: {
+    backgroundColor: colors.primary,
+    height: 2,
+  },
 }));
 
 const PartnerWorkScreen: React.FC<any> = ({ navigation, route }: any) => {
@@ -19,7 +28,18 @@ const PartnerWorkScreen: React.FC<any> = ({ navigation, route }: any) => {
   // -------------------------------
   // STATE
   // -------------------------------
+  const [index, setIndex] = useState<number>(0);
 
+  const [routes] = useState([
+    {
+      key: 'WorkInformation',
+      title: t('work.workInformation', 'Work Information'),
+    },
+    {
+      key: 'Conversations',
+      title: t('work.conversations', 'Conversations'),
+    },
+  ]);
 
   // -------------------------------
   // ACTION
@@ -29,21 +49,60 @@ const PartnerWorkScreen: React.FC<any> = ({ navigation, route }: any) => {
   // RENDER UI
   // -------------------------------
 
-  const renderContent = () => {
-    return null;
+  const renderTabBar = (props: any) => {
+    return (
+      <TabBar
+        {...props}
+        scrollEnabled={false}
+        style={{
+          backgroundColor: colors.white,
+        }}
+        activeColor={colors.primary}
+        inactiveColor={colors.c667085}
+        indicatorStyle={styles.indicatorStyle}
+        renderLabel={({ route, focused, color }: any) => {
+          const labelColor = focused ? colors.primary : colors.c667085;
+          return (
+            <CText
+              h5
+              style={{
+                color: labelColor,
+              }}
+            >
+              {route.title}
+            </CText>
+          );
+        }}
+      />
+    );
   };
 
-  const renderLeftHead = () => null;
-
-  const renderRightHead = () => null;
+  const renderScene = ({ route, jumpTo }: any) => {
+    switch (route.key) {
+      case 'WorkInformation':
+        return <WorkInformation />;
+      case 'Conversations':
+        return null;
+      default:
+        break;
+    }
+  };
 
   return (
     <Wrapper>
       <CHeader
-        rightComponent={renderRightHead()}
-        leftComponent={renderLeftHead()}
+        title={t('common.work')}
+        leftComponentOnPress={goBack}
+        isBorderBottom
       />
-      {renderContent()}
+      <TabView
+        navigationState={{ index, routes }}
+        renderScene={renderScene}
+        renderTabBar={renderTabBar}
+        onIndexChange={setIndex}
+        initialLayout={{ width: ScreenWidth }}
+        lazy={true}
+      />
     </Wrapper>
   );
 };
