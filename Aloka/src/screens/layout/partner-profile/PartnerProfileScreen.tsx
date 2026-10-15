@@ -355,6 +355,16 @@ export const PartnerProfileScreen: React.FC = () => {
       },
     },
     {
+      id: 'qr-code',
+      title: t('profile.qrCode', 'Mã QR'),
+      iconName: 'qr-code',
+      iconType: 'ionicons',
+      iconBgColor: '#4AB95C',
+      onPress: () => {
+        navigation.navigate('QRCodeScreen');
+      },
+    },
+    {
       id: 'packages-promotions',
       title: t('partnerProfile.menuPackages', 'Gói dịch vụ & khuyến mãi'),
       iconName: 'bookmark',
@@ -374,7 +384,7 @@ export const PartnerProfileScreen: React.FC = () => {
       iconType: 'ionicons',
       iconBgColor: '#F79009',
       onPress: () => {
-        showToast(toastEl, t('common.featureDeveloping', 'Tính năng đang phát triển'));
+        navigation.navigate('IncomeManageScreen');
       },
     },
     {

@@ -59,6 +59,19 @@ const PartnerTabBar: React.FC<any> = ({ state, descriptors, navigation, toastRef
     }
   };
 
+  const getIconName = (routeName: string, isFocused: boolean, defaultIcon: string) => {
+    switch (routeName) {
+      case 'PartnerProfileTab':
+        return isFocused ? 'person' : 'person-outline';
+      case 'PartnerWalletTab':
+        return isFocused ? 'wallet' : 'wallet-outline';
+      case 'PartnerWorkTab':
+        return isFocused ? 'stats-chart' : 'stats-chart-outline';
+      default:
+        return defaultIcon;
+    }
+  };
+
   return (
     <View style={[styles.tabBarContainer, { paddingBottom: bottomPadding }]}>
       {state.routes.map((route: any, index: number) => {
@@ -70,12 +83,6 @@ const PartnerTabBar: React.FC<any> = ({ state, descriptors, navigation, toastRef
         };
 
         const onPress = () => {
-          if (route.name === 'PartnerWalletTab') {
-            const msg = t('common.featureDeveloping', 'Tính năng đang phát triển');
-            toastRef?.current?.show(msg, 2000);
-            return;
-          }
-
           const event = navigation.emit({
             type: 'tabPress',
             target: route.key,
@@ -90,6 +97,7 @@ const PartnerTabBar: React.FC<any> = ({ state, descriptors, navigation, toastRef
         const activeColor = '#19A2A7';
         const inactiveColor = '#98A2B3';
         const color = isFocused ? activeColor : inactiveColor;
+        const iconName = getIconName(route.name, isFocused, config.iconName);
 
         return (
           <TouchableOpacity
@@ -100,7 +108,7 @@ const PartnerTabBar: React.FC<any> = ({ state, descriptors, navigation, toastRef
           >
             <IconX
               type={config.iconType}
-              name={config.iconName}
+              name={iconName}
               size={23}
               color={color}
             />

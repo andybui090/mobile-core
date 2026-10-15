@@ -74,6 +74,8 @@
 	<string>Aloka needs access to your microphone for voice and video calls in chat</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Need to access your photo library to select or update profile pictures and other support in the application</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Need to access your photo library to save QR code and images</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Aloka needs speech recognition to convert your voice into text for chat messages.</string>
 	<key>RCTNewArchEnabled</key>

@@ -31,6 +31,7 @@ export type PartnerAppStackParamList = {
   WorkHistoryScreen: undefined;
   WithdrawScreen: undefined;
   TransactionSuccessScreen: { amount?: string | number } | undefined;
+  QRCodeScreen: undefined;
 };
 
 const Stack = createNativeStackNavigator<PartnerAppStackParamList>();
@@ -103,6 +104,10 @@ export const PartnerAppNavigator: React.FC = () => {
       <Stack.Screen
         name="TransactionSuccessScreen"
         component={TransactionSuccessScreen}
+      />
+      <Stack.Screen
+        name="QRCodeScreen"
+        component={mainStack.QRCodeScreen}
       />
     </Stack.Navigator>
   );
