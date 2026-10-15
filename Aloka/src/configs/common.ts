@@ -575,3 +575,17 @@ export const splitCategory = (categoryName: string) => {
   }
   return result;
 };
+
+export const formatMoneyVNDPackage = (money: any, characterReplace: string) => {
+  if (money) {
+    if (money.toString().length > 0) {
+      let str = String(money);
+      return str
+        .replace(/\D/g, '')
+        .replace(/\B(?=(\d{3})+(?!\d))/g, characterReplace);
+    } else {
+      return money;
+    }
+  }
+  return '';
+};

@@ -71,7 +71,13 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     return api.get(GLOBAL.GET_COUNTRY, payload);
   };
   const postFeedback = (payload: object) => {
-    return api.post(GLOBAL.FEEDBACK, payload);
+    return api.post(GLOBAL.REPORT, payload);
+  };
+  const getListReport = (payload: object) => {
+    return api.get(GLOBAL.LIST_REPORT, payload);
+  };
+  const postReport = (payload: object) => {
+    return api.post(GLOBAL.REPORT, payload);
   };
   /*
     HOME
@@ -165,6 +171,18 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   const getListChannel = (payload: any) => {
     return api.get(CHANNEL.GET_CHANNEL, payload);
   };
+  const getChannelDetailServicesPackage = (payload: any) => {
+    return api.get(PACKAGE.PACKAGES, payload);
+  };
+  const putChannel = (payload: any) => {
+    return api.put(`${CHANNEL.GET_CHANNEL}/${payload.id}`, payload);
+  };
+  const postChannelPackage = (payload: any) => {
+    return api.post(PACKAGE.PACKAGES, payload);
+  };
+  const putChannelPackage = (payload: any) => {
+    return api.put(`${PACKAGE.PACKAGES}/${payload.id}`, payload);
+  };
   /*
       BOOKING
     */
@@ -208,6 +226,8 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     getLanguage,
     getCountries,
     postFeedback,
+    getListReport,
+    postReport,
     /*
       HOME
     */
@@ -254,6 +274,10 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     getChannelAppointmentTime,
     postBookingCall,
     getListChannel,
+    getChannelDetailServicesPackage,
+    putChannel,
+    postChannelPackage,
+    putChannelPackage,
     /*
       BOOKING
     */

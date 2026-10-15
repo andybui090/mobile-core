@@ -11,22 +11,22 @@ import {
   // getMembershipCallback,
   // getDetailChannelNewsFeed,
   // getDetailChannelNewsFeedCallback,
-  // getDetailChannelServicesPackageCallback,
-  // getDetailChannelServicesPackage,
-  // getDetailChannelOptionServicesPackage,
-  // getDetailChannelOptionServicesPackageCallback,
-  // postCreateChannelPackage,
-  // postCreateChannelPackageCallback,
+  getDetailChannelServicesPackage,
+  getDetailChannelServicesPackageCallback,
+  getDetailChannelOptionServicesPackage,
+  getDetailChannelOptionServicesPackageCallback,
+  postCreateChannelPackage,
+  postCreateChannelPackageCallback,
   // postBuyPackageChannel,
   // postBuyPackageChannelCallback,
   postBuyPackageFreeChannel,
   postBuyPackageFreeChannelCallback,
   postBookingChannel,
   postBookingChannelCallback,
-  // postEditChannelPackage,
-  // postEditChannelPackageCallback,
-  // updateChannel,
-  // updateChannelCallback,
+  postEditChannelPackage,
+  postEditChannelPackageCallback,
+  updateChannel,
+  updateChannelCallback,
   getAppointmentTime,
   getAppointmentTimeCallback,
   // getPackageHot,
@@ -72,32 +72,32 @@ interface actionListChannel {
 //   };
 // }
 
-// interface actionDetailChannelServicesPackage {
-//   payload: {};
-// }
+interface actionDetailChannelServicesPackage {
+  payload: {};
+}
 
-// interface actionCreateChannePackage {
-//   payload: {
-//     user_id: string;
-//     channel_id: string;
-//     package_id: string;
-//     name: string;
-//     price: number;
-//     discount: number;
-//     chat_1vs1: number;
-//     call_1vs1: number;
-//     is_newsfeed: number;
-//     is_livestream: number;
-//     view_week: number;
-//   };
-// }
+interface actionCreateChannePackage {
+  payload: {
+    user_id: string;
+    channel_id: string;
+    package_id: string;
+    name: string;
+    price: number;
+    discount: number;
+    chat_1vs1: number;
+    call_1vs1: number;
+    is_newsfeed: number;
+    is_livestream: number;
+    view_week: number;
+  };
+}
 
-// interface actionUpdateChannel {
-//   payload: {
-//     schedules: string;
-//     channel_id: string;
-//   };
-// }
+interface actionUpdateChannel {
+  payload: {
+    schedules: string;
+    channel_id: string;
+  };
+}
 
 interface actionAppointmentTime {
   payload: {
@@ -178,36 +178,33 @@ function* fetchListChannel(action: actionListChannel) {
 //   );
 // }
 
-// function* fetchDetailChannelServicesPackage(
-//   action: actionDetailChannelServicesPackage,
-// ) {
-//   yield* processAPISaga(
-//     ApiService.getChannelDetailServicesPackage,
-//     action.payload,
-//     getDetailChannelServicesPackageCallback,
-//     2,
-//   );
-// }
+function* fetchDetailChannelServicesPackage(
+  action: actionDetailChannelServicesPackage,
+) {
+  yield* processAPISaga(
+    ApiService.getChannelDetailServicesPackage,
+    action.payload,
+    getDetailChannelServicesPackageCallback,
+  );
+}
 
-// function* fetchDetailChannelOptionServicesPackage(
-//   action: actionDetailChannelServicesPackage,
-// ) {
-//   yield* processAPISaga(
-//     ApiService.getChannelDetailServicesPackage,
-//     action.payload,
-//     getDetailChannelOptionServicesPackageCallback,
-//     2,
-//   );
-// }
+function* fetchDetailChannelOptionServicesPackage(
+  action: actionDetailChannelServicesPackage,
+) {
+  yield* processAPISaga(
+    ApiService.getChannelDetailServicesPackage,
+    action.payload,
+    getDetailChannelOptionServicesPackageCallback,
+  );
+}
 
-// function* fetchCreateChannelPackage(action: actionCreateChannePackage) {
-//   yield* processAPISaga(
-//     ApiService.postChannelPackage,
-//     action.payload,
-//     postCreateChannelPackageCallback,
-//     2,
-//   );
-// }
+function* fetchCreateChannelPackage(action: actionCreateChannePackage) {
+  yield* processAPISaga(
+    ApiService.postChannelPackage,
+    action.payload,
+    postCreateChannelPackageCallback,
+  );
+}
 
 // function* fetchBuyPackage(action: actionBuyPackage) {
 //   yield* processAPISaga(
@@ -234,23 +231,21 @@ function* fetchBookingCall(action: actionBookingCall) {
   );
 }
 
-// function* fetchEditChannelPackage(action: actionCreateChannePackage) {
-//   yield* processAPISaga(
-//     ApiService.putChannelPackage,
-//     action.payload,
-//     postEditChannelPackageCallback,
-//     2,
-//   );
-// }
+function* fetchEditChannelPackage(action: actionCreateChannePackage) {
+  yield* processAPISaga(
+    ApiService.putChannelPackage,
+    action.payload,
+    postEditChannelPackageCallback,
+  );
+}
 
-// function* updateChannelAppointment(action: actionUpdateChannel) {
-//   yield* processAPISaga(
-//     ApiService.putChannel,
-//     action.payload,
-//     updateChannelCallback,
-//     2,
-//   );
-// }
+function* updateChannelAppointment(action: actionUpdateChannel) {
+  yield* processAPISaga(
+    ApiService.putChannel,
+    action.payload,
+    updateChannelCallback,
+  );
+}
 
 function* fetchTimeAppointment(action: actionAppointmentTime) {
   yield* processAPISaga(
@@ -276,20 +271,20 @@ export default [
   takeLatest(getListChannel, fetchListChannel),
   // takeLatest(getMembership, fetchListMemberShip),
   // takeLatest(getDetailChannelNewsFeed, fetchDetailChannelNewsfeed),
-  // takeLatest(
-  //   getDetailChannelServicesPackage,
-  //   fetchDetailChannelServicesPackage,
-  // ),
-  // takeLatest(
-  //   getDetailChannelOptionServicesPackage,
-  //   fetchDetailChannelOptionServicesPackage,
-  // ),
-  // takeLatest(postCreateChannelPackage, fetchCreateChannelPackage),
+  takeLatest(
+    getDetailChannelServicesPackage,
+    fetchDetailChannelServicesPackage,
+  ),
+  takeLatest(
+    getDetailChannelOptionServicesPackage,
+    fetchDetailChannelOptionServicesPackage,
+  ),
+  takeLatest(postCreateChannelPackage, fetchCreateChannelPackage),
   // takeLatest(postBuyPackageChannel, fetchBuyPackage),
   takeLatest(postBuyPackageFreeChannel, fetchBuyPackageFree),
   takeLatest(postBookingChannel, fetchBookingCall),
-  // takeLatest(postEditChannelPackage, fetchEditChannelPackage),
-  // takeLatest(updateChannel, updateChannelAppointment),
+  takeLatest(postEditChannelPackage, fetchEditChannelPackage),
+  takeLatest(updateChannel, updateChannelAppointment),
   takeLatest(getAppointmentTime, fetchTimeAppointment),
   // takeLatest(getPackageHot, fetchPackageHot),
 ];

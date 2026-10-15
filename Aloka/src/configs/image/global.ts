@@ -16,4 +16,7 @@ export const global = {
   kyc_1: require('../../assets/images/global/kyc_1.png'),
   kyc_2: require('../../assets/images/global/kyc_2.png'),
   ic_frame: require('../../assets/images/global/iconFram.png'),
+  report_success: require('../../assets/images/global/report_success.png'),
+  report: require('../../assets/images/global/report.png'),
+  bg_package: require('../../assets/images/global/bg_package.png'),
 };

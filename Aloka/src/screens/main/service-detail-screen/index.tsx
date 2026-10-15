@@ -252,10 +252,10 @@ const ServiceDetailScreen: React.FC<any> = ({ navigation, route }: any) => {
   const handleShare = () => {};
 
   const handleViewChannel = () => {
-    // navigation.navigate(mainRoute.channelDetailScreen, {
-    //   channelId: channelData.id,
-    //   type: 'package',
-    // });
+    navigation.navigate(mainRoute.channelDetailScreen, {
+      channelId: channelData.id,
+      type: 'package',
+    });
   };
 
   const checkIsFreeBuyed = (packageItem: any) => {

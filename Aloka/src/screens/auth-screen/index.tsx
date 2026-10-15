@@ -15,12 +15,12 @@ const AuthScreen: React.FC<any> = ({ navigation, route }: any) => {
 
   //default
   const [dataLogin, setDataLogin] = useState({
-    phoneNumber: '0909995896', //normal user: 0909995891, student user: 0909995892
+    phoneNumber: '', //normal user: 0909995891, student user: 0909995892
     phoneCode: {
       value: '+84',
       label: 'Vietnam',
     },
-    otpCode: '123456',
+    otpCode: '',
     useOnboard: {},
     loginType: 'phone',
     requiredPhone: 0, // 1 là bắt buộc, nếu là 0 thì bỏ required đi

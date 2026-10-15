@@ -2,22 +2,23 @@ import { CHeader, IconType, IconX, Toast, Wrapper } from '@/components';
 import { AppContext } from '@/contexts';
 import { goBack } from '@/navigation/RootNavigation';
 import { useAppDispatch } from '@/redux/store/customReduxHook';
-import { CEmptyData, CText, Row } from '@/utils';
+import { CText, Row } from '@/utils';
 import { makeStyles, useTheme } from '@rneui/themed';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Platform, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 // import RNQRGenerator from 'rn-qr-generator';
-import QRCode from './QRCode';
-// import {
-//   DocumentDirectoryPath,
-//   writeFile,
-//   unlink,
-// } from '@dr.pogodin/react-native-fs';
-// import moment from 'moment';
 import { screenStyles, ScreenWidth, showToast } from '@/configs';
+import {
+  DocumentDirectoryPath,
+  writeFile
+} from '@dr.pogodin/react-native-fs';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
-// import ScanQRCode from './ScanQRCode';
+import moment from 'moment';
+import QRCode from './QRCode';
+import ScanQRCode from './ScanQRCode';
+import { videoDownloadPermission } from '@/permissions';
+import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 
 const useStyles = makeStyles(({ colors }) => ({
   container: {
@@ -92,45 +93,45 @@ const QRCodeScreen: React.FC<any> = ({ navigation, route }: any) => {
   // ACTION
   // -------------------------------
   const handleSaveQRCode = async (qrBase64: string) => {
-    // if (qrBase64 !== '') {
-    //   try {
-    //     const aPath = DocumentDirectoryPath;
-    //     const fileName = `doctornetwork_${moment().unix()}.jpeg`;
-    //     const imagePath = `${aPath}/${fileName}`;
-    //     // 🔥 ghi file base64 ra temp
-    //     await writeFile(imagePath, qrBase64, 'base64');
-    //     if (Platform.OS === 'android') {
-    //       // ✅ Android → MediaStore
-    //       await MediaStoreModule.saveMedia(imagePath, fileName, 'image');
-    //       // xoá file temp
-    //       await unlink(imagePath);
-    //       showToast(
-    //         toastEl,
-    //         t('profile.saveQrCodeSuccess', 'Save QRCode success'),
-    //         1500,
-    //       );
-    //       console.log('✅ QR saved Android');
-    //     } else {
-    //       // ===== GIỮ NGUYÊN iOS =====
-    //       const checkVideoDownLoad: any = await videoDownloadPermission();
-    //       if (checkVideoDownLoad.isSuccess) {
-    //         await CameraRoll.saveAsset(imagePath);
-    //         showToast(
-    //           toastEl,
-    //           t('profile.saveQrCodeSuccess', 'Save QRCode success'),
-    //           1500,
-    //         );
-    //         console.log('✅ QR saved iOS');
-    //       } else if (checkVideoDownLoad.msg) {
-    //         console.log(checkVideoDownLoad.msg);
-    //       }
-    //     }
-    //     bottomSheetModalRef.current?.close();
-    //   } catch (error) {
-    //     console.log('🔥 Save QR error:', error);
-    //     showToast(toastEl, JSON.stringify(error));
-    //   }
-    // }
+    if (qrBase64 !== '') {
+      try {
+        const aPath = DocumentDirectoryPath;
+        const fileName = `doctornetwork_${moment().unix()}.jpeg`;
+        const imagePath = `${aPath}/${fileName}`;
+        // 🔥 ghi file base64 ra temp
+        await writeFile(imagePath, qrBase64, 'base64');
+        // if (Platform.OS === 'android') {
+        //   // ✅ Android → MediaStore
+        //   await MediaStoreModule.saveMedia(imagePath, fileName, 'image');
+        //   // xoá file temp
+        //   await unlink(imagePath);
+        //   showToast(
+        //     toastEl,
+        //     t('profile.saveQrCodeSuccess', 'Save QRCode success'),
+        //     1500,
+        //   );
+        //   console.log('✅ QR saved Android');
+        // } else {
+        // ===== GIỮ NGUYÊN iOS =====
+        const checkVideoDownLoad: any = await videoDownloadPermission();
+        if (checkVideoDownLoad.isSuccess) {
+          await CameraRoll.saveAsset(imagePath);
+          showToast(
+            toastEl,
+            t('profile.saveQrCodeSuccess', 'Save QRCode success'),
+            1500,
+          );
+          console.log('✅ QR saved iOS');
+        } else if (checkVideoDownLoad.msg) {
+          console.log(checkVideoDownLoad.msg);
+        }
+        // }
+        bottomSheetModalRef.current?.close();
+      } catch (error) {
+        console.log('🔥 Save QR error:', error);
+        showToast(toastEl, JSON.stringify(error));
+      }
+    }
   };
 
   // -------------------------------
@@ -138,14 +139,14 @@ const QRCodeScreen: React.FC<any> = ({ navigation, route }: any) => {
   // -------------------------------
 
   const renderTab = () => {
-    return <QRCode showMyQRCode={showMyQRCode} saveQrCode={handleSaveQRCode} />;
-    // if (tabIndex === 0) {
-    //   return (
-    //     <QRCode showMyQRCode={showMyQRCode} saveQrCode={handleSaveQRCode} />
-    //   );
-    // } else {
-    //   return <ScanQRCode navigation={navigation} />;
-    // }
+    // return <QRCode showMyQRCode={showMyQRCode} saveQrCode={handleSaveQRCode} />;
+    if (tabIndex === 0) {
+      return (
+        <QRCode showMyQRCode={showMyQRCode} saveQrCode={handleSaveQRCode} />
+      );
+    } else {
+      return <ScanQRCode navigation={navigation} />;
+    }
   };
 
   const _renderFooter = () => {

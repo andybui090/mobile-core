@@ -6,7 +6,8 @@ export const GLOBAL = {
   GET_LAGUAGES: '/languages',
   GET_COUNTRY: '/countries',
   GET_CATEGORIES: '/categories',
-  FEEDBACK: '/interactions/reports',
+  LIST_REPORT: '/reports',
+  REPORT: '/interactions/reports',
 };
 
 export const HOME = {

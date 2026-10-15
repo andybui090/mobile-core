@@ -7,6 +7,8 @@ interface GlobalState {
   countryList: responseProps;
   categoryList: responseProps;
   feedbackData: responseProps;
+  reportList: responseProps;
+  responseCreateReport: responseProps;
 }
 
 const initialState: GlobalState = {
@@ -39,6 +41,16 @@ const initialState: GlobalState = {
     error: undefined,
   },
   feedbackData: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
+  reportList: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
+  responseCreateReport: {
     loading: false,
     data: undefined,
     error: undefined,
@@ -101,12 +113,34 @@ const globalSlice = createSlice({
       feedbackData.data = data;
       feedbackData.error = error;
     },
+    //
+    getListReport: (state, payload) => {
+      state.reportList.loading = true;
+    },
+    getListReportCallback: (state, { payload: { data, error } }) => {
+      const { reportList } = state;
+      reportList.loading = false;
+      reportList.data = data;
+      reportList.error = error;
+    },
+    postReport: (state, payload) => {
+      state.responseCreateReport.loading = true;
+    },
+    postReportCallback: (state, { payload: { data, error } }) => {
+      const { responseCreateReport } = state;
+      responseCreateReport.loading = false;
+      responseCreateReport.data = data;
+      responseCreateReport.error = error;
+    },
     resetGlobal: (state, _action) => {
-      const { feedbackData } = state;
-
+      const { feedbackData, responseCreateReport } = state;
       feedbackData.loading = false;
       feedbackData.data = undefined;
       feedbackData.error = undefined;
+
+      responseCreateReport.loading = false;
+      responseCreateReport.data = undefined;
+      responseCreateReport.error = undefined;
     },
   },
 });
@@ -123,6 +157,10 @@ export const {
   getCategoriesCallback,
   postFeedbackData,
   postFeedbackDataCallback,
+  getListReport,
+  getListReportCallback,
+  postReport,
+  postReportCallback,
   resetGlobal,
 } = globalSlice.actions;
 

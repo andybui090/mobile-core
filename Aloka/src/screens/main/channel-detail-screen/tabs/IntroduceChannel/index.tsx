@@ -1,26 +1,16 @@
-import {AnimatedReadMore} from '@/components';
-import {screenStyles} from '@/configs';
-import {mainRoute} from '@/constants/route_key';
-import {CLoading, CText} from '@/utils';
-import {typeLoading} from '@/utils/CLoading';
-import {useIsFocused} from '@react-navigation/native';
-import {makeStyles, useTheme} from '@rneui/themed';
+import { AnimatedReadMore } from '@/components';
+import { screenStyles } from '@/configs';
+import { CText } from '@/utils';
+import { makeStyles, useTheme } from '@rneui/themed';
 import React from 'react';
-import {useTranslation} from 'react-i18next';
-import {View} from 'react-native';
-// import ListSocials from './../../components/listSocials';
+import { useTranslation } from 'react-i18next';
+import { View } from 'react-native';
 import Specialists from './../../components/specialists';
-// import {Outstanding} from './outstanding';
 
 interface Props {
   description?: string;
   categories: any;
-  listVideosIntro?: any;
-  navigation: any;
-  links: any;
-  firstRenderVideo: boolean;
   onShowSpecName: any;
-  onSeeMoreVideo: any;
 }
 
 const useStyles = makeStyles(({colors}) => ({
@@ -36,12 +26,7 @@ export const IntroduceChannel = React.memo(
   ({
     description = '',
     categories,
-    listVideosIntro,
-    navigation,
-    links,
-    firstRenderVideo,
     onShowSpecName,
-    onSeeMoreVideo,
   }: Props) => {
     const {t} = useTranslation();
 
@@ -51,37 +36,7 @@ export const IntroduceChannel = React.memo(
 
     const styles = useStyles();
 
-    const isFocusScreen = useIsFocused();
-
     //ACTION
-    const handlePressItemVideo = (item: any, index: number) => {
-      // navigation.navigate(mainRoute.videoPlayStaticScreen, {
-      //   firstIndex: index,
-      //   data: listVideosIntro || [],
-      //   type: 'expertOutstanding',
-      //   isFromDetail: true,
-      // });
-    };
-
-    // const _renderListVideo = () => {
-    //   if (firstRenderVideo) {
-    //     return (
-    //       <View style={screenStyles.pV12}>
-    //         <CLoading loadingSize={typeLoading.small} />
-    //       </View>
-    //     );
-    //   } else if (listVideosIntro?.length > 0) {
-    //     const isPlay = isFocusScreen;
-    //     return (
-    //       <Outstanding
-    //         listData={listVideosIntro}
-    //         isPlayTop={isPlay}
-    //         onPressItem={handlePressItemVideo}
-    //         onSeeMoreVideo={onSeeMoreVideo}
-    //       />
-    //     );
-    //   }
-    // };
 
     //RENDER
     const renderDescription = () => {
@@ -109,12 +64,6 @@ export const IntroduceChannel = React.memo(
       );
     };
 
-    // const renderLinks = () => {
-    //   if (links?.length > 0) {
-    //     return <ListSocials socials={links} />;
-    //   }
-    // };
-
     const renderSpecialists = () => {
       const specialists = categories || [];
       if (specialists?.length > 0) {
@@ -130,9 +79,7 @@ export const IntroduceChannel = React.memo(
     return (
       <>
         {renderDescription()}
-        {/* {_renderListVideo()} */}
         {renderSpecialists()}
-        {/* {renderLinks()} */}
       </>
     );
   },

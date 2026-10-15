@@ -342,4 +342,10 @@ export const screenStyles = StyleSheet.create({
     right: 30,
     bottom: 30,
   },
+  pV4:{
+    paddingVertical:4,
+  },
+  pV6:{
+    paddingVertical:6,
+  }
 });

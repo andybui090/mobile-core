@@ -9,6 +9,10 @@ import {
   getCategoriesCallback,
   postFeedbackData,
   postFeedbackDataCallback,
+  getListReport,
+  getListReportCallback,
+  postReport,
+  postReportCallback,
 } from '@/redux/slices/globalSlice';
 import { takeLatest } from 'redux-saga/effects';
 import { processAPISaga } from '../function/commonProcess';
@@ -36,6 +40,20 @@ interface actionFeedBack {
     report_images?: any;
   };
 }
+
+interface actionListReport {
+  payload: null;
+}
+
+interface actionReport {
+  payload: {
+    // video_id: string;
+    // report_type_id: number;
+    // content: string;
+    // type: string;
+  };
+}
+
 
 function* fetchTutorials(action: actionGetTutorials) {
   yield* processAPISaga(
@@ -77,10 +95,25 @@ function* fetchFeedback(action: actionFeedBack) {
   );
 }
 
+function* fetchListReport(action: actionListReport) {
+  yield* processAPISaga(
+    ApiService.getListReport,
+    action.payload,
+    getListReportCallback,
+  );
+}
+
+function* fetchPostReport(action: actionReport) {
+  yield* processAPISaga(ApiService.postReport, action.payload, postReportCallback);
+}
+
+
 export default [
   takeLatest(getTutorials, fetchTutorials),
   takeLatest(getLanguages, fetchListLanguage),
   takeLatest(getCountries, fetchCountries),
   takeLatest(getCategories, fetchCategories),
   takeLatest(postFeedbackData, fetchFeedback),
+  takeLatest(getListReport, fetchListReport),
+  takeLatest(postReport, fetchPostReport),
 ];

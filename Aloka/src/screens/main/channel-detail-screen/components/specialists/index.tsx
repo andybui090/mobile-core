@@ -34,7 +34,7 @@ const Specialists = ({ specialists = [], onShowSpecName }: Props) => {
     <View style={styles.container}>
       <View style={styles.line} />
       <CText color={colors.c101828} h5 w600>
-        {t('doctorProfile.specialist')}
+        {t('expert.specialty', 'Chuyên môn')}
       </CText>
       <View style={styles.specialistStyle}>
         {specialists.map((item: any, index: any) => {

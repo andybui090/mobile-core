@@ -9,14 +9,14 @@ interface AuthState {
   channelList: responseProps;
   // updateChannelListLocal: any;
   // channelDetailNewsFeed: responseObjectProps;
-  // listPackageChannel: responseObjectProps;
-  // listOptionPackageChannel: responseObjectProps;
-  // dataPackageChannel: responseObjectProps;
-  // dataEditPackageChannel: responseObjectProps;
+  listPackageChannel: responseProps;
+  listOptionPackageChannel: responseProps;
+  dataPackageChannel: responseProps;
+  dataEditPackageChannel: responseProps;
   dataBuyPackage: responseProps;
   dataBuyPackageFree: responseProps;
   dataBookingCall: responseProps;
-  // dataUpdateChannel: responseCreateProps;
+  dataUpdateChannel: responseProps;
   dataAppointmentTime: responseProps;
   // dataPackageHot: responseObjectProps;
   // memberShipList: responseListProps;
@@ -54,26 +54,26 @@ const initialState: AuthState = {
   //   data: undefined,
   //   error: undefined,
   // },
-  // listPackageChannel: {
-  //   loading: false,
-  //   data: undefined,
-  //   error: undefined,
-  // },
-  // listOptionPackageChannel: {
-  //   loading: false,
-  //   data: undefined,
-  //   error: undefined,
-  // },
-  // dataPackageChannel: {
-  //   loading: false,
-  //   data: undefined,
-  //   error: undefined,
-  // },
-  // dataEditPackageChannel: {
-  //   loading: false,
-  //   data: undefined,
-  //   error: undefined,
-  // },
+  listPackageChannel: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
+  listOptionPackageChannel: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
+  dataPackageChannel: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
+  dataEditPackageChannel: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
   dataBuyPackage: {
     loading: false,
     data: undefined,
@@ -89,11 +89,11 @@ const initialState: AuthState = {
     data: undefined,
     error: undefined,
   },
-  // dataUpdateChannel: {
-  //   loading: false,
-  //   data: undefined,
-  //   error: undefined,
-  // },
+  dataUpdateChannel: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
   dataAppointmentTime: {
     loading: false,
     data: undefined,
@@ -196,51 +196,51 @@ const channelSlice = createSlice({
     //   channelDetailNewsFeed.error = error;
     // },
     // //
-    // getDetailChannelServicesPackage: (state, _action) => {
-    //   state.listPackageChannel.loading = true;
-    // },
-    // getDetailChannelServicesPackageCallback: (
-    //   state,
-    //   { payload: { data, error } },
-    // ) => {
-    //   const { listPackageChannel } = state;
-    //   listPackageChannel.loading = false;
-    //   listPackageChannel.data = data;
-    //   listPackageChannel.error = error;
-    // },
+    getDetailChannelServicesPackage: (state, _action) => {
+      state.listPackageChannel.loading = true;
+    },
+    getDetailChannelServicesPackageCallback: (
+      state,
+      { payload: { data, error } },
+    ) => {
+      const { listPackageChannel } = state;
+      listPackageChannel.loading = false;
+      listPackageChannel.data = data;
+      listPackageChannel.error = error;
+    },
     // //
-    // getDetailChannelOptionServicesPackage: (state, _action) => {
-    //   state.listOptionPackageChannel.loading = true;
-    // },
-    // getDetailChannelOptionServicesPackageCallback: (
-    //   state,
-    //   { payload: { data, error } },
-    // ) => {
-    //   const { listOptionPackageChannel } = state;
-    //   listOptionPackageChannel.loading = false;
-    //   listOptionPackageChannel.data = data;
-    //   listOptionPackageChannel.error = error;
-    // },
+    getDetailChannelOptionServicesPackage: (state, _action) => {
+      state.listOptionPackageChannel.loading = true;
+    },
+    getDetailChannelOptionServicesPackageCallback: (
+      state,
+      { payload: { data, error } },
+    ) => {
+      const { listOptionPackageChannel } = state;
+      listOptionPackageChannel.loading = false;
+      listOptionPackageChannel.data = data;
+      listOptionPackageChannel.error = error;
+    },
     // //
-    // postCreateChannelPackage: (state, _action) => {
-    //   state.dataPackageChannel.loading = true;
-    // },
-    // postCreateChannelPackageCallback: (state, { payload: { data, error } }) => {
-    //   const { dataPackageChannel } = state;
-    //   dataPackageChannel.loading = false;
-    //   dataPackageChannel.data = data;
-    //   dataPackageChannel.error = error;
-    // },
+    postCreateChannelPackage: (state, _action) => {
+      state.dataPackageChannel.loading = true;
+    },
+    postCreateChannelPackageCallback: (state, { payload: { data, error } }) => {
+      const { dataPackageChannel } = state;
+      dataPackageChannel.loading = false;
+      dataPackageChannel.data = data;
+      dataPackageChannel.error = error;
+    },
     // // edit package
-    // postEditChannelPackage: (state, _action) => {
-    //   state.dataEditPackageChannel.loading = true;
-    // },
-    // postEditChannelPackageCallback: (state, { payload: { data, error } }) => {
-    //   const { dataEditPackageChannel } = state;
-    //   dataEditPackageChannel.loading = false;
-    //   dataEditPackageChannel.data = data;
-    //   dataEditPackageChannel.error = error;
-    // },
+    postEditChannelPackage: (state, _action) => {
+      state.dataEditPackageChannel.loading = true;
+    },
+    postEditChannelPackageCallback: (state, { payload: { data, error } }) => {
+      const { dataEditPackageChannel } = state;
+      dataEditPackageChannel.loading = false;
+      dataEditPackageChannel.data = data;
+      dataEditPackageChannel.error = error;
+    },
     postBuyPackageChannel: (state, _action) => {
       state.dataBuyPackage.loading = true;
     },
@@ -271,15 +271,15 @@ const channelSlice = createSlice({
       dataBookingCall.data = data;
       dataBookingCall.error = error;
     },
-    // updateChannel: (state, _action) => {
-    //   state.dataUpdateChannel.loading = true;
-    // },
-    // updateChannelCallback: (state, { payload: { data, error } }) => {
-    //   const { dataUpdateChannel } = state;
-    //   dataUpdateChannel.loading = false;
-    //   dataUpdateChannel.data = data;
-    //   dataUpdateChannel.error = error;
-    // },
+    updateChannel: (state, _action) => {
+      state.dataUpdateChannel.loading = true;
+    },
+    updateChannelCallback: (state, { payload: { data, error } }) => {
+      const { dataUpdateChannel } = state;
+      dataUpdateChannel.loading = false;
+      dataUpdateChannel.data = data;
+      dataUpdateChannel.error = error;
+    },
     getAppointmentTime: (state, _action) => {
       state.dataAppointmentTime.loading = true;
     },
@@ -304,14 +304,14 @@ const channelSlice = createSlice({
       const {
         dataBuyPackage,
         dataBuyPackageFree,
-        // dataPackageChannel,
+        dataPackageChannel,
         // dataEditPackageChannel,
-        // dataUpdateChannel,
+        dataUpdateChannel,
         dataBookingCall,
       } = state;
-      // dataPackageChannel.loading = false;
-      // dataPackageChannel.data = undefined;
-      // dataPackageChannel.error = undefined;
+      dataPackageChannel.loading = false;
+      dataPackageChannel.data = undefined;
+      dataPackageChannel.error = undefined;
 
       dataBuyPackageFree.loading = false;
       dataBuyPackageFree.data = undefined;
@@ -325,9 +325,9 @@ const channelSlice = createSlice({
       // dataEditPackageChannel.data = undefined;
       // dataEditPackageChannel.error = undefined;
 
-      // dataUpdateChannel.loading = false;
-      // dataUpdateChannel.data = undefined;
-      // dataUpdateChannel.error = undefined;
+      dataUpdateChannel.loading = false;
+      dataUpdateChannel.data = undefined;
+      dataUpdateChannel.error = undefined;
 
       dataBookingCall.loading = false;
       dataBookingCall.data = undefined;
@@ -367,12 +367,12 @@ export const {
   // getListChannelLocal,
   // getDetailChannelNewsFeed,
   // getDetailChannelNewsFeedCallback,
-  // getDetailChannelServicesPackage,
-  // getDetailChannelServicesPackageCallback,
-  // getDetailChannelOptionServicesPackage,
-  // getDetailChannelOptionServicesPackageCallback,
-  // postCreateChannelPackage,
-  // postCreateChannelPackageCallback,
+  getDetailChannelServicesPackage,
+  getDetailChannelServicesPackageCallback,
+  getDetailChannelOptionServicesPackage,
+  getDetailChannelOptionServicesPackageCallback,
+  postCreateChannelPackage,
+  postCreateChannelPackageCallback,
   postBuyPackageChannel,
   postBuyPackageChannelCallback,
   postBuyPackageFreeChannel,
@@ -380,10 +380,10 @@ export const {
   postBookingChannel,
   postBookingChannelCallback,
   resetPackageChannel,
-  // postEditChannelPackage,
-  // postEditChannelPackageCallback,
-  // updateChannel,
-  // updateChannelCallback,
+  postEditChannelPackage,
+  postEditChannelPackageCallback,
+  updateChannel,
+  updateChannelCallback,
   getAppointmentTime,
   getAppointmentTimeCallback,
   // getPackageHot,

@@ -128,7 +128,7 @@ export default function QRCode({ showMyQRCode, saveQrCode }: any) {
             </CText>
           )}
           {renderQRCode()}
-          {/* {qrBase64 != '' ? (
+          {qrBase64 != '' ? (
             <Pressable onPress={() => saveQrCode(qrBase64)}>
               <Row
                 start
@@ -152,7 +152,7 @@ export default function QRCode({ showMyQRCode, saveQrCode }: any) {
                 </CText>
               </Row>
             </Pressable>
-          ) : null} */}
+          ) : null}
         </View>
       </Wrapper>
     );
