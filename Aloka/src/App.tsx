@@ -33,50 +33,53 @@ import { View } from 'react-native';
 import BootSplash from 'react-native-bootsplash';
 import FirebaseConfigProvider from './utils/FirebaseConfigProvider';
 import { NetworkAwareProvider } from './utils/NetworkAwareProvider';
+import { registerTranslation } from 'react-native-paper-dates';
+import { useTranslation } from 'react-i18next';
+import { PaperProvider } from 'react-native-paper';
 
 function App() {
-  // const {t} = useTranslation();
-  // registerTranslation('vi', {
-  //   save: t('common.save'), // ví dụ key trong i18n của bạn
-  //   selectSingle: t('date.selectSingle', 'Chọn ngày'),
-  //   selectMultiple: t('date.selectMultiple'),
-  //   selectRange: t('date.selectRange', 'Chọn khoảng thời gian'),
-  //   notAccordingToDateFormat: inputFormat =>
-  //     t('date.invalidFormat', {format: inputFormat}),
-  //   mustBeHigherThan: date => t('date.mustBeHigherThan', {date}),
-  //   mustBeLowerThan: date => t('date.mustBeLowerThan', {date}),
-  //   mustBeBetween: (startDate, endDate) =>
-  //     t('date.mustBeBetween', {startDate, endDate}),
-  //   dateIsDisabled: t('date.disabled'),
-  //   previous: t('common.previous'),
-  //   next: t('common.next'),
-  //   typeInDate: t('date.typeIn'),
-  //   pickDateFromCalendar: t('date.pickFromCalendar'),
-  //   close: t('common.close'),
-  //   hour: t('date.hour'),
-  //   minute: t('date.minute'),
-  // });
+  const { t } = useTranslation();
+  registerTranslation('vi', {
+    save: t('common.save'), // ví dụ key trong i18n của bạn
+    selectSingle: t('date.selectSingle', 'Chọn ngày'),
+    selectMultiple: t('date.selectMultiple'),
+    selectRange: t('date.selectRange', 'Chọn khoảng thời gian'),
+    notAccordingToDateFormat: inputFormat =>
+      t('date.invalidFormat', { format: inputFormat }),
+    mustBeHigherThan: date => t('date.mustBeHigherThan', { date }),
+    mustBeLowerThan: date => t('date.mustBeLowerThan', { date }),
+    mustBeBetween: (startDate, endDate) =>
+      t('date.mustBeBetween', { startDate, endDate }),
+    dateIsDisabled: t('date.disabled'),
+    previous: t('common.previous'),
+    next: t('common.next'),
+    typeInDate: t('date.typeIn'),
+    pickDateFromCalendar: t('date.pickFromCalendar'),
+    close: t('common.close'),
+    hour: t('date.hour'),
+    minute: t('date.minute'),
+  });
 
-  // registerTranslation('en', {
-  //   save: t('common.save', 'Save'), // ví dụ key trong i18n của bạn
-  //   selectSingle: t('date.selectSingle', 'Pick a date'),
-  //   selectMultiple: t('date.selectMultiple'),
-  //   selectRange: t('date.selectRange', 'Select Range'),
-  //   notAccordingToDateFormat: inputFormat =>
-  //     t('date.invalidFormat', {format: inputFormat}),
-  //   mustBeHigherThan: date => t('date.mustBeHigherThan', {date}),
-  //   mustBeLowerThan: date => t('date.mustBeLowerThan', {date}),
-  //   mustBeBetween: (startDate, endDate) =>
-  //     t('date.mustBeBetween', {startDate, endDate}),
-  //   dateIsDisabled: t('date.disabled'),
-  //   previous: t('common.previous'),
-  //   next: t('common.next'),
-  //   typeInDate: t('date.typeIn'),
-  //   pickDateFromCalendar: t('date.pickFromCalendar'),
-  //   close: t('common.close'),
-  //   hour: t('date.hour'),
-  //   minute: t('date.minute'),
-  // });
+  registerTranslation('en', {
+    save: t('common.save', 'Save'), // ví dụ key trong i18n của bạn
+    selectSingle: t('date.selectSingle', 'Pick a date'),
+    selectMultiple: t('date.selectMultiple'),
+    selectRange: t('date.selectRange', 'Select Range'),
+    notAccordingToDateFormat: inputFormat =>
+      t('date.invalidFormat', { format: inputFormat }),
+    mustBeHigherThan: date => t('date.mustBeHigherThan', { date }),
+    mustBeLowerThan: date => t('date.mustBeLowerThan', { date }),
+    mustBeBetween: (startDate, endDate) =>
+      t('date.mustBeBetween', { startDate, endDate }),
+    dateIsDisabled: t('date.disabled'),
+    previous: t('common.previous'),
+    next: t('common.next'),
+    typeInDate: t('date.typeIn'),
+    pickDateFromCalendar: t('date.pickFromCalendar'),
+    close: t('common.close'),
+    hour: t('date.hour'),
+    minute: t('date.minute'),
+  });
 
   // useEffect(() => {
   //   Orientation.lockToPortrait();
@@ -224,7 +227,9 @@ function App() {
   return (
     <View style={{ flex: 1 }}>
       <StatusBar barStyle="dark-content" />
-      <RootNavigator onCompleteLoading={hideSlashScreen} />
+      <PaperProvider>
+        <RootNavigator onCompleteLoading={hideSlashScreen} />
+      </PaperProvider>
       <FirebaseConfigProvider />
       <NetworkAwareProvider />
     </View>

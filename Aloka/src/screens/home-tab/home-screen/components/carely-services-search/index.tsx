@@ -1,4 +1,4 @@
-import {ImageHelper} from '@/components';
+import { ImageHelper } from '@/components';
 import {
   calculateDistance,
   formatMoneyVND,
@@ -10,9 +10,9 @@ import {
   screenStyles,
   ScreenWidth,
 } from '@/configs';
-import {CEmptyData, CText, Row} from '@/utils';
-import {makeStyles, useTheme} from '@rneui/themed';
-import {useTranslation} from 'react-i18next';
+import { CEmptyData, CText, Row } from '@/utils';
+import { makeStyles, useTheme } from '@rneui/themed';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   FlatList,
@@ -20,12 +20,12 @@ import {
   Pressable,
   View,
 } from 'react-native';
-import {ServiceLoading} from './ServiceLoading';
-import {Rating} from 'react-native-ratings';
-import {useContext} from 'react';
-import {AppContext} from '@/contexts';
+import { ServiceLoading } from './ServiceLoading';
+import { Rating } from 'react-native-ratings';
+import { useContext } from 'react';
+import { AppContext } from '@/contexts';
 
-const useStyles = makeStyles(({colors}) => ({
+const useStyles = makeStyles(({ colors }) => ({
   card: {
     width: '48%',
     backgroundColor: '#fff',
@@ -51,12 +51,12 @@ const useStyles = makeStyles(({colors}) => ({
 
 const CarelyServicesSearch = (props: any) => {
   const {
-    theme: {colors},
+    theme: { colors },
   } = useTheme();
   const styles = useStyles();
-  const {t} = useTranslation();
+  const { t } = useTranslation();
 
-  const {currentLocation} = useContext(AppContext);
+  const { currentLocation } = useContext(AppContext);
   //
   const {
     loading,
@@ -71,8 +71,8 @@ const CarelyServicesSearch = (props: any) => {
   const renderErrorImage = () => {
     return (
       <Image
-        source={images.global.img_default}
-        style={{width: '80%', height: '80%'}}
+        source={images.global.logo_app}
+        style={{ width: '80%', height: '80%' }}
         resizeMode="contain"
       />
     );
@@ -83,14 +83,15 @@ const CarelyServicesSearch = (props: any) => {
       <View
         style={[
           screenStyles.centerWrap,
-          {paddingBottom: ifIphoneX(20, 10), paddingTop: 5},
-        ]}>
+          { paddingBottom: ifIphoneX(20, 10), paddingTop: 5 },
+        ]}
+      >
         <ActivityIndicator size="small" color={colors.primary} />
       </View>
     ) : null;
   };
 
-  const ServiceCard = ({item}: any) => {
+  const ServiceCard = ({ item }: any) => {
     const {
       name,
       price,
@@ -117,7 +118,7 @@ const CarelyServicesSearch = (props: any) => {
       <Pressable style={styles.card} onPress={() => onPressItem(item)}>
         <View style={styles.image}>
           <ImageHelper
-            source={{uri: thumbnail}}
+            source={{ uri: thumbnail }}
             renderErrorImage={renderErrorImage}
           />
         </View>
@@ -156,12 +157,13 @@ const CarelyServicesSearch = (props: any) => {
           )}
           <View style={screenStyles.mT3}>
             {priceFormat.discountPrice > 0 ? (
-              <Row start style={{flex: 1, flexWrap: 'wrap'}}>
+              <Row start style={{ flex: 1, flexWrap: 'wrap' }}>
                 <CText
                   color={'#999'}
                   h5
                   w400
-                  style={{textDecorationLine: 'line-through'}}>
+                  style={{ textDecorationLine: 'line-through' }}
+                >
                   {`${formatMoneyVND(priceFormat.rootPrice, '.')}`}
                 </CText>
                 <CText h4 w600 color={'#ff3b30'} style={[screenStyles.mL5]}>
@@ -169,7 +171,7 @@ const CarelyServicesSearch = (props: any) => {
                 </CText>
               </Row>
             ) : (
-              <Row start style={{flex: 1, flexWrap: 'wrap'}}>
+              <Row start style={{ flex: 1, flexWrap: 'wrap' }}>
                 <CText h4 w600 color={'#ff3b30'}>
                   {`${formatMoneyVND(priceFormat.rootPrice, '.')}`}
                 </CText>
@@ -192,9 +194,9 @@ const CarelyServicesSearch = (props: any) => {
         keyExtractor={keyExtractor}
         numColumns={2}
         showsVerticalScrollIndicator={false}
-        columnWrapperStyle={{justifyContent: 'space-between'}}
-        contentContainerStyle={{paddingHorizontal: 12, flexGrow: 1}}
-        renderItem={({item}) => <ServiceCard item={item} />}
+        columnWrapperStyle={{ justifyContent: 'space-between' }}
+        contentContainerStyle={{ paddingHorizontal: 12, flexGrow: 1 }}
+        renderItem={({ item }) => <ServiceCard item={item} />}
         scrollEventThrottle={isIOS ? 160 : 16}
         ListEmptyComponent={<CEmptyData />}
         ListFooterComponent={_renderSearchResultsFooter}

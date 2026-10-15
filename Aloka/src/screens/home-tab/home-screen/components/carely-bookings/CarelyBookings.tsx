@@ -44,8 +44,9 @@ const CarelyBookings = (props: any) => {
     const { user } = useContext(AppContext);
 
     const { loading, listData, onLoadMore, finalLoad, onEndReached, setOnEndReached, onPressItem } = props;
+
     const renderErrorImage = () => {
-        return <Image source={images.bottomTab.carely} style={screenStyles.box30} resizeMode="contain" />;
+        return <Image source={images.global.logo_app} style={screenStyles.box30} resizeMode="contain" />;
     };
 
     const renderItem = ({ item, index }: any) => {
@@ -116,7 +117,6 @@ const CarelyBookings = (props: any) => {
                     onMomentumScrollBegin={() => setOnEndReached(false)}
                     onEndReached={onLoadMore}
                 />
-                {/* <Divider color={colors.cF9FAFB} width={7} /> */}
             </View>
         );
     };

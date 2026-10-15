@@ -335,3 +335,243 @@ export const formatByte = (type: any, name: string, size: number) => {
   let MB = formatBytes(size);
   return {MB, removeEx, extension};
 };
+
+export const formatDateTimeKey = (d: Date) => {
+  const pad = (n: number) => (n < 10 ? '0' + n : n);
+  const yyyy = d.getFullYear();
+  const MM = pad(d.getMonth() + 1);
+  const dd = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const mm = pad(d.getMinutes());
+  return `${yyyy}-${MM}-${dd} ${hh}:${mm}`;
+};
+
+export const normalizeTimeBooked = (bookings: {date: string}[]) => {
+  const map = new Map<string, boolean>();
+  bookings.forEach(b => {
+    const d = new Date(b.date);
+    const key = formatDateTimeKey(d);
+    map.set(key, true);
+  });
+  return map;
+};
+
+const pad2 = (num: number) => (num < 10 ? `0${num}` : `${num}`);
+
+export const formatDateCarely = (date: Date, lang: string, t: any) => {
+  const labels = [
+    t('common.sunday', 'Sun'),
+    t('common.monday', 'Mon'),
+    t('common.tuesday', 'Tue'),
+    t('common.wednesday', 'Wed'),
+    t('common.thursday', 'Thu'),
+    t('common.friday', 'Fri'),
+    t('common.saturday', 'Sat'),
+  ];
+
+  const dayName = labels[date.getDay()];
+  const dd = pad2(date.getDate());
+  const mm = pad2(date.getMonth() + 1);
+  const yyyy = date.getFullYear();
+
+  if (lang === 'vi') {
+    return `${dayName}, Ngày ${dd}/${mm}/${yyyy}`;
+  }
+
+  return `${dayName}, ${dd}/${mm}/${yyyy}`;
+};
+
+export const formatTimeRangeWithDuration = (
+  startTime: string, // "15:30"
+  durationMinutes: number, // 90
+) => {
+  const [h, m] = startTime.split(':').map(Number);
+
+  const start = new Date();
+  start.setHours(h, m, 0, 0);
+
+  const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+
+  const format24hWithPeriod = (date: Date) => {
+    const hh = date.getHours().toString().padStart(2, '0');
+    const mm = date.getMinutes().toString().padStart(2, '0');
+    const period = date.getHours() >= 12 ? 'PM' : 'AM';
+
+    return `${hh}:${mm} ${period}`;
+  };
+
+  return `${format24hWithPeriod(start)} – ${format24hWithPeriod(end)}`;
+};
+
+type PackageItem = {
+  channel_id: string;
+  call_1vs1: number;
+  chat_1vs1: number;
+  is_book_service: number;
+  id: number;
+  order_id: number;
+  remain_call: number;
+  remain_chat: number;
+};
+
+type OrderInfo = {
+  id: number;
+  order_id: number;
+  is_book_service: number;
+  remain_call: number;
+  remain_chat: number;
+};
+
+export type MergedPackage = {
+  channel_id: string;
+  call_1vs1: number;
+  chat_1vs1: number;
+  is_book_service: number;
+  orders: OrderInfo[];
+  expiredChat: boolean;
+  expiredCall: boolean;
+};
+
+export function mergePackagesByChannel(
+  packages: PackageItem[] | null | undefined,
+): MergedPackage[] {
+  if (!Array.isArray(packages)) return [];
+
+  const result: Record<string, MergedPackage> = {};
+
+  packages.forEach(pkg => {
+    const {
+      channel_id,
+      call_1vs1,
+      chat_1vs1,
+      id,
+      order_id,
+      remain_call,
+      remain_chat,
+      is_book_service,
+    } = pkg;
+
+    if (!result[channel_id]) {
+      result[channel_id] = {
+        channel_id,
+        call_1vs1,
+        chat_1vs1,
+        is_book_service,
+        orders: [],
+        expiredChat: true,
+        expiredCall: true,
+      };
+    }
+
+    result[channel_id].orders.push({
+      id,
+      order_id,
+      is_book_service,
+      remain_call,
+      remain_chat,
+    });
+  });
+
+  // tính expiredChat & expiredCall
+  Object.values(result).forEach(pkg => {
+    const hasUnlimitedChat = pkg.orders.some(o => o.remain_chat < 0);
+    const hasUnlimitedCall = pkg.orders.some(o => o.remain_call < 0);
+
+    pkg.expiredChat = hasUnlimitedChat
+      ? false
+      : pkg.orders.every(o => o.remain_chat === 0);
+
+    pkg.expiredCall = hasUnlimitedCall
+      ? false
+      : pkg.orders.every(o => o.remain_call === 0);
+  });
+
+  return Object.values(result);
+}
+
+export function getPackageByChannelId(
+  mergedPackages: MergedPackage[],
+  channelId: string,
+): MergedPackage {
+  return (
+    mergedPackages.find(pkg => pkg.channel_id === channelId) ?? {
+      channel_id: '',
+      call_1vs1: 0,
+      chat_1vs1: 0,
+      is_book_service: 0,
+      orders: [],
+      expiredChat: true,
+      expiredCall: true,
+    }
+  );
+}
+
+export function getNearValidChatPackageId(pkg: MergedPackage): number | null {
+  // duyệt ngược từ cuối mảng orders
+  for (let i = 0; i < pkg.orders.length; i++) {
+    const order = pkg.orders[i];
+    if (order.remain_chat < 0 || order.remain_chat > 0) {
+      return order.id;
+    }
+  }
+  return null; // không tìm thấy
+}
+
+export function getNearValidChatOrderId(pkg: MergedPackage): number | null {
+  // duyệt ngược từ cuối mảng orders
+  for (let i = 0; i < pkg.orders.length; i++) {
+    const order = pkg.orders[i];
+    if (order.remain_chat < 0 || order.remain_chat > 0) {
+      return order.order_id;
+    }
+  }
+  return null; // không tìm thấy
+}
+
+export function getNearValidCallOrderId(pkg: MergedPackage): number | null {
+  // duyệt ngược từ cuối mảng orders
+  for (let i = 0; i < pkg.orders.length; i++) {
+    const order = pkg.orders[i];
+    if (order.remain_call < 0 || order.remain_call > 0) {
+      return order.order_id;
+    }
+  }
+  return null; // không tìm thấy
+}
+
+export function getPackageOrderId(
+  pkg: MergedPackage,
+  pkgId: number,
+): number | null {
+  if (!pkg?.orders?.length) return null;
+
+  const order = pkg.orders.find(o => o.id === pkgId);
+  return order?.order_id ?? null;
+}
+
+export const calculateNumberViewLike = (
+  numberReal: number,
+  numberVirtual: number,
+) => {
+  //se la so luot that + them so luot ao
+  if (numberReal) {
+    if (numberVirtual) {
+      return numberReal + numberVirtual;
+    } else {
+      return numberReal;
+    }
+  } else {
+    if (numberVirtual) {
+      return numberVirtual;
+    }
+    return 0;
+  }
+};
+
+export const splitCategory = (categoryName: string) => {
+  let result = '';
+  if (categoryName) {
+    result = categoryName.split(',')[0];
+  }
+  return result;
+};

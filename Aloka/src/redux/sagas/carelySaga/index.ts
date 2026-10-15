@@ -3,19 +3,19 @@ import {
   getCarelyServicesCallback,
   getCarelySearchServices,
   getCarelySearchServicesCallback,
-  // getCarelyChildServices,
-  // getCarelyChildServicesCallback,
+  getCarelyChildServices,
+  getCarelyChildServicesCallback,
   // ratingCarely,
   // ratingCarelyCallback,
-  // getDetailPkgCarely,
-  // getDetailPkgCarelyCallback,
-  // refundPkgCarely,
-  // refundPkgCarelyCallback,
+  getDetailPkgCarely,
+  getDetailPkgCarelyCallback,
+  refundPkgCarely,
+  refundPkgCarelyCallback,
   // getReviewCarely,
   // getReviewCarelyCallback,
 } from '@/redux/slices/carelySlice';
-import {takeLatest} from 'redux-saga/effects';
-import {processAPISaga} from '../function/commonProcess';
+import { takeLatest } from 'redux-saga/effects';
+import { processAPISaga } from '../function/commonProcess';
 import ApiService from '@/services/api-base';
 
 interface actionGetCarelyService {
@@ -27,11 +27,11 @@ interface actionGetCarelyService {
   };
 }
 
-// interface actionRefundCarelyService {
-//   payload: {
-//     order_id:''
-//   };
-// }
+interface actionRefundCarelyService {
+  payload: {
+    order_id:''
+  };
+}
 
 function* fetchCarelyService(action: actionGetCarelyService) {
   yield* processAPISaga(
@@ -49,14 +49,13 @@ function* fetchCarelySearchService(action: actionGetCarelyService) {
   );
 }
 
-// function* fetchCarelyChildServices(action: actionGetCarelyService) {
-//   yield* processAPISaga(
-//     ApiService.getCarelyServices,
-//     action.payload,
-//     getCarelyChildServicesCallback,
-//     2,
-//   );
-// }
+function* fetchCarelyChildServices(action: actionGetCarelyService) {
+  yield* processAPISaga(
+    ApiService.getCarelyServices,
+    action.payload,
+    getCarelyChildServicesCallback,
+  );
+}
 
 // function* fetchRatingCarely(action: actionGetCarelyService) {
 //   yield* processAPISaga(
@@ -67,23 +66,21 @@ function* fetchCarelySearchService(action: actionGetCarelyService) {
 //   );
 // }
 
-// function* fetchDetailPkgCarely(action: actionGetCarelyService) {
-//   yield* processAPISaga(
-//     ApiService.getCarelyPackageDetail,
-//     action.payload,
-//     getDetailPkgCarelyCallback,
-//     1,
-//   );
-// }
+function* fetchDetailPkgCarely(action: actionGetCarelyService) {
+  yield* processAPISaga(
+    ApiService.getCarelyPackageDetail,
+    action.payload,
+    getDetailPkgCarelyCallback,
+  );
+}
 
-// function* fetchRefundPkgCarely(action: actionRefundCarelyService) {
-//   yield* processAPISaga(
-//     ApiService.refundAfterBookingFailed,
-//     action.payload,
-//     refundPkgCarelyCallback,
-//     1,
-//   );
-// }
+function* fetchRefundPkgCarely(action: actionRefundCarelyService) {
+  yield* processAPISaga(
+    ApiService.refundAfterBookingFailed,
+    action.payload,
+    refundPkgCarelyCallback,
+  );
+}
 
 // function* fetchCarelyReview(action: actionGetCarelyService) {
 //   yield* processAPISaga(
@@ -97,9 +94,9 @@ function* fetchCarelySearchService(action: actionGetCarelyService) {
 export default [
   takeLatest(getCarelyServices, fetchCarelyService),
   takeLatest(getCarelySearchServices, fetchCarelySearchService),
-  // takeLatest(getCarelyChildServices, fetchCarelyChildServices),
+  takeLatest(getCarelyChildServices, fetchCarelyChildServices),
   // takeLatest(ratingCarely, fetchRatingCarely),
-  // takeLatest(getDetailPkgCarely, fetchDetailPkgCarely),
-  // takeLatest(refundPkgCarely, fetchRefundPkgCarely),
+  takeLatest(getDetailPkgCarely, fetchDetailPkgCarely),
+  takeLatest(refundPkgCarely, fetchRefundPkgCarely),
   // takeLatest(getReviewCarely, fetchCarelyReview),
 ];

@@ -134,6 +134,9 @@ export const screenStyles = StyleSheet.create({
   mR10: {
     marginRight: 10,
   },
+  mR5: {
+    marginRight: 5,
+  },
   mH16: {
     marginHorizontal: 16,
   },
@@ -229,6 +232,9 @@ export const screenStyles = StyleSheet.create({
   pB16: {
     paddingBottom: 16,
   },
+  pB12: {
+    paddingBottom: 12,
+  },
   rowStart: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -323,5 +329,17 @@ export const screenStyles = StyleSheet.create({
   },
   overflowHidden: {
     overflow: 'hidden',
+  },
+  round40R: {
+    height: 40,
+    width: 40,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  hitSlop30: {
+    top: 30,
+    left: 30,
+    right: 30,
+    bottom: 30,
   },
 });

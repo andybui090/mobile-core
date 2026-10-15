@@ -1,5 +1,7 @@
 type successPayload = {
   items: any[];
+  status: string;
+  result: any;
 };
 
 type errorPayload = {
@@ -11,4 +13,3 @@ export type responseProps = {
   data: successPayload | undefined;
   error: errorPayload | undefined;
 };
-

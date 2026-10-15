@@ -50,6 +50,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>Aloka requires access to your media library to allow you to select media files when using supported features.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Need to access your camera to take a photo then update profile picture and other support in the application</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

@@ -10,6 +10,10 @@ import {
   CARELY,
   ONBOARD,
   LOCATION,
+  CHANNEL,
+  APPOINTMENT,
+  PACKAGE,
+  COURSES,
 } from './uris';
 import i18n from 'i18next';
 
@@ -99,7 +103,9 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   const deleteAccount = (payload: object) => {
     return api.delete(PROFILE.DELETE_ACCOUNT);
   };
-
+  const putUpdateProfile = (payload: object) => {
+    return api.put(PROFILE.UPDATE_PROFILE, payload);
+  };
   /*
     ONBOARD
   */
@@ -131,11 +137,59 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   const getCarelyServices = (payload: any) => {
     return api.get(CARELY.SERVICES, payload);
   };
+  const getCarelyPackageDetail = (payload: any) => {
+    return api.get(`${CARELY.SERVICES}/${payload.packageId}`, payload);
+  };
+  const refundAfterBookingFailed = (payload: any) => {
+    return api.post(CARELY.REFUND, payload);
+  };
   /*
     LOCATION
   */
   const getListSearch = (payload: object) => {
     return api.get(LOCATION.SEARCH_LOCATION, payload);
+  };
+
+  /*
+    CHANNEL
+  */
+  const getChannelDetail = (payload: any) => {
+    return api.get(`${CHANNEL.GET_CHANNEL}/${payload.channelId}`);
+  };
+  const getChannelAppointmentTime = (payload: any) => {
+    return api.get(`${PACKAGE.APPOINT_TIME}/${payload.channelId}`);
+  };
+  const postBookingCall = (payload: any) => {
+    return api.post(`${CHANNEL.BOOKING_CALL}`, payload);
+  };
+  const getListChannel = (payload: any) => {
+    return api.get(CHANNEL.GET_CHANNEL, payload);
+  };
+  /*
+      BOOKING
+    */
+  const updateBookingStatus = (payload: any) => {
+    return api.put(`${APPOINTMENT.APPOINTMENTS}/${payload?.id}`, payload);
+  };
+
+  const buyPackage = (payload: any) => {
+    return api.post(`${CHANNEL.BUY_PACKAGE}`, payload);
+  };
+
+  const getPaymentStatus = (payload: any) => {
+    return api.get(`${PACKAGE.GET_PAYMENT_STATUS}/${payload.orderId}`);
+  };
+
+  const getMyPackagesBeforeBooking = (packageId: any) => {
+    return api.get(`/packages/my?package_id=${packageId}`);
+  };
+
+  const getVoucherByPackage = (payload: any) => {
+    return api.get(`vouchers/by-package`, payload);
+  };
+
+  const getVoucherCourse = (payload: object) => {
+    return api.post(COURSES.VERIFY_COURSE, payload);
   };
 
   return {
@@ -170,7 +224,7 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     getProfile,
     logoutApp,
     deleteAccount,
-
+    putUpdateProfile,
     /*
       ONBOARD
     */
@@ -181,14 +235,34 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     getSpecializations,
     getTitleInfomations,
     updateExpertProfile,
+
     /*
-      CARELY
+      SERVICE
     */
     getCarelyServices,
+    getCarelyPackageDetail,
+    refundAfterBookingFailed,
     /*
       LOCATION
     */
     getListSearch,
+
+    /*
+      CHANNEL
+    */
+    getChannelDetail,
+    getChannelAppointmentTime,
+    postBookingCall,
+    getListChannel,
+    /*
+      BOOKING
+    */
+    updateBookingStatus,
+    buyPackage,
+    getPaymentStatus,
+    getMyPackagesBeforeBooking,
+    getVoucherByPackage,
+    getVoucherCourse,
   };
 };
 

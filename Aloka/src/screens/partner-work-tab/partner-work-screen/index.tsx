@@ -1,6 +1,5 @@
 import { CHeader, Wrapper } from '@/components';
 import { ScreenWidth } from '@/configs';
-import { goBack } from '@/navigation/RootNavigation';
 import { useAppDispatch } from '@/redux/store/customReduxHook';
 import { CText } from '@/utils';
 import { makeStyles, useTheme } from '@rneui/themed';
@@ -8,6 +7,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TabBar, TabView } from 'react-native-tab-view';
 import WorkInformation from './work-information';
+import Conversations from './conversations';
 
 const useStyles = makeStyles(({ colors }) => ({
   indicatorStyle: {
@@ -82,7 +82,7 @@ const PartnerWorkScreen: React.FC<any> = ({ navigation, route }: any) => {
       case 'WorkInformation':
         return <WorkInformation />;
       case 'Conversations':
-        return null;
+        return <Conversations />;
       default:
         break;
     }
@@ -91,8 +91,11 @@ const PartnerWorkScreen: React.FC<any> = ({ navigation, route }: any) => {
   return (
     <Wrapper>
       <CHeader
+        leftComponentOnPress={() =>
+          navigation.getParent()?.getParent()?.goBack()
+        }
+        rightComponentDisable
         title={t('common.work')}
-        leftComponentOnPress={goBack}
         isBorderBottom
       />
       <TabView

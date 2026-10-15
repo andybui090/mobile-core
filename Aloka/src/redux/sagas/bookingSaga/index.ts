@@ -1,28 +1,131 @@
 import {
-  getCarelyServices,
-  getCarelyServicesCallback,
-} from '@/redux/slices/carelySlice';
-import {takeLatest} from 'redux-saga/effects';
-import {processAPISaga} from '../function/commonProcess';
+  getUpcomingBooking,
+  getUpcomingBookingCallback,
+  putCompleteBooking,
+  putCompleteBookingCallback,
+  putCancelBooking,
+  putCancelBookingCallback,
+  putRejectBooking,
+  putRejectBookingCallback,
+  putStatusBooking,
+  putStatusBookingCallback,
+  getRequestBooking,
+  getRequestBookingCallback,
+  putAcceptBooking,
+  putAcceptBookingCallback,
+  getCompletedBooking,
+  getCompletedBookingCallback,
+  getCancelBooking,
+  getCancelBookingCallback,
+  getExpiredBooking,
+  getExpiredBookingCallback,
+} from '@/redux/slices/bookingSlice';
+import { takeLatest } from 'redux-saga/effects';
+import { processAPISaga } from '../function/commonProcess';
 import ApiService from '@/services/api-base';
-
-interface actionGetCarelyService {
+interface actionHistoryBookings {
   payload: {
     fq?: string;
-    limit?: number;
     offset?: number;
-    sort?: string;
+    limit?: number;
   };
 }
 
-function* fetchCarelyService(action: actionGetCarelyService) {
+interface actionBookings {
+  payload: {
+    status?: string;
+  };
+}
+
+function* fetchUpcomingBooking(action: actionHistoryBookings) {
   yield* processAPISaga(
-    ApiService.getCarelyServices,
+    ApiService.getHistoryBookings,
     action.payload,
-    getCarelyServicesCallback,
+    getUpcomingBookingCallback,
+  );
+}
+
+function* completeBooking(action: actionBookings) {
+  yield* processAPISaga(
+    ApiService.updateBookingStatus,
+    action.payload,
+    putCompleteBookingCallback,
+  );
+}
+
+function* cancelBooking(action: actionBookings) {
+  yield* processAPISaga(
+    ApiService.updateBookingStatus,
+    action.payload,
+    putCancelBookingCallback,
+  );
+}
+
+function* rejectBooking(action: actionBookings) {
+  yield* processAPISaga(
+    ApiService.updateBookingStatus,
+    action.payload,
+    putRejectBookingCallback,
+  );
+}
+
+function* updateStatusBooking(action: actionBookings) {
+  yield* processAPISaga(
+    ApiService.updateBookingStatus,
+    action.payload,
+    putStatusBookingCallback,
+  );
+}
+
+function* fetchRequestBooking(action: actionHistoryBookings) {
+  yield* processAPISaga(
+    ApiService.getHistoryBookings,
+    action.payload,
+    getRequestBookingCallback,
+  );
+}
+
+function* acceptBooking(action: actionBookings) {
+  yield* processAPISaga(
+    ApiService.updateBookingStatus,
+    action.payload,
+    putAcceptBookingCallback,
+  );
+}
+
+function* fetchCompletedBooking(action: actionHistoryBookings) {
+  yield* processAPISaga(
+    ApiService.getHistoryBookings,
+    action.payload,
+    getCompletedBookingCallback,
+  );
+}
+
+function* fetchCancelBooking(action: actionHistoryBookings) {
+  yield* processAPISaga(
+    ApiService.getHistoryBookings,
+    action.payload,
+    getCancelBookingCallback,
+  );
+}
+
+function* fetchExpiredBooking(action: actionHistoryBookings) {
+  yield* processAPISaga(
+    ApiService.getHistoryBookings,
+    action.payload,
+    getExpiredBookingCallback,
   );
 }
 
 export default [
-  takeLatest(getCarelyServices, fetchCarelyService),
+  takeLatest(getUpcomingBooking, fetchUpcomingBooking),
+  takeLatest(putCompleteBooking, completeBooking),
+  takeLatest(putCancelBooking, cancelBooking),
+  takeLatest(putRejectBooking, rejectBooking),
+  takeLatest(putStatusBooking, updateStatusBooking),
+  takeLatest(getRequestBooking, fetchRequestBooking),
+  takeLatest(putAcceptBooking, acceptBooking),
+  takeLatest(getCompletedBooking, fetchCompletedBooking),
+  takeLatest(getCancelBooking, fetchCancelBooking),
+  takeLatest(getExpiredBooking, fetchExpiredBooking),
 ];

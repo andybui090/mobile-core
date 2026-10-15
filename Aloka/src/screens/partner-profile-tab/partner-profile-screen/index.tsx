@@ -11,6 +11,7 @@ import { images, screenStyles } from '@/configs';
 import { mainRoute, partnerProfileTabRoute } from '@/constants';
 import { AppContext } from '@/contexts';
 import { UserTypes } from '@/navigation/root-store';
+import { goBack } from '@/navigation/RootNavigation';
 import { Container, CScrollView, CText, Row } from '@/utils';
 import { makeStyles, useTheme } from '@rneui/themed';
 import React, { useContext } from 'react';
@@ -110,6 +111,9 @@ const PartnerProfileScreen: React.FC<any> = ({ navigation }: any) => {
 
   const { user, userType }: any = useContext(AppContext);
 
+  // -------------------------------
+  // ACTION
+  // -------------------------------
   const handleSetting = () => {
     navigation.navigate(mainRoute.settingScreen);
   };
@@ -119,8 +123,18 @@ const PartnerProfileScreen: React.FC<any> = ({ navigation }: any) => {
   };
 
   const handleEditProfile = () => {
-    navigation.navigate(partnerProfileTabRoute.partnerEditProfileScreen);
+    navigation.navigate(mainRoute.partnerEditProfileScreen);
   };
+
+  const handlePressMenuItem = (routeName: string) => {
+    if (routeName) {
+      navigation.navigate(routeName);
+    }
+  };
+
+  // -------------------------------
+  // RENDER UI
+  // -------------------------------
 
   const renderKYCStatus = (status: number) => {
     const verified = status === 1;
@@ -239,7 +253,7 @@ const PartnerProfileScreen: React.FC<any> = ({ navigation }: any) => {
                 source={images.global.ico_edit}
                 style={screenStyles.box16}
               />
-              <CText h6 w600 color={colors.primary} style={screenStyles.mL5}>
+              <CText h56 w600 color={colors.primary} style={screenStyles.mL5}>
                 {t('profile.editProfile', 'Sửa hồ sơ')}
               </CText>
             </Pressable>
@@ -304,11 +318,20 @@ const PartnerProfileScreen: React.FC<any> = ({ navigation }: any) => {
 
   const renderLeftHead = () => {
     return (
-      <View style={screenStyles.leftWrapper}>
-        <CText h4 w600>
+      <Pressable
+        style={screenStyles.leftWrapper}
+        onPress={() => navigation.getParent()?.getParent()?.goBack()}
+      >
+        <IconX
+          type="ionicons"
+          name={'chevron-back'}
+          color={colors.c667085}
+          size={26}
+        />
+        <CText h4 w600 style={screenStyles.mL5}>
           {t('studio.profile.title', 'Hồ sơ')}
         </CText>
-      </View>
+      </Pressable>
     );
   };
 
@@ -341,36 +364,43 @@ const PartnerProfileScreen: React.FC<any> = ({ navigation }: any) => {
         key: 'mySpecialistPage',
         description: 'mySpecialistPageDes',
         image: images.account.my_specialist,
+        routeName: mainRoute.mySpecialistScreen,
       },
       {
         key: 'myServices',
         description: 'myServicesDes',
         image: images.account.my_services,
+        routeName: mainRoute.myServicesScreen,
       },
       {
         key: 'myContent',
         description: 'myContentDes',
         image: images.account.my_content,
+        routeName: mainRoute.myContentScreen,
       },
       {
         key: 'myWorkSchedule',
         description: 'myWorkScheduleDes',
         image: images.account.my_work_schedule,
+        routeName: mainRoute.myWorkScheduleScreen,
       },
       {
         key: 'myIncome',
         description: 'myIncomeDes',
         image: images.account.my_income_management,
+        routeName: mainRoute.myIncomeScreen,
       },
       {
         key: 'myDr',
         description: 'myDrDes',
         image: images.account.my_doctor_network,
+        routeName: mainRoute.myDrScreen,
       },
       {
         key: 'mySupport',
         description: 'mySupportDes',
         image: images.account.my_support,
+        routeName: mainRoute.mySupportScreen,
       },
     ];
 
@@ -381,11 +411,11 @@ const PartnerProfileScreen: React.FC<any> = ({ navigation }: any) => {
           contentContainerStyle={styles.content}
         >
           {renderProfileMenu()}
-          {menuItems.map(({ key, description, image }) => (
+          {menuItems.map(({ key, description, image, routeName }) => (
             <Pressable
               key={key}
               style={[styles.menuRow, key === 'myDr' && styles.communityRow]}
-              onPress={() => {}}
+              onPress={() => handlePressMenuItem(routeName)}
             >
               <Image
                 source={image}

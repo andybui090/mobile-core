@@ -1,23 +1,19 @@
-import { images, screenStyles } from '@/configs';
+import { IconType, IconX } from '@/components';
+import { screenStyles } from '@/configs';
 import { CText } from '@/utils';
 import { makeStyles, useTheme } from '@rneui/themed';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, View } from 'react-native';
+import { View } from 'react-native';
 
 const useStyles = makeStyles(({ colors }) => ({
-  imgEmpty: {
-    height: 136,
-    width: 136,
-    marginBottom: 16,
-  },
 }));
 
 interface EmptyBookingProps {
   message?: string; // cho phép custom message nếu cần
 }
 
-const EmptyBooking: React.FC<EmptyBookingProps> = ({ message }) => {
+export const EmptyBooking: React.FC<EmptyBookingProps> = ({ message }) => {
   const {
     theme: { colors },
   } = useTheme();
@@ -26,16 +22,15 @@ const EmptyBooking: React.FC<EmptyBookingProps> = ({ message }) => {
 
   return (
     <View style={[screenStyles.flex1Center, { justifyContent: 'center' }]}>
-      <Image
-        style={styles.imgEmpty}
-        source={images.work.ico_empty_booking}
-        resizeMode="contain"
+      <IconX
+        type={IconType.IONICONS}
+        name="calendar-outline"
+        size={64}
+        color="#D0D5DD"
       />
-      <CText h5 w600 color={colors.cAAAAAA}>
+      <CText h5 w500 color={colors.cAAAAAA} style={screenStyles.mT10}>
         {message ?? t('booking.noAppointment', 'No appointment yet')}
       </CText>
     </View>
   );
 };
-
-export default EmptyBooking;

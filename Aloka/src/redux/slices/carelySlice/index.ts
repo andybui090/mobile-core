@@ -3,11 +3,11 @@ import { responseProps } from '../types';
 
 interface CarelyState {
   carelyServiceData: responseProps;
-  // carelyChildServiceData: responseProps;
+  carelyChildServiceData: responseProps;
   carelySearchData: responseProps;
   // carelyRatingData: responseProps;
-  // carelyPackageData: responseProps;
-  // carelyDataRefund: responseProps;
+  carelyPackageData: responseProps;
+  carelyDataRefund: responseProps;
   // carelyReviewData: responseProps;
 }
 
@@ -17,11 +17,11 @@ const initialState: CarelyState = {
     data: undefined,
     error: undefined,
   },
-  // carelyChildServiceData: {
-  //   loading: false,
-  //   data: undefined,
-  //   error: undefined,
-  // },
+  carelyChildServiceData: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
   carelySearchData: {
     loading: false,
     data: undefined,
@@ -32,16 +32,16 @@ const initialState: CarelyState = {
   //   data: undefined,
   //   error: undefined,
   // },
-  // carelyPackageData: {
-  //   loading: false,
-  //   data: undefined,
-  //   error: undefined,
-  // },
-  // carelyDataRefund: {
-  //   loading: false,
-  //   data: undefined,
-  //   error: undefined,
-  // },
+  carelyPackageData: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
+  carelyDataRefund: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
   // carelyReviewData: {
   //   loading: false,
   //   data: undefined,
@@ -71,15 +71,15 @@ const carelySlice = createSlice({
       carelySearchData.data = data;
       carelySearchData.error = error;
     },
-    //   getCarelyChildServices: (state, _action) => {
-    //     state.carelyChildServiceData.loading = true;
-    //   },
-    //   getCarelyChildServicesCallback: (state, { payload: { data, error } }) => {
-    //     const { carelyChildServiceData } = state;
-    //     carelyChildServiceData.loading = false;
-    //     carelyChildServiceData.data = data;
-    //     carelyChildServiceData.error = error;
-    //   },
+    getCarelyChildServices: (state, _action) => {
+      state.carelyChildServiceData.loading = true;
+    },
+    getCarelyChildServicesCallback: (state, { payload: { data, error } }) => {
+      const { carelyChildServiceData } = state;
+      carelyChildServiceData.loading = false;
+      carelyChildServiceData.data = data;
+      carelyChildServiceData.error = error;
+    },
     //   ratingCarely: (state, _action) => {
     //     state.carelyRatingData.loading = true;
     //   },
@@ -89,24 +89,24 @@ const carelySlice = createSlice({
     //     carelyRatingData.data = data;
     //     carelyRatingData.error = error;
     //   },
-    //   getDetailPkgCarely: (state, _action) => {
-    //     state.carelyPackageData.loading = true;
-    //   },
-    //   getDetailPkgCarelyCallback: (state, { payload: { data, error } }) => {
-    //     const { carelyPackageData } = state;
-    //     carelyPackageData.loading = false;
-    //     carelyPackageData.data = data;
-    //     carelyPackageData.error = error;
-    //   },
-    //   refundPkgCarely: (state, _action) => {
-    //     state.carelyDataRefund.loading = true;
-    //   },
-    //   refundPkgCarelyCallback: (state, { payload: { data, error } }) => {
-    //     const { carelyDataRefund } = state;
-    //     carelyDataRefund.loading = false;
-    //     carelyDataRefund.data = data;
-    //     carelyDataRefund.error = error;
-    //   },
+    getDetailPkgCarely: (state, _action) => {
+      state.carelyPackageData.loading = true;
+    },
+    getDetailPkgCarelyCallback: (state, { payload: { data, error } }) => {
+      const { carelyPackageData } = state;
+      carelyPackageData.loading = false;
+      carelyPackageData.data = data;
+      carelyPackageData.error = error;
+    },
+      refundPkgCarely: (state, _action) => {
+        state.carelyDataRefund.loading = true;
+      },
+      refundPkgCarelyCallback: (state, { payload: { data, error } }) => {
+        const { carelyDataRefund } = state;
+        carelyDataRefund.loading = false;
+        carelyDataRefund.data = data;
+        carelyDataRefund.error = error;
+      },
     //   getReviewCarely: (state, _action) => {
     //     state.carelyReviewData.loading = true;
     //   },
@@ -116,29 +116,29 @@ const carelySlice = createSlice({
     //     carelyReviewData.data = data;
     //     carelyReviewData.error = error;
     //   },
-    //   resetCarely: state => {
-    //     const {
-    //       carelyChildServiceData,
-    //       carelyRatingData,
-    //       carelyPackageData,
-    //       carelyDataRefund,
-    //     } = state;
-    //     carelyChildServiceData.loading = false;
-    //     carelyChildServiceData.data = undefined;
-    //     carelyChildServiceData.error = undefined;
+    resetCarely: state => {
+      const {
+        // carelyChildServiceData,
+        // carelyRatingData,
+        carelyPackageData,
+        // carelyDataRefund,
+      } = state;
+      // carelyChildServiceData.loading = false;
+      // carelyChildServiceData.data = undefined;
+      // carelyChildServiceData.error = undefined;
 
-    //     carelyRatingData.loading = false;
-    //     carelyRatingData.data = undefined;
-    //     carelyRatingData.error = undefined;
+      // carelyRatingData.loading = false;
+      // carelyRatingData.data = undefined;
+      // carelyRatingData.error = undefined;
 
-    //     carelyPackageData.loading = false;
-    //     carelyPackageData.data = undefined;
-    //     carelyPackageData.error = undefined;
+      carelyPackageData.loading = false;
+      carelyPackageData.data = undefined;
+      carelyPackageData.error = undefined;
 
-    //     carelyDataRefund.loading = false;
-    //     carelyDataRefund.data = undefined;
-    //     carelyDataRefund.error = undefined;
-    //   },
+      // carelyDataRefund.loading = false;
+      // carelyDataRefund.data = undefined;
+      // carelyDataRefund.error = undefined;
+    },
     //   resetCarelyRating: state => {
     //     const { carelyReviewData } = state;
 
@@ -154,15 +154,15 @@ export const {
   getCarelyServicesCallback,
   getCarelySearchServices,
   getCarelySearchServicesCallback,
-  // getCarelyChildServices,
-  // getCarelyChildServicesCallback,
+  getCarelyChildServices,
+  getCarelyChildServicesCallback,
   // ratingCarely,
   // ratingCarelyCallback,
-  // getDetailPkgCarely,
-  // getDetailPkgCarelyCallback,
-  // refundPkgCarely,
-  // refundPkgCarelyCallback,
-  // resetCarely,
+  getDetailPkgCarely,
+  getDetailPkgCarelyCallback,
+  refundPkgCarely,
+  refundPkgCarelyCallback,
+  resetCarely,
   // getReviewCarely,
   // getReviewCarelyCallback,
   // resetCarelyRating,

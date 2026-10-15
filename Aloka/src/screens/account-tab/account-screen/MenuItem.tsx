@@ -8,6 +8,7 @@ import { TouchableOpacity, View } from 'react-native';
 
 interface MenuItemProps {
   label: string;
+  alias:string;
   iconName: any;
   iconType: any;
   iconBg?: any;
@@ -30,6 +31,7 @@ const MenuItem = (props: MenuItemProps) => {
   const styles = useStyles();
   const {
     label,
+    alias,
     iconName,
     iconType,
     iconBg,
@@ -69,7 +71,7 @@ const MenuItem = (props: MenuItemProps) => {
         ]}
       >
         <CText h5 w400 color={colors.c344054}>
-          {t(label)}
+          {t(label, alias)}
         </CText>
         <IconX
           name={'chevron-right' as any}

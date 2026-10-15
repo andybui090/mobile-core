@@ -338,6 +338,7 @@ const SettingScreen: React.FC<any> = ({ navigation, route }: any) => {
     <Wrapper>
       <CHeader
         leftComponentOnPress={goBack}
+        rightComponentDisable
         title={t('settings.settings', 'Cài đặt')}
         isBorderBottom
       />

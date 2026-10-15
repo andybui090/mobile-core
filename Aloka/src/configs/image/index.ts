@@ -5,6 +5,9 @@ import { intro } from './intro';
 import { home } from './home';
 import { account } from './account';
 import { work } from './work';
+import { service } from './service';
+import { payment } from './payment';
+import { channel } from './channel';
 
 export const images = {
   intro,
@@ -14,4 +17,7 @@ export const images = {
   bottomTab,
   auth,
   work,
+  service,
+  payment,
+  channel,
 };

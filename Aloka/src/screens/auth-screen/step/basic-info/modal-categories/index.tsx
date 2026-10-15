@@ -281,6 +281,7 @@ export function ModalCategory({
       <Wrapper>
         <CHeader
           btnClose
+          rightComponentDisable
           title={t(
             'onboarding.SelectCategoriesOfInterest',
             'Select categories of interest', 

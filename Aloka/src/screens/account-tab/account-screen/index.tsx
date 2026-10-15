@@ -1,7 +1,7 @@
-import { CHeader, ImageHelper, Wrapper } from '@/components';
+import { CHeader, IconType, IconX, ImageHelper, Wrapper } from '@/components';
 import ImageHeader from '@/components/header/ImageHeader';
 import { images, screenStyles } from '@/configs';
-import { mainRoute } from '@/constants';
+import { accountTabRoute, mainRoute } from '@/constants';
 import { AppContext } from '@/contexts';
 import { useAppDispatch } from '@/redux/store/customReduxHook';
 import { Container, CScrollView, CText, Row } from '@/utils';
@@ -12,6 +12,7 @@ import { Image, Pressable, View } from 'react-native';
 import { getVersion } from 'react-native-device-info';
 import { ListMenu } from './ListMenu';
 import MenuItem from './MenuItem';
+import Share from 'react-native-share';
 
 const useStyles = makeStyles(({ colors }) => ({
   hasNoti: {
@@ -25,25 +26,52 @@ const useStyles = makeStyles(({ colors }) => ({
   },
   imgWrap: {
     ...screenStyles.centerWrap,
-    height: 64,
-    width: 64,
+    height: 56,
+    width: 56,
     borderRadius: 50,
     overflow: 'hidden' as const,
   },
   line: { height: 7, backgroundColor: colors.cF9FAFB, marginTop: 16 },
   btnWrap: {
-    marginTop: 20,
     borderColor: colors.primary,
     borderRadius: 8,
-    paddingVertical: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
     borderWidth: 1,
     ...screenStyles.rowCenter,
+  },
+  profileWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  contactRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    borderTopWidth: 1,
+    borderTopColor: colors.cEAECF0,
+    marginTop: 16,
+    paddingTop: 12,
+  },
+  contactInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  contactItem: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    paddingVertical: 2,
+  },
+  contactText: {
+    flex: 1,
+    marginLeft: 4,
+    fontSize: 12,
   },
 }));
 
 export interface IMenuProfile {
   id: number;
   label: string;
+  alias: string;
   iconName: string;
   iconType: any;
   iconBg: string;
@@ -79,16 +107,21 @@ const AccountScreen: React.FC<any> = ({ navigation, route }: any) => {
     navigation.navigate(mainRoute.notificationScreen);
   };
 
-  const handleShowFollowingList = () => {
-    // navigation.navigate(mainRoute.followingList);
-  };
-
   const handleEditProfile = () => {
-    // navigation.navigate(mainRoute.editProfileScreen);
+    navigation.navigate(accountTabRoute.editProfileScreen);
   };
 
   const handlePressMenuItem = (item: IMenuProfile) => {
-    if (item.screenName) {
+    if (item.alias == 'Invite friends') {
+      const shareOption = {
+        title: 'Kết nối Aloka',
+        message: 'Chăm sóc sức khoẻ tại nhà',
+        url: '',
+      };
+      Share.open(shareOption)
+        .then((res: any) => {})
+        .catch(error => console.log(error));
+    } else if (item.screenName) {
       navigation.navigate(item.screenName);
     }
   };
@@ -109,17 +142,15 @@ const AccountScreen: React.FC<any> = ({ navigation, route }: any) => {
 
   const renderProfileMenu = () => {
     const { avatar } = user?.personalization ?? {};
-    const { username, full_name } = user ?? {};
-    const { total_following } = user?.statistics ?? {};
+    const { username, full_name, phone, email } = user ?? {};
+    // const { total_following } = user?.statistics ?? {};
     return (
-      <View style={screenStyles.pH24}>
+      <View style={styles.profileWrap}>
         <Row start>
           <View
             style={[
               styles.imgWrap,
               {
-                // borderWidth: 1,
-                // borderColor: colors.cF9FAFB,
                 backgroundColor: colors.cEAECF0,
               },
             ]}
@@ -135,7 +166,7 @@ const AccountScreen: React.FC<any> = ({ navigation, route }: any) => {
             <CText h4 w600 color={colors.c101828}>
               {full_name || username}
             </CText>
-            <Row start style={{ marginTop: 4 }}>
+            {/* <Row start style={{ marginTop: 4 }}>
               <Pressable onPress={handleShowFollowingList}>
                 <CText color={colors.black} h5>
                   {total_following || 0}
@@ -144,15 +175,49 @@ const AccountScreen: React.FC<any> = ({ navigation, route }: any) => {
                   </CText>
                 </CText>
               </Pressable>
-            </Row>
+            </Row> */}
           </View>
         </Row>
-        <Pressable style={styles.btnWrap} onPress={handleEditProfile}>
-          <Image source={images.global.ico_edit} style={screenStyles.box16} />
-          <CText h5 w500 color={colors.primary} style={screenStyles.mL10}>
-            {t('profile.editProfile', 'Edit Profile')}
-          </CText>
-        </Pressable>
+        <View style={styles.contactRow}>
+          <View style={styles.contactInfo}>
+            <View style={styles.contactItem}>
+              <IconX
+                type={IconType.IONICONS}
+                name="call-outline"
+                size={14}
+                color={colors.c98A2B3}
+              />
+              <CText
+                color={colors.c98A2B3}
+                style={styles.contactText}
+                numberOfLines={1}
+              >
+                {phone || '—'}
+              </CText>
+            </View>
+            <View style={styles.contactItem}>
+              <IconX
+                type={IconType.IONICONS}
+                name="mail-outline"
+                size={14}
+                color={colors.c98A2B3}
+              />
+              <CText
+                color={colors.c98A2B3}
+                style={styles.contactText}
+                numberOfLines={1}
+              >
+                {email || '—'}
+              </CText>
+            </View>
+          </View>
+          <Pressable style={styles.btnWrap} onPress={handleEditProfile}>
+            <Image source={images.global.ico_edit} style={screenStyles.box16} />
+            <CText h56 w600 color={colors.primary} style={screenStyles.mL5}>
+              {t('profile.editProfile', 'Sửa hồ sơ')}
+            </CText>
+          </Pressable>
+        </View>
       </View>
     );
   };
@@ -166,24 +231,6 @@ const AccountScreen: React.FC<any> = ({ navigation, route }: any) => {
       </Row>
     );
   };
-
-  // const renderItemList = (item: any) => {
-  //   return <MenuItem {...item.item} onPress={handlePressMenuItem} />;
-  // };
-
-  // const renderListMenu = () => {
-  //   return (
-  //     <FlatList
-  //       style={{ flex: 1, paddingHorizontal: 16 }}
-  //       data={ListMenu as IMenuProfile[]}
-  //       extraData={ListMenu}
-  //       keyExtractor={keyExtractor}
-  //       renderItem={renderItemList}
-  //       ListFooterComponent={renderVersion()}
-  //       scrollsToTop={false}
-  //     />
-  //   );
-  // };
 
   const renderSession = (title: string) => {
     return (
@@ -206,37 +253,31 @@ const AccountScreen: React.FC<any> = ({ navigation, route }: any) => {
       <Container>
         {renderProfileMenu()}
         <View style={styles.line} />
-        <CScrollView>
+        <CScrollView contentContainerStyle={screenStyles.flexGrowBottom}>
           {/* <MenuSection title="Hoạt động của tôi" items={activityItems} /> */}
-          {renderSession('Hoạt động của tôi')}
-          <MenuItem
+          {renderSession(t('profile.myActivities', 'Hoạt động của tôi'))}
+          {/* <MenuItem
             {...ListMenu[0]}
             onPress={handlePressMenuItem}
             isBorderBottom
+          /> */}
+          <MenuItem
+            {...ListMenu[1]}
+            onPress={() => handlePressMenuItem(ListMenu[1])}
           />
-          <MenuItem {...ListMenu[1]} onPress={handlePressMenuItem} />
-          {/* {renderSession('Lưu trữ')}
+          {renderSession(t('profile.connectionsAndMore','Kết nối & Khác'))}
           <MenuItem
             {...ListMenu[2]}
-            onPress={handlePressMenuItem}
+            onPress={() => handlePressMenuItem(ListMenu[2])}
             isBorderBottom
           />
-          <MenuItem {...ListMenu[3]} onPress={handlePressMenuItem} /> */}
-          {renderSession('Kết nối & Khác')}
           <MenuItem
-            {...ListMenu[4]}
-            onPress={handlePressMenuItem}
-            isBorderBottom
-          />
-          {/* <MenuItem {...ListMenu[5]} onPress={handlePressMenuItem} isBorderBottom/> */}
-          <MenuItem
-            {...ListMenu[6]}
-            onPress={handlePressMenuItem}
+            {...ListMenu[3]}
+            onPress={() => handlePressMenuItem(ListMenu[3])}
             isBorderBottom
           />
           {renderVersion()}
         </CScrollView>
-        {/* {renderListMenu()} */}
       </Container>
     );
   };
@@ -283,7 +324,6 @@ const AccountScreen: React.FC<any> = ({ navigation, route }: any) => {
         leftComponent={renderLeftHead()}
       />
       {renderContent()}
-      {/* {renderVersion()} */}
     </Wrapper>
   );
 };

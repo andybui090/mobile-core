@@ -5,6 +5,7 @@ interface ProfileState {
   profileData: responseProps;
   logoutData: responseProps;
   deleteAccountData: responseProps;
+  dataUpdateProfileInfo: responseProps;
 }
 
 const initialState: ProfileState = {
@@ -23,6 +24,11 @@ const initialState: ProfileState = {
     data: undefined,
     error: undefined,
   },
+  dataUpdateProfileInfo: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
 };
 
 const profileSlice = createSlice({
@@ -37,6 +43,16 @@ const profileSlice = createSlice({
       profileData.loading = false;
       profileData.data = data;
       profileData.error = error;
+    },
+    // chỉnh sửa thong tin
+    updateProfileInfo: (state, _action) => {
+      state.dataUpdateProfileInfo.loading = true;
+    },
+    updateProfileInfoCallback: (state, { payload: { data, error } }) => {
+      const { dataUpdateProfileInfo } = state;
+      dataUpdateProfileInfo.loading = false;
+      dataUpdateProfileInfo.data = data;
+      dataUpdateProfileInfo.error = error;
     },
     postLogout: (state, _action) => {
       state.logoutData.loading = true;
@@ -58,7 +74,7 @@ const profileSlice = createSlice({
       deleteAccountData.error = error;
     },
     resetProfileSlice: state => {
-      const { logoutData, deleteAccountData } = state;
+      const { logoutData, deleteAccountData, dataUpdateProfileInfo } = state;
       logoutData.loading = false;
       logoutData.data = undefined;
       logoutData.error = undefined;
@@ -66,6 +82,10 @@ const profileSlice = createSlice({
       deleteAccountData.loading = false;
       deleteAccountData.data = undefined;
       deleteAccountData.error = undefined;
+
+      dataUpdateProfileInfo.loading = false;
+      dataUpdateProfileInfo.data = undefined;
+      dataUpdateProfileInfo.error = undefined;
     },
   },
 });
@@ -77,6 +97,8 @@ export const {
   postLogoutCallback,
   callDeleteAccount,
   callDeleteAccountCallback,
+  updateProfileInfo,
+  updateProfileInfoCallback,
   resetProfileSlice,
 } = profileSlice.actions;
 

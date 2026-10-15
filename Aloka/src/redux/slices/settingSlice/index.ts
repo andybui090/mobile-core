@@ -3,12 +3,18 @@ import { responseProps } from '../types';
 
 interface settingState {
   appTheme: 'dark' | 'light';
-  settingOnboarding:responseProps;
+  settingOnboarding: responseProps;
+  settingList: responseProps;
 }
 
 const initialState: settingState = {
   appTheme: 'light',
-  settingOnboarding:{
+  settingOnboarding: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
+  settingList: {
     loading: false,
     data: undefined,
     error: undefined,
@@ -19,9 +25,18 @@ const settingSlice = createSlice({
   name: 'setting',
   initialState,
   reducers: {
-    setAppTheme: (state, { payload }) => state.appTheme = payload,
+    setAppTheme: (state, { payload }) => (state.appTheme = payload),
     getSettingsOnboarding: (state, _action) => {
       state.settingOnboarding.loading = true;
+    },
+    getSettings: (state, _action) => {
+      state.settingList.loading = true;
+    },
+    getSettingsCallback: (state, { payload: { data, error } }) => {
+      const { settingList } = state;
+      settingList.loading = false;
+      settingList.data = data;
+      settingList.error = error;
     },
     getSettingsOnboardingCallback: (state, { payload: { data, error } }) => {
       const { settingOnboarding } = state;
@@ -34,12 +49,14 @@ const settingSlice = createSlice({
       settingOnboarding.loading = false;
       settingOnboarding.data = undefined;
       settingOnboarding.error = undefined;
-    }
+    },
   },
 });
 
-export const { 
+export const {
   setAppTheme,
+  getSettings,
+  getSettingsCallback,
   getSettingsOnboarding,
   getSettingsOnboardingCallback,
   resetSettings,

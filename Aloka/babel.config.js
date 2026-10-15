@@ -11,6 +11,7 @@ module.exports = {
         ['transform-remove-console', {
           exclude: ['error', 'warn'],
         }],
+        'react-native-paper/babel',
       ],
     },
   },

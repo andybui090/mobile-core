@@ -1690,6 +1690,7 @@ const PartnerEditProfileScreen: React.FC<any> = ({
     <Wrapper>
       <CHeader
         leftComponentOnPress={goBack}
+        rightComponentDisable
         title={t('profile.editProfile')}
         isBorderBottom
       />

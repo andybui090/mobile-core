@@ -1,6 +1,6 @@
 import { HeaderBar, ImageHeader, Toast, Wrapper } from '@/components';
 import { isEmptyArray, screenStyles } from '@/configs';
-import { PAGINATION } from '@/constants';
+import { homeTabRoute, mainRoute, PAGINATION } from '@/constants';
 import {
   getCarelySearchServices,
   getCarelyServices,
@@ -267,7 +267,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
   // -------------------------------
 
   const handlePressSearch = () => {
-    // navigation.navigate(carelyHomeTabRoute.carelySearchScreen);
+    navigation.navigate(homeTabRoute.searchServicesScreen);
   };
 
   const handleChooseFilterService = (item: any) => {
@@ -285,7 +285,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
   };
 
   const handlePressDetailService = (item: any) => {
-    // navigation.navigate(mainRoute.carelyServiceDetailScreen, { service: item });
+    navigation.navigate(mainRoute.serviceDetailScreen, { service: item });
   };
 
   const _handleLoadMoreSearch = () => {
@@ -301,9 +301,9 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
   };
 
   const handlePressItemService = (item: any) => {
-    // navigation.navigate(carelyHomeTabRoute.carelyServiceScreen, {
-    //   parentService: item,
-    // });
+    navigation.navigate(homeTabRoute.servicesScreen, {
+      parentService: item,
+    });
   };
 
   const _handleLoadMore = () => {
@@ -331,7 +331,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
   // -------------------------------
   const renderSearch = () => {
     return (
-      <View style={[screenStyles.pH14, screenStyles.mT8, { zIndex: 2 }]}>
+      <View style={[screenStyles.pH14, screenStyles.mT8]}>
         <CSearchBarTrigger
           placeholder={t('search.searchPlaceholder', 'Search...')}
           onPress={handlePressSearch}
@@ -438,19 +438,19 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
 
   const renderContent = () => {
     return (
-      <View style={screenStyles.flex1}>
+      <Container>
         {renderSearch()}
         {renderListFilter()}
         {renderTopBanner}
-        {renderListData()}
-      </View>
+        {renderListData()} 
+      </Container>
     );
   };
 
   return (
     <Wrapper>
       <ImageHeader />
-      <HeaderBar isBorderBottom />
+      <HeaderBar />
       {renderContent()}
       <Toast ref={toastEl} position={'center'} />
     </Wrapper>

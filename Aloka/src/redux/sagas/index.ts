@@ -8,6 +8,7 @@ import carelySaga from './carelySaga';
 import onboardSaga from './onboardSaga';
 import locationSaga from './locationSaga';
 import bookingSaga from './bookingSaga';
+import channelSaga from './channelSaga';
 
 export default function* rootSaga() {
   yield all([
@@ -20,5 +21,6 @@ export default function* rootSaga() {
     ...onboardSaga,
     ...locationSaga,
     ...bookingSaga,
+    ...channelSaga,
   ]);
 }

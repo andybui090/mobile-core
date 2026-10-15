@@ -25,9 +25,10 @@ export const Complete = ({ onComplete }: any) => {
     //     status: true,
     //   }),
     // );
-    setTimeout(() => {
-      onComplete();
-    }, 300);
+    // setTimeout(() => {
+    //   onComplete();
+    // }, 300);
+    onComplete();
   }, []);
 
   // const handleComplete = () => {

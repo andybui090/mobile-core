@@ -31,6 +31,7 @@ const AboutUsScreen: React.FC<any> = () => {
       <CHeader
         title={t('settings.aboutUs')}
         leftComponentOnPress={goBack}
+        rightComponentDisable
         isBorderBottom
       />
 

@@ -36,7 +36,6 @@ const useStyles = makeStyles(({ colors }) => ({
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
     overflow: 'hidden' as const,
-    // padding:8,
   },
 }));
 
@@ -83,7 +82,7 @@ const CarelyServices = (props: any) => {
   const renderErrorImage = () => {
     return (
       <Image
-        source={images.global.img_default}
+        source={images.global.logo_app}
         style={screenStyles.box28}
         resizeMode="contain"
       />

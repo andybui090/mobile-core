@@ -1,12 +1,13 @@
 import { ScreenWidth, images, screenStyles } from '@/configs';
 import { AppContext } from '@/contexts';
 import { CText, Row } from '@/utils';
-// import { useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { makeStyles, useTheme } from '@rneui/themed';
 import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, Pressable, View } from 'react-native';
 import CHeader from './CHeader';
+import { mainRoute } from '@/constants';
 
 const useStyles = makeStyles(({ colors }) => ({
   row: {
@@ -28,7 +29,7 @@ type HeaderProps = {
 };
 
 const HeaderBar: React.FC<HeaderProps> = props => {
-  // const navigation = useNavigation();
+  const navigation = useNavigation();
   const { isBorderBottom = false } = props;
 
   const {
@@ -73,9 +74,9 @@ const HeaderBar: React.FC<HeaderProps> = props => {
   }, [user]);
 
   const handleNotify = () => {
-    // if (user.id) {
-    //   navigation.navigate(mainRoute.notifyScreen as never);
-    // }
+    if (user.id) {
+      navigation.navigate(mainRoute.notificationScreen as never);
+    }
   };
 
   // const handleOpenProfile = () => {

@@ -1,11 +1,11 @@
 import { CHeader, Wrapper } from '@/components';
 import { useAppDispatch } from '@/redux/store/customReduxHook';
+import { CEmptyData } from '@/utils';
 import { makeStyles, useTheme } from '@rneui/themed';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-const useStyles = makeStyles(() => ({
-}));
+const useStyles = makeStyles(() => ({}));
 
 const PartnerWalletScreen: React.FC<any> = ({ navigation, route }: any) => {
   const { t } = useTranslation();
@@ -20,7 +20,6 @@ const PartnerWalletScreen: React.FC<any> = ({ navigation, route }: any) => {
   // STATE
   // -------------------------------
 
-
   // -------------------------------
   // ACTION
   // -------------------------------
@@ -30,18 +29,18 @@ const PartnerWalletScreen: React.FC<any> = ({ navigation, route }: any) => {
   // -------------------------------
 
   const renderContent = () => {
-    return null;
+    return <CEmptyData />;
   };
-
-  const renderLeftHead = () => null;
-
-  const renderRightHead = () => null;
 
   return (
     <Wrapper>
       <CHeader
-        rightComponent={renderRightHead()}
-        leftComponent={renderLeftHead()}
+        leftComponentOnPress={() =>
+          navigation.getParent()?.getParent()?.goBack()
+        }
+        rightComponentDisable
+        title={t('common.wallet', 'Wallet')}
+        isBorderBottom
       />
       {renderContent()}
     </Wrapper>

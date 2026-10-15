@@ -1,51 +1,97 @@
-import { CHeader, Wrapper } from '@/components';
-import { useAppDispatch } from '@/redux/store/customReduxHook';
-import { makeStyles, useTheme } from '@rneui/themed';
+import { Wrapper } from '@/components';
+import { images, isIOS, screenStyles } from '@/configs';
+import { CButton, CText } from '@/utils';
+import { useTheme } from '@rneui/themed';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  Image,
+  Linking,
+  StyleSheet,
+  View
+} from 'react-native';
+// import { useIsFocused } from '@react-navigation/native';
+// import { openDoctorNetworkApp } from '@/navigation/app-helper';
 
-const useStyles = makeStyles(() => ({
-}));
-
-const DrNetworkScreen: React.FC<any> = ({ navigation, route }: any) => {
+const DrNetworkScreen: React.FC<any> = ({ navigation }: any) => {
+  
+  // const isFocus = useIsFocused();
   const { t } = useTranslation();
-  const styles = useStyles();
   const {
     theme: { colors },
   } = useTheme();
 
-  const dispatch = useAppDispatch();
+  // useEffect(() => {
+  //   // if (isFocus) {
+  //   //   openDoctorNetworkApp();
+  //   //   const timer = setTimeout(() => {
+  //   //     navigation.navigate('HomeTab');
+  //   //   }, 500);
+  //   //   return () => clearTimeout(timer);
+  //   // }
+  // }, [isFocus, navigation]);
 
-  // -------------------------------
-  // STATE
-  // -------------------------------
+  const handleOpenDrApp = async () => {
+    try {
+      const scheme = 'doctornetwork://';
+      const storeUrl = isIOS
+        ? 'https://apps.apple.com/app/doctor-networks/id1671676828'
+        : 'https://play.google.com/store/apps/details?id=com.anonymous.doctornetwork';
 
-
-  // -------------------------------
-  // ACTION
-  // -------------------------------
-
-  // -------------------------------
-  // RENDER UI
-  // -------------------------------
-
-  const renderContent = () => {
-    return null;
+      const canOpen = await Linking.canOpenURL(scheme).catch(() => false);
+      if (canOpen) {
+        await Linking.openURL(scheme);
+      } else {
+        Linking.openURL(scheme).catch(async () => {
+          await Linking.openURL(storeUrl).catch(err => {
+            console.log('Cannot open store url', err);
+          });
+        });
+      }
+    } catch (error) {
+      console.log('openDoctorNetworkApp error:', error);
+    }
   };
-
-  const renderLeftHead = () => null;
-
-  const renderRightHead = () => null;
 
   return (
     <Wrapper>
-      <CHeader
-        rightComponent={renderRightHead()}
-        leftComponent={renderLeftHead()}
-      />
-      {renderContent()}
+      <View style={styles.container}>
+        <Image
+          source={images.bottomTab.drnetwork}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <CText h2 color={colors.c101828} w600>
+          {'Doctor Network'}
+        </CText>
+        <CText h4 color={colors.c667085} style={screenStyles.mV15}>
+          {t('common.connectDr', 'Connect & Open Doctor Network')}
+        </CText>
+
+        <CButton
+          title={t('common.openDr')}
+          btnWidth={'100%'}
+          onPress={handleOpenDrApp}
+          isBottom
+        />
+      </View>
     </Wrapper>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 28,
+    backgroundColor: '#FFFFFF',
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    marginBottom: 24,
+  },
+});
 
 export default DrNetworkScreen;

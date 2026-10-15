@@ -8,6 +8,7 @@ import carelyReducer from '@/redux/slices/carelySlice';
 import onboardReducer from '@/redux/slices/onboardSlice';
 import locationReducer from '@/redux/slices/locationSlice';
 import bookingReducer from '@/redux/slices/bookingSlice';
+import channelReducer from '@/redux/slices/channelSlice';
 
 const appReducer = combineReducers({
   globalReducer,
@@ -19,6 +20,7 @@ const appReducer = combineReducers({
   onboardReducer,
   locationReducer,
   bookingReducer,
+  channelReducer,
 });
 
 export const clearReducer = () => ({ type: 'CLEAR_REDUCER' });

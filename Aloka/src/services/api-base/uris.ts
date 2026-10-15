@@ -48,3 +48,42 @@ export const CARELY = {
 export const LOCATION = {
   SEARCH_LOCATION: '/places',
 };
+
+export const CHANNEL = {
+  GET_CHANNEL: '/channels',
+  // TOP_11_VIDEO: '/videos',
+  // SERIES: '/series',
+  // NEWSFEED: '/feeds/home',
+  BUY_PACKAGE: '/orders/packages',
+  BOOKING_CALL: '/appointments',
+  // GET_MEMBERSHIP: '/packages/list',
+};
+
+export const APPOINTMENT = {
+  APPOINTMENTS: '/appointments',
+};
+
+export const PACKAGE = {
+  PACKAGE_USED: '/packages/used',
+  PACKAGES: '/packages',
+  APPOINT_TIME: '/appointments/time',
+  GET_PAYMENT_STATUS: '/orders',
+};
+
+export const COURSES = {
+  // COURSE: '/courses',
+  // CATEGORY_COURSE: '/courses/list/categories',
+  // LIST_MY_SAVE: '/courses/list/saves',
+  // SAVE_COURSE: '/interactions/saves',
+  // REVIEW_COURSE: '/interactions/reviews',
+  // COURSE_ENROLLMENTS: '/courseenrollments',
+  // CERTIFICATE: '/certificates',
+  // LESSON_VIEW: '/lessonperiods',
+  // COMMENTS: '/interactions/comments',
+  // LIKE_COMMENTS: '/interactions/likes',
+  // BUY_COURSE: '/orders/products',
+  VERIFY_COURSE: 'events/vouchers/verify',
+  // UI V2
+  // TRAINING_COURSES: 'traininginstitutions',
+  // TRAINING_COURSES_DETAIL: '/traininginstitutions',
+};

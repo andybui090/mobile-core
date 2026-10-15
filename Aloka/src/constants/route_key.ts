@@ -3,6 +3,8 @@ export const rootRoute = 'rootRoute';
 // Group 1
 export const homeTabRoute = {
   homeScreen: 'HomeScreen',
+  servicesScreen: 'ServicesScreen',
+  searchServicesScreen: 'SearchServicesScreen',
 };
 
 export const drnetworkTabRoute = {
@@ -15,6 +17,8 @@ export const appointmentTabRoute = {
 
 export const accountTabRoute = {
   accountScreen: 'AccountScreen',
+  editProfileScreen: 'EditProfileScreen',
+  historyBookingScreen: 'HistoryBookingScreen',
 };
 
 // Group 2
@@ -26,7 +30,7 @@ export const partnerWorkTabRoute = {
 
 export const partnerProfileTabRoute = {
   partnerProfileScreen: 'PartnerProfileScreen',
-  partnerEditProfileScreen: 'PartnerEditProfileScreen',
+  // partnerEditProfileScreen: 'PartnerEditProfileScreen',
 };
 
 export const partnerWalletTabRoute = {
@@ -37,8 +41,22 @@ export const partnerWalletTabRoute = {
 export const mainRoute = {
   notificationScreen: 'NotificationScreen',
   settingScreen: 'SettingScreen',
-  aboutUsScreen:'AboutUsScreen',
+  aboutUsScreen: 'AboutUsScreen',
   feedbackScreen: 'FeedbackScreen',
+  mySpecialistScreen: 'MySpecialistScreen',
+  myServicesScreen: 'MyServicesScreen',
+  myContentScreen: 'MyContentScreen',
+  myWorkScheduleScreen: 'MyWorkScheduleScreen',
+  myIncomeScreen: 'MyIncomeScreen',
+  myDrScreen: 'MyDrScreen',
+  mySupportScreen: 'MySupportScreen',
+
+  //
+  serviceDetailScreen: 'ServiceDetailScreen',
+  qrCodeScreen: 'QRCodeScreen',
+  bookingScreen: 'BookingScreen',
+  partnerEditProfileScreen: 'PartnerEditProfileScreen',
+  channelDetailScreen: 'ChannelDetailScreen',
 };
 
 // export const gettingRoute = {
