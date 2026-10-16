@@ -24,6 +24,7 @@ export const PROFILE = {
   UPDATE_PROFILE: '/me',
   LOGOUT_APP: '/logout',
   DELETE_ACCOUNT: '/me',
+  ORDERS: '/packages/my',
 };
 
 export const ONBOARD = {
@@ -57,7 +58,7 @@ export const CHANNEL = {
   // NEWSFEED: '/feeds/home',
   BUY_PACKAGE: '/orders/packages',
   BOOKING_CALL: '/appointments',
-  // GET_MEMBERSHIP: '/packages/list',
+  GET_MEMBERSHIP: '/packages/list',
 };
 
 export const APPOINTMENT = {

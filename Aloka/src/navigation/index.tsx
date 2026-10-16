@@ -70,6 +70,7 @@ import AuthScreen from '@/screens/auth-screen';
 import ApiSSO from '@/services/api-sso';
 import MainNavigator from './app-navigator/main-navigator';
 import { Loader } from '@/utils';
+import socketService from '@/socketio';
 interface RootNavigatorProps {
   onCompleteLoading: () => Promise<void>;
 }
@@ -192,18 +193,18 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
     // }
   };
 
-  // const initSocketIO = async () => {
-  //   if (!socketService.isConnected()) {
-  //     await socketService.connect();
-  //     if (
-  //       navigationRef.current?.getCurrentRoute()?.name == 'CommunityScreen' ||
-  //       navigationRef.current?.getCurrentRoute()?.name == 'CommunityChat'
-  //     ) {
-  //       socketService.emitListRoom(PAGINATION.ITEMS_100, 0);
-  //     }
-  //     deeplinkService.redirectScreen();
-  //   }
-  // };
+  const initSocketIO = async () => {
+    if (!socketService.isConnected()) {
+      await socketService.connect();
+      // if (
+      //   navigationRef.current?.getCurrentRoute()?.name == 'CommunityScreen' ||
+      //   navigationRef.current?.getCurrentRoute()?.name == 'CommunityChat'
+      // ) {
+      //   socketService.emitListRoom(PAGINATION.ITEMS_100, 0);
+      // }
+      // deeplinkService.redirectScreen();
+    }
+  };
 
   useEffect(() => {
     const processAPIProfileUser = () => {
@@ -221,7 +222,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
               payload: dataRes.result,
             });
             // initFirebaseToken();
-            // initSocketIO();
+            initSocketIO();
           } else {
             logoutApp();
           }

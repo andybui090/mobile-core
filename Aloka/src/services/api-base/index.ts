@@ -112,6 +112,9 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   const putUpdateProfile = (payload: object) => {
     return api.put(PROFILE.UPDATE_PROFILE, payload);
   };
+  const getMyPackages = (payload: any) => {
+    return api.get(`${PROFILE.ORDERS}`, payload);
+  };
   /*
     ONBOARD
   */
@@ -183,6 +186,9 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
   const putChannelPackage = (payload: any) => {
     return api.put(`${PACKAGE.PACKAGES}/${payload.id}`, payload);
   };
+  const getListMembership = (payload: any) => {
+    return api.get(CHANNEL.GET_MEMBERSHIP, payload);
+  };
   /*
       BOOKING
     */
@@ -245,6 +251,7 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     logoutApp,
     deleteAccount,
     putUpdateProfile,
+    getMyPackages,
     /*
       ONBOARD
     */
@@ -278,6 +285,7 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     putChannel,
     postChannelPackage,
     putChannelPackage,
+    getListMembership,
     /*
       BOOKING
     */

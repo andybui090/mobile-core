@@ -82,17 +82,6 @@ function App() {
   });
 
   // useEffect(() => {
-  //   Orientation.lockToPortrait();
-  //   const logFirstOpen = async () => {
-  //     const isLogged = await AsyncStorage.getItem('fb_first_open_logged');
-  //     if (!isLogged) {
-  //       await AsyncStorage.setItem('fb_first_open_logged', 'true');
-  //     }
-  //   };
-  //   logFirstOpen();
-  // }, []);
-
-  // useEffect(() => {
   //   getTrackingStatus()
   //     .then(status => {
   //       console.log('🚀 ~ App ~ getTrackingStatus:', status);

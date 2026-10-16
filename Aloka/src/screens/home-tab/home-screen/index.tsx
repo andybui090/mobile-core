@@ -180,7 +180,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
       if (!loading) {
         if (data) {
           const newItems = data.items || [];
-          console.log('🚀 ~ processAPIListService ~ newItems:', newItems);
+          // console.log('🚀 ~ processAPIListService ~ newItems:', newItems);
           if (offset === 0) {
             setListServices(newItems);
           } else {

@@ -72,7 +72,7 @@ const ServicesScreen: React.FC<any> = ({ navigation, route }: any) => {
       if (!loading) {
         if (data) {
           const newItems = data.items || [];
-          console.log('🚀 ~ processAPIListService ~ newItems:', newItems);
+          // console.log('🚀 ~ processAPIListService ~ newItems:', newItems);
           const arrClone = [...listChildService, ...newItems];
           setListChildService(arrClone);
           setLoading(false);

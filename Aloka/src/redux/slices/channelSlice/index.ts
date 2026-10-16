@@ -19,7 +19,7 @@ interface AuthState {
   dataUpdateChannel: responseProps;
   dataAppointmentTime: responseProps;
   // dataPackageHot: responseObjectProps;
-  // memberShipList: responseListProps;
+  memberShipList: responseProps;
   // refreshVideoLocal: any;
 }
 
@@ -104,11 +104,11 @@ const initialState: AuthState = {
   //   data: undefined,
   //   error: undefined,
   // },
-  // memberShipList: {
-  //   loading: false,
-  //   data: undefined,
-  //   error: undefined,
-  // },
+  memberShipList: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
   // refreshVideoLocal: {
   //   isRefresh: false,
   // },
@@ -157,16 +157,16 @@ const channelSlice = createSlice({
       channelList.data = data;
       channelList.error = error;
     },
-    // //
-    // getMembership: (state, _action) => {
-    //   state.memberShipList.loading = true;
-    // },
-    // getMembershipCallback: (state, { payload: { data, error } }) => {
-    //   const { memberShipList } = state;
-    //   memberShipList.loading = false;
-    //   memberShipList.data = data;
-    //   memberShipList.error = error;
-    // },
+    //
+    getMembership: (state, _action) => {
+      state.memberShipList.loading = true;
+    },
+    getMembershipCallback: (state, { payload: { data, error } }) => {
+      const { memberShipList } = state;
+      memberShipList.loading = false;
+      memberShipList.data = data;
+      memberShipList.error = error;
+    },
     // //updatelocal
     // getListChannelLocal: (state, _action) => {
     //   state.updateChannelListLocal.data = _action.payload;
@@ -360,8 +360,8 @@ export const {
   // getSerriesChannelCallback,
   getListChannel,
   getListChannelCallback,
-  // getMembership,
-  // getMembershipCallback,
+  getMembership,
+  getMembershipCallback,
   // resetChannel,
   // resetChannelSuggest,
   // getListChannelLocal,

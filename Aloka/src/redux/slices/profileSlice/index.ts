@@ -6,6 +6,7 @@ interface ProfileState {
   logoutData: responseProps;
   deleteAccountData: responseProps;
   dataUpdateProfileInfo: responseProps;
+  dataMyPackages: responseProps;
 }
 
 const initialState: ProfileState = {
@@ -25,6 +26,11 @@ const initialState: ProfileState = {
     error: undefined,
   },
   dataUpdateProfileInfo: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
+  dataMyPackages: {
     loading: false,
     data: undefined,
     error: undefined,
@@ -73,6 +79,15 @@ const profileSlice = createSlice({
       deleteAccountData.data = data;
       deleteAccountData.error = error;
     },
+    getMyPackages: (state, _action) => {
+      state.dataMyPackages.loading = true;
+    },
+    getMyPackagesCallback: (state, { payload: { data, error } }) => {
+      const { dataMyPackages } = state;
+      dataMyPackages.loading = false;
+      dataMyPackages.data = data;
+      dataMyPackages.error = error;
+    },
     resetProfileSlice: state => {
       const { logoutData, deleteAccountData, dataUpdateProfileInfo } = state;
       logoutData.loading = false;
@@ -87,6 +102,12 @@ const profileSlice = createSlice({
       dataUpdateProfileInfo.data = undefined;
       dataUpdateProfileInfo.error = undefined;
     },
+    resetPackagesSlice: (state, _action) => {
+      const { dataMyPackages } = state;
+      dataMyPackages.loading = false;
+      dataMyPackages.data = undefined;
+      dataMyPackages.error = undefined;
+    },
   },
 });
 
@@ -99,7 +120,10 @@ export const {
   callDeleteAccountCallback,
   updateProfileInfo,
   updateProfileInfoCallback,
+  getMyPackages,
+  getMyPackagesCallback,
   resetProfileSlice,
+  resetPackagesSlice,
 } = profileSlice.actions;
 
 export default profileSlice.reducer;

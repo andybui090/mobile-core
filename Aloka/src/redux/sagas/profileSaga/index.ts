@@ -7,6 +7,8 @@ import {
   callDeleteAccountCallback,
   updateProfileInfo,
   updateProfileInfoCallback,
+  getMyPackages,
+  getMyPackagesCallback,
 } from '@/redux/slices/profileSlice';
 import { takeLatest } from 'redux-saga/effects';
 import { processAPISaga } from '../function/commonProcess';
@@ -34,6 +36,13 @@ interface actionUpdateProfileInfo {
   payload: null;
 }
 
+interface actionMyPackages {
+  payload: {
+    offset?: number;
+    limit?: number;
+  };
+}
+
 function* fetchLogoutServer(action: actionLogout) {
   yield* processAPISaga(
     ApiService.logoutApp,
@@ -58,9 +67,18 @@ function* fetchUpdateProfileInfo(action: actionUpdateProfileInfo) {
   );
 }
 
+function* fetchMyPackages(action: actionMyPackages) {
+  yield* processAPISaga(
+    ApiService.getMyPackages,
+    action.payload,
+    getMyPackagesCallback,
+  );
+}
+
 export default [
   takeLatest(getProfile, fetchProfile),
   takeLatest(postLogout, fetchLogoutServer),
   takeLatest(callDeleteAccount, fetchDeleteAccount),
   takeLatest(updateProfileInfo, fetchUpdateProfileInfo),
+  takeLatest(getMyPackages, fetchMyPackages),
 ];

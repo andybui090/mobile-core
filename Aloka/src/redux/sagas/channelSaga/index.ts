@@ -7,8 +7,8 @@ import {
   // getSerriesChannelCallback,
   getListChannel,
   getListChannelCallback,
-  // getMembership,
-  // getMembershipCallback,
+  getMembership,
+  getMembershipCallback,
   // getDetailChannelNewsFeed,
   // getDetailChannelNewsFeedCallback,
   getDetailChannelServicesPackage,
@@ -50,13 +50,13 @@ interface actionListChannel {
   };
 }
 
-// interface actionMemershipChannel {
-//   payload: {
-//     limit: number;
-//     offset: number;
-//     fqin: string;
-//   };
-// }
+interface actionMemershipChannel {
+  payload: {
+    limit: number;
+    offset: number;
+    fqin: string;
+  };
+}
 
 // interface actionSerriesChannel {
 //   payload: {
@@ -160,14 +160,13 @@ function* fetchListChannel(action: actionListChannel) {
   );
 }
 
-// function* fetchListMemberShip(action: actionMemershipChannel) {
-//   yield* processAPISaga(
-//     ApiService.getListMembership,
-//     action.payload,
-//     getMembershipCallback,
-//     2,
-//   );
-// }
+function* fetchListMemberShip(action: actionMemershipChannel) {
+  yield* processAPISaga(
+    ApiService.getListMembership,
+    action.payload,
+    getMembershipCallback,
+  );
+}
 
 // function* fetchDetailChannelNewsfeed(action: actionDetailChannelNewsFeed) {
 //   yield* processAPISaga(
@@ -269,7 +268,7 @@ export default [
   // takeLatest(getVideoChannel, fetchVideoChannel),
   // takeLatest(getSerriesChannel, fetchSerriesChannel),
   takeLatest(getListChannel, fetchListChannel),
-  // takeLatest(getMembership, fetchListMemberShip),
+  takeLatest(getMembership, fetchListMemberShip),
   // takeLatest(getDetailChannelNewsFeed, fetchDetailChannelNewsfeed),
   takeLatest(
     getDetailChannelServicesPackage,
