@@ -10,6 +10,7 @@ import { View } from 'react-native';
 import { TabBar, TabView } from 'react-native-tab-view';
 // import HistoryChatTab from './HistoryChatTab';
 import PackageTab from './PackageTab';
+import HistoryChatTab from './HistoryChatTab';
 
 const useStyles = makeStyles(({ colors }) => ({
   bgRow: {
@@ -27,7 +28,7 @@ const useStyles = makeStyles(({ colors }) => ({
   indicatorStyle: {
     backgroundColor: colors.primary,
     height: 2,
-  }
+  },
 }));
 
 const HistoryBookingScreen: React.FC<any> = ({ navigation, route }: any) => {
@@ -72,7 +73,8 @@ const HistoryBookingScreen: React.FC<any> = ({ navigation, route }: any) => {
           borderBottomWidth: 1,
           paddingHorizontal: isIOS ? 8 : 0,
           borderBottomColor: colors.cEAECF0,
-        }}>
+        }}
+      >
         <TabBar
           {...props}
           scrollEnabled
@@ -91,7 +93,8 @@ const HistoryBookingScreen: React.FC<any> = ({ navigation, route }: any) => {
                 w500
                 style={{
                   color: labelColor,
-                }}>
+                }}
+              >
                 {route.title}
               </CText>
             );
@@ -104,10 +107,17 @@ const HistoryBookingScreen: React.FC<any> = ({ navigation, route }: any) => {
   const renderScene = ({ route }: any) => {
     switch (route.key) {
       case 'packages':
-        return <PackageTab navigation={navigation} refreshIdx={refreshIdx} isFocusScreen={isFocusScreen}/>;
+        return (
+          <PackageTab
+            navigation={navigation}
+            refreshIdx={refreshIdx}
+            isFocusScreen={isFocusScreen}
+          />
+        );
       case 'historyChat':
-        return <CEmptyData />;
-        // return <HistoryChatTab navigation={navigation} refreshIdx={refreshIdx} />;
+        return (
+          <HistoryChatTab navigation={navigation} refreshIdx={refreshIdx} />
+        );
       default:
         return null;
     }
@@ -124,14 +134,18 @@ const HistoryBookingScreen: React.FC<any> = ({ navigation, route }: any) => {
         lazy={false}
       />
     );
-  }
+  };
 
   return (
     <Wrapper>
-      <CHeader leftComponentOnPress={goBack} title={t('profile.serviceBookingHistory', "Lịch sử đặt dịch vụ")} isBorderBottom />
+      <CHeader
+        leftComponentOnPress={goBack}
+        title={t('profile.serviceBookingHistory', 'Lịch sử đặt dịch vụ')}
+        isBorderBottom
+      />
       {renderTab()}
     </Wrapper>
-  )
+  );
 };
 
 export default HistoryBookingScreen;

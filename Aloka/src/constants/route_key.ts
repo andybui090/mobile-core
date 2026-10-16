@@ -57,6 +57,7 @@ export const mainRoute = {
   bookingScreen: 'BookingScreen',
   partnerEditProfileScreen: 'PartnerEditProfileScreen',
   channelDetailScreen: 'ChannelDetailScreen',
+  chatScreen:'ChatScreen',
 };
 
 // export const gettingRoute = {

@@ -122,6 +122,7 @@ const SettingScreen: React.FC<any> = ({ navigation, route }: any) => {
           console.log('🚀 ~ processDeleteAccount ~ data:', data);
           if (statusSuccess(status)) {
             logout?.();
+            
           }
           resetProfileSlice();
         } else if (error) {

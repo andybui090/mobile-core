@@ -116,7 +116,7 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
         rootDispatch({ type: TYPES.SHOW_GETTING_START, payload: false });
         await autoLoginApp(
           (userInfoSSO: any) => {
-            console.log('🚀 ~ initApp ~ userInfoSSO:', userInfoSSO);
+            // console.log('🚀 ~ initApp ~ userInfoSSO:', userInfoSSO);
             appDispatch(getProfile(null));
             initConfigDefault();
           },
@@ -261,6 +261,8 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
     removeValue(STORAGEKEY.JWT_TOKEN);
     ApiService.deleteAuthorizationHeader();
     ApiSSO.deleteAuthorizationHeader();
+
+    socketService.disconnect();
     // APIUpload.deleteAuthorizationHeader();
     // APIECommerceService.deleteAuthorizationHeader();
     appDispatch(clearReducer()); //open comment when done

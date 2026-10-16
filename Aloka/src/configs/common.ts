@@ -1,6 +1,7 @@
 import { API_MESSAGE } from '@/constants';
 import { Linking, Platform } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
+import dayjs from 'dayjs';
 
 export const getUniqueListBy = (arr: any, key: string) => {
   return [...new Map(arr.map((item: any) => [item[key], item])).values()];
@@ -588,4 +589,53 @@ export const formatMoneyVNDPackage = (money: any, characterReplace: string) => {
     }
   }
   return '';
+};
+
+export const timeDifferenceV2 = (t: any, start: any, end?: any): string => {
+  let startDate = dayjs(start);
+  let endDate = dayjs(end) || dayjs();
+  let difference = endDate.diff(startDate, 'millisecond');
+  if (startDate > endDate) {
+    difference = startDate.diff(endDate, 'millisecond');
+  }
+  if (difference < 60 * 1000) {
+    return `${t('communityChat.chat.titleOffline')}`;
+  }
+  if (difference < 60 * 60 * 1000) {
+    const minute = Math.round(difference / (60 * 1000));
+    if (minute === 1) {
+      return `${minute} ${t('common.minute', 'minute')}`;
+    }
+    return `${minute} ${t('common.minutes', 'minutes')}`;
+  }
+  if (difference < 24 * 60 * 60 * 1000) {
+    const hour = Math.round(difference / (60 * 60 * 1000));
+    if (hour === 1) {
+      return `${hour} ${t('common.hour', 'hour')}`;
+    }
+    return `${hour} ${t('common.hours', 'hours')}`;
+  }
+  if (difference < 30 * 24 * 60 * 60 * 1000) {
+    const day = Math.round(difference / (24 * 60 * 60 * 1000));
+    if (day === 1) {
+      return `${day} ${t('common.day', 'day')}`;
+    }
+    return `${day} ${t('common.days', 'days')}`;
+  }
+  if (difference < 365 * 24 * 60 * 60 * 1000) {
+    const month = Math.round(difference / (30 * 24 * 60 * 60 * 1000));
+    if (month === 1) {
+      return `${month} ${t('common.month', 'month')}`;
+    }
+    return `${month} ${t('common.months', 'months')}`;
+  }
+  if (!end) {
+    return startDate.format('DD-MM-YYYY');
+  } else {
+    const year = Math.round(difference / (365 * 24 * 60 * 60 * 1000));
+    if (year === 1) {
+      return `${year} ${t('common.year', 'year')}`;
+    }
+    return `${year} ${t('common.years', 'years')}`;
+  }
 };

@@ -14,6 +14,7 @@ import QRCodeScreen from './qr-code-screen';
 import BookingScreen from './booking-screen';
 import PartnerEditProfileScreen from './partner-edit-profile-screen';
 import ChannelDetailScreen from './channel-detail-screen';
+import ChatScreen from './chat-screen';
 
 export {
   NotificationScreen,
@@ -32,4 +33,5 @@ export {
   BookingScreen,
   PartnerEditProfileScreen,
   ChannelDetailScreen,
+  ChatScreen,
 };

@@ -8,6 +8,7 @@ import { work } from './work';
 import { service } from './service';
 import { payment } from './payment';
 import { channel } from './channel';
+import { chat } from './chat';
 
 export const images = {
   intro,
@@ -20,4 +21,5 @@ export const images = {
   service,
   payment,
   channel,
+  chat,
 };
