@@ -9,6 +9,7 @@ import { service } from './service';
 import { payment } from './payment';
 import { channel } from './channel';
 import { chat } from './chat';
+import { community } from './community';
 
 export const images = {
   intro,
@@ -22,4 +23,5 @@ export const images = {
   payment,
   channel,
   chat,
+  community,
 };

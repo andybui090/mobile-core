@@ -2,6 +2,7 @@ import { API_MESSAGE } from '@/constants';
 import { Linking, Platform } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import dayjs from 'dayjs';
+import moment from 'moment';
 
 export const getUniqueListBy = (arr: any, key: string) => {
   return [...new Map(arr.map((item: any) => [item[key], item])).values()];
@@ -334,7 +335,7 @@ export const formatByte = (type: any, name: string, size: number) => {
   let extension = type.split('/').pop().toUpperCase();
   let removeEx = name.split('.').shift();
   let MB = formatBytes(size);
-  return {MB, removeEx, extension};
+  return { MB, removeEx, extension };
 };
 
 export const formatDateTimeKey = (d: Date) => {
@@ -347,7 +348,7 @@ export const formatDateTimeKey = (d: Date) => {
   return `${yyyy}-${MM}-${dd} ${hh}:${mm}`;
 };
 
-export const normalizeTimeBooked = (bookings: {date: string}[]) => {
+export const normalizeTimeBooked = (bookings: { date: string }[]) => {
   const map = new Map<string, boolean>();
   bookings.forEach(b => {
     const d = new Date(b.date);
@@ -637,5 +638,75 @@ export const timeDifferenceV2 = (t: any, start: any, end?: any): string => {
       return `${year} ${t('common.year', 'year')}`;
     }
     return `${year} ${t('common.years', 'years')}`;
+  }
+};
+
+export function removeDuplicates(arr: any) {
+  return arr.filter((item: any, index: any) => arr.indexOf(item) === index);
+}
+
+export const conventUserNameChat = (
+  listOwner: any = '',
+  text: any = '',
+  isReview: boolean,
+  isName: number = 0,
+) => {
+  let result = '';
+  if (typeof text === 'string') {
+    if (text.includes('{community.chat.remove}')) {
+      result = text.replace('{community.chat.remove}', '');
+    } else if (text.includes('{communityChat.chat.unPinMessage}')) {
+      result = text.replace('{communityChat.chat.unPinMessage}', '');
+    } else if (text.includes('{communityChat.chat.pinMessage}')) {
+      result = text.replace('{communityChat.chat.pinMessage}', '');
+    } else if (text.includes('{communityChat.chat.memberLeveaGroup}')) {
+      result = text.replace('{communityChat.chat.memberLeveaGroup}', '');
+    } else if (text.includes('{communityChat.chat.addMember}')) {
+      result = text.replace('{communityChat.chat.addMember}', '');
+    } else if (text.includes('{communityChat.chat.deleteMember}')) {
+      result = text.replace('{communityChat.chat.deleteMember}', '');
+    } else if (text.includes('{communityChat.listMember.changeRole}')) {
+      result = text.replace('{communityChat.listMember.changeRole}', '');
+    } else {
+      result = text;
+    }
+  }
+  if (result.length > 2) {
+    return listOwner === 'Owner' ||
+      listOwner === 'Admin' ||
+      isReview ||
+      isName !== 1
+      ? result
+      : result.slice(0, 2) + '*'.repeat(result.length - 2);
+  }
+  return result;
+};
+
+export function randomIntFromInterval(min: number, max: number) {
+  // min and max included
+  return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+export const replaceSpace = (str: string) => {
+  return str.replace(/\u0020/, '\u00a0');
+};
+
+export const setMomentLocale = (languageCode: string) => {
+  switch (languageCode) {
+    case 'vi':
+      moment.locale('vi');
+      break;
+    case 'ko':
+      moment.locale('ko');
+      break;
+    case 'ja':
+      moment.locale('ja');
+      break;
+    case 'fr':
+      moment.locale('fr');
+      break;
+    default:
+      moment.locale('en');
+      break;
   }
 };

@@ -10,6 +10,7 @@ import { Provider } from 'react-redux';
 import App from './App';
 import useI18n from './hooks/useI18n';
 import { navigationRef } from './navigation/RootNavigation';
+// import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 function ContainerApp(): ReactElement {
   useI18n();
@@ -20,9 +21,11 @@ function ContainerApp(): ReactElement {
         <ThemeProvider theme={theme}>
           <Provider store={store}>
             <BottomSheetModalProvider>
-              <NavigationContainer ref={navigationRef}>
-                <App />
-              </NavigationContainer>
+              {/* <KeyboardProvider> */}
+                <NavigationContainer ref={navigationRef}>
+                  <App />
+                </NavigationContainer>
+              {/* </KeyboardProvider> */}
             </BottomSheetModalProvider>
           </Provider>
         </ThemeProvider>

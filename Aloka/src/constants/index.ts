@@ -14,3 +14,5 @@ export {
   partnerProfileTabRoute,
   partnerWalletTabRoute,
 } from './route_key';
+
+export { CHAT_THEME } from './chat_theme';

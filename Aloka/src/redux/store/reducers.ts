@@ -10,6 +10,7 @@ import locationReducer from '@/redux/slices/locationSlice';
 import bookingReducer from '@/redux/slices/bookingSlice';
 import channelReducer from '@/redux/slices/channelSlice';
 import socketioReducer from '@/redux/slices/socketioSlice';
+import communityReducer from '@/redux/slices/communitySlice';
 
 const appReducer = combineReducers({
   globalReducer,
@@ -23,6 +24,7 @@ const appReducer = combineReducers({
   bookingReducer,
   channelReducer,
   socketioReducer,
+  communityReducer,
 });
 
 export const clearReducer = () => ({ type: 'CLEAR_REDUCER' });

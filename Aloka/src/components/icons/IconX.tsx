@@ -7,6 +7,7 @@ import { Octicons } from '@react-native-vector-icons/octicons';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { Entypo } from '@react-native-vector-icons/entypo';
+import { Feather } from '@react-native-vector-icons/feather';
 
 export const IconType = {
   IONICONS: 'ionicons',
@@ -16,6 +17,7 @@ export const IconType = {
   MATERIAL_ICONS: 'materialicons',
   MATERIAL_DESIGN_ICONS: 'materialdesignicons',
   ENTYPO: 'entypo',
+  FEATHER: 'feather',
 } as const;
 
 export type IconType = typeof IconType[keyof typeof IconType];
@@ -28,6 +30,7 @@ const ICON_MAP = {
   [IconType.MATERIAL_ICONS]: MaterialIcons,
   [IconType.MATERIAL_DESIGN_ICONS]: MaterialDesignIcons,
   [IconType.ENTYPO]: Entypo,
+  [IconType.FEATHER]: Feather,
 };
 
 type BaseProps = {

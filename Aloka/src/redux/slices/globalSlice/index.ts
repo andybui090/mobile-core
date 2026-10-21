@@ -9,6 +9,11 @@ interface GlobalState {
   feedbackData: responseProps;
   reportList: responseProps;
   responseCreateReport: responseProps;
+  //
+  checkRoomPrivate: any;
+  reloadConnectSocket: any;
+  deleteRoomLive: any;
+  appStateStatus: any;
 }
 
 const initialState: GlobalState = {
@@ -55,6 +60,15 @@ const initialState: GlobalState = {
     data: undefined,
     error: undefined,
   },
+  //
+  checkRoomPrivate: '',
+  reloadConnectSocket: '',
+  deleteRoomLive: {
+    loading: false,
+    data: undefined,
+    error: undefined,
+  },
+  appStateStatus: '',
 };
 
 const globalSlice = createSlice({
@@ -142,6 +156,19 @@ const globalSlice = createSlice({
       responseCreateReport.data = undefined;
       responseCreateReport.error = undefined;
     },
+    //
+    checkRoomPrivate: (state, _action) => {
+      state.checkRoomPrivate = _action.payload;
+    },
+    reloadConnectSocket: (state, _action) => {
+      state.reloadConnectSocket = _action.payload;
+    },
+    deleteRoomLive: (state, _action) => {
+      state.deleteRoomLive = _action.payload;
+    },
+    appStateStatus: (state, _action) => {
+      state.appStateStatus = _action.payload;
+    },
   },
 });
 
@@ -162,6 +189,11 @@ export const {
   postReport,
   postReportCallback,
   resetGlobal,
+  //,
+  checkRoomPrivate,
+  reloadConnectSocket,
+  deleteRoomLive,
+  appStateStatus,
 } = globalSlice.actions;
 
 export default globalSlice.reducer;

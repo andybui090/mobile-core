@@ -14,6 +14,7 @@ import {
   APPOINTMENT,
   PACKAGE,
   COURSES,
+  COMMUNITY,
 } from './uris';
 import i18n from 'i18next';
 
@@ -216,6 +217,88 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     return api.post(COURSES.VERIFY_COURSE, payload);
   };
 
+  /*
+    SOCKETIO
+  */
+  const getListHistoryChat = (payload: any) => {
+    return api.get(
+      `${COMMUNITY.GET_LISTHISTORYCHAT}/${payload.id}/messages`,
+      payload.data,
+    );
+  };
+
+  const updateRemainCallChat = (payload: any) => {
+    return api.post(PACKAGE.PACKAGE_USED, payload);
+  };
+
+  /*
+    COMMUNITY
+  */
+  const getListRoom = (payload: any) => {
+    return api.get(COMMUNITY.GET_LISTROOM, payload);
+  };
+
+  const getListFriends = (payload: any) => {
+    return api.get(COMMUNITY.GET_LISTFRIEND, payload);
+  };
+
+  const getListMemberGroup = (payload: any) => {
+    return api.get(
+      `${COMMUNITY.GET_LISTMEMBERGROUP}/${payload.id}/members`,
+      payload.data,
+    );
+  };
+
+  const getListMemberGroupChat = (payload: any) => {
+    return api.get(
+      `${COMMUNITY.GET_LISTMEMBERGROUP}/${payload.id}/members`,
+      payload.data,
+    );
+  };
+
+  const postMessageSeen = (payload: any) => {
+    return api.post(`${COMMUNITY.POST_MESSAGE_SEEN}`, payload);
+  };
+
+  const getListRequestFriends = (payload: any) => {
+    return api.get(`${COMMUNITY.REQUEST_FRIENDS}`, payload);
+  };
+
+  const getListRequestFriendsWaitting = (payload: any) => {
+    return api.get(`${COMMUNITY.REQUEST_FRIENDS}?type=waiting`, payload);
+  };
+
+  const getListSearchFriends = (payload: any) => {
+    return api.get(
+      `${COMMUNITY.REQUEST_FRIENDS}/search?s=${payload.phone}`,
+      payload,
+    );
+  };
+
+  const getListRequestFriendsInvited = (payload: any) => {
+    return api.get(`${COMMUNITY.REQUEST_FRIENDS}?type=invited`, payload);
+  };
+
+  const getListEmoji = (payload: any) => {
+    return api.get(`${COMMUNITY.GET_EMOJI}`, payload);
+  };
+
+  const getListTypeRoom = (payload: any) => {
+    return api.get(COMMUNITY.GET_TYPE_LISTROOM, payload);
+  };
+
+  const getBackground = (payload: object) => {
+    return api.get(COMMUNITY.BACKGROUND, payload);
+  };
+
+  const createBackground = (payload: object) => {
+    return api.post(COMMUNITY.BACKGROUND, payload);
+  };
+
+  const updateChatPremiumStatus = (payload: any) => {
+    return api.put(`/rooms/${payload?.id}/update`, payload.dataUpdate);
+  };
+
   return {
     api,
     setXAppLanguage,
@@ -295,6 +378,28 @@ const createApiClient = (baseURL = Config.BASE_API_URL) => {
     getMyPackagesBeforeBooking,
     getVoucherByPackage,
     getVoucherCourse,
+    /*
+      SOCKETIO
+    */
+    getListHistoryChat,
+    updateRemainCallChat,
+    /*
+      COMMUNITY
+    */
+    getListRoom,
+    getListFriends,
+    getListMemberGroup,
+    getListMemberGroupChat,
+    postMessageSeen,
+    getListRequestFriends,
+    getListRequestFriendsWaitting,
+    getListSearchFriends,
+    getListRequestFriendsInvited,
+    getListEmoji,
+    getListTypeRoom,
+    getBackground,
+    createBackground,
+    updateChatPremiumStatus,
   };
 };
 

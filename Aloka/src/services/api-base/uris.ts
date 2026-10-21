@@ -89,3 +89,15 @@ export const COURSES = {
   // TRAINING_COURSES: 'traininginstitutions',
   // TRAINING_COURSES_DETAIL: '/traininginstitutions',
 };
+
+export const COMMUNITY = {
+  GET_LISTROOM: '/rooms',
+  GET_LISTFRIEND: '/doctors',
+  GET_LISTHISTORYCHAT: '/rooms',
+  GET_LISTMEMBERGROUP: '/rooms',
+  POST_MESSAGE_SEEN: '/messages/seen',
+  REQUEST_FRIENDS: '/friends',
+  GET_EMOJI: '/emojis',
+  BACKGROUND: '/backgrounds',
+  GET_TYPE_LISTROOM: '/rooms/owner',
+};

@@ -3,6 +3,8 @@ type successPayload = {
   status: string;
   result: any;
   msg: any;
+  users: any;
+  disconnects: any;
 };
 
 type errorPayload = {

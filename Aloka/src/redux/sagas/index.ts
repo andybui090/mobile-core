@@ -9,6 +9,8 @@ import onboardSaga from './onboardSaga';
 import locationSaga from './locationSaga';
 import bookingSaga from './bookingSaga';
 import channelSaga from './channelSaga';
+// import socketSaga from './socketSaga';
+import communitySaga from './communitySaga';
 
 export default function* rootSaga() {
   yield all([
@@ -22,5 +24,7 @@ export default function* rootSaga() {
     ...locationSaga,
     ...bookingSaga,
     ...channelSaga,
+    // ...socketSaga,
+    ...communitySaga,
   ]);
 }

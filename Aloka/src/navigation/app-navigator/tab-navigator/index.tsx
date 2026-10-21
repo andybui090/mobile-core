@@ -126,7 +126,7 @@ export function AppTab() {
   // const { userType } = useContext(AppContext);
   return (
     <Tab.Navigator
-      initialRouteName="HomeTab"
+      initialRouteName="AccountTab"
       screenOptions={screenTabOption}
       tabBar={props => <BottomTab {...props} />}
     >

@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { getBottomSpace, ifIphoneX } from './helpers/Notch';
 
 export const screenStyles = StyleSheet.create({
@@ -342,10 +342,27 @@ export const screenStyles = StyleSheet.create({
     right: 30,
     bottom: 30,
   },
-  pV4:{
-    paddingVertical:4,
+  pV4: {
+    paddingVertical: 4,
   },
-  pV6:{
-    paddingVertical:6,
-  }
+  pV6: {
+    paddingVertical: 6,
+  },
+  shadow: {
+    backgroundColor: '#fff',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
 });
