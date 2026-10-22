@@ -5,6 +5,7 @@ export const homeTabRoute = {
   homeScreen: 'HomeScreen',
   servicesScreen: 'ServicesScreen',
   searchServicesScreen: 'SearchServicesScreen',
+  nearbyFacilitiesScreen: 'NearbyFacilitiesScreen',
 };
 
 export const drnetworkTabRoute = {
