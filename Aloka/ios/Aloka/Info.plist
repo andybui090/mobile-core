@@ -63,13 +63,11 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Aloka needs your location to suggest nearby services</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Aloka needs access to your microphone for voice and video calls in chat</string>
+	<string>Allow Microphone permission to support chat</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Need to access your photo library to select or update profile pictures and other support in the application</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Aloka needs speech recognition to convert your voice into text for chat messages.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Allow Microphone permission to support chat</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIAppFonts</key>
