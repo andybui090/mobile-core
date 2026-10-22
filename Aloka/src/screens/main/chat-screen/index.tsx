@@ -1,7 +1,8 @@
 import {
   APILoading,
-  // BottomSheetReport,
+  BottomSheetReport,
   CHeader,
+  ConfirmModal,
   IconType,
   IconX,
   ImageHelper,
@@ -9,9 +10,7 @@ import {
   Wrapper,
 } from '@/components';
 import {
-  //   GALogEvent,
   ScreenWidth,
-  // adjustTractEventParams,
   changeAlias,
   conventUserNameChat,
   fonts,
@@ -24,15 +23,13 @@ import {
   replaceSpace,
   screenStyles,
   setMomentLocale,
-  //   showNotiLocal,
+  showNotiLocal,
   showToast,
   timeDifferenceV2,
 } from '@/configs';
 import { CHAT_THEME, PAGINATION, STORAGEKEY } from '@/constants';
-import { mainRoute } from '@/constants/route_key';
 import { AppContext } from '@/contexts';
 import useKeyboardHeight from '@/hooks/useKeyboardHeight';
-import { navigationRef } from '@/navigation/RootNavigation';
 import {
   getListEmoji,
   getListHistoryChat,
@@ -44,7 +41,7 @@ import {
   resetHistoryChat,
   setAppChatBg,
 } from '@/redux/slices/communitySlice';
-import { deleteRoomLive } from '@/redux/slices/globalSlice';
+import { getListReport } from '@/redux/slices/globalSlice';
 import {
   resetCheckErorrRemoveRoom,
   resetMessages,
@@ -65,9 +62,9 @@ import { getObjectData, storeObjectData, storeStringData } from '@/storages';
 import { CLoading, CText, Row } from '@/utils';
 import { LinkPreview } from '@flyerhq/react-native-link-preview';
 // import {Clipboard} from '@react-native-clipboard/clipboard/dist/Clipboard';
+import { readFile } from '@dr.pogodin/react-native-fs';
 import { pick, types } from '@react-native-documents/picker';
 import { makeStyles, useTheme } from '@rneui/themed';
-import axios from 'axios';
 import { Buffer } from 'buffer';
 import moment from 'moment';
 import React, {
@@ -82,18 +79,17 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  ImageBackground,
   Keyboard,
   Linking,
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
 import Config from 'react-native-config';
 import FastImage from 'react-native-fast-image';
-import { readFile } from '@dr.pogodin/react-native-fs';
 import {
   Bubble,
   Composer,
@@ -105,21 +101,6 @@ import {
 } from 'react-native-gifted-chat';
 import ParsedText from 'react-native-parsed-text';
 import { URL } from 'react-native-url-polyfill';
-// import {setAdjustPan, setAdjustResize} from 'rn-android-keyboard-adjust';
-// import ConfirmModal from '../../myAppointment/ConfirmModal';
-// import {MessageModal} from '../modal/MessageModal';
-// import ModalLike from '../modal/ModalLike';
-// import {EditRoom} from '../modal/editRoom';
-// import {ErrorRoom} from '../modal/errorRoom';
-// import {BottomSheetListEmojji} from '../modal/listEmoji';
-// import {ModalListMember} from '../modal/listMember';
-// import {ModalListPin} from '../modal/listPin';
-// import {MediaLocal} from '../modal/mediaLocal';
-// import {OwnerDeleteMessage} from '../modal/ownerDeleteMessage';
-// import {ModalSettingChat} from '../modal/settingChat';
-// import {ShareMessage} from '../modal/shareMessage';
-// import {TitleLiveChat} from '../modal/titleLiveChat';
-// import {BottomSheetVoice} from '../modal/voice';
 import ChatFooter from './components/ChatFooter';
 import AddFriend from './components/addFriend';
 import { tagUser } from './components/convertTagUser';
@@ -129,21 +110,28 @@ import MediaSelect from './components/history/MediaSelect';
 import ReplyMessage from './components/history/ReplyMessage';
 import VideoImgSelect from './components/history/VideoImgSelect';
 import VideoSelect from './components/history/VideoSelect';
-// import LiveStream from './components/liveStream';
 import AudioLocal from './components/local/AudioLocal';
-// import { DetailFile } from './components/local/DetailFile';
-// import { DetailImgVideo } from './components/local/DetailImgVideo';
+import { DetailFile } from './components/local/DetailFile';
+import { DetailImgVideo } from './components/local/DetailImgVideo';
 import FileLocal from './components/local/FileLocal';
 import ImgLocal from './components/local/ImgLocal';
-// import MediaImgVideoLocal from './components/local/MediaImgVideoLocal';
+import MediaImgVideoLocal from './components/local/MediaImgVideoLocal';
 import ReplyMessageLocal from './components/local/ReplyMessageLocal';
-// import VideoLocal from './components/local/VideoLocal';
+import VideoLocal from './components/local/VideoLocal';
+import MessagePin from './components/messagePin';
 import { MessageModal } from './modal/MessageModal';
 import ModalLike from './modal/ModalLike';
-// import { MediaLocal } from './modal/mediaLocal';
-// import MessagePin from './components/messagePin';
-// import { BottomSheetReport } from './components/modal-report';
-// import PlayLiveStream from './components/playLiveStream';
+import { EditRoom } from './modal/editRoom';
+import { ErrorRoom } from './modal/errorRoom';
+import { BottomSheetListEmojji } from './modal/listEmoji';
+import { ModalListMember } from './modal/listMember';
+import { ModalListPin } from './modal/listPin';
+import { MediaLocal } from './modal/mediaLocal';
+import { OwnerDeleteMessage } from './modal/ownerDeleteMessage';
+import { ModalSettingChat } from './modal/settingChat';
+import { ShareMessage } from './modal/shareMessage';
+import { TitleLiveChat } from './modal/titleLiveChat';
+import { BottomSheetVoice } from './modal/voice';
 
 const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
   const {
@@ -264,6 +252,12 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
 
   const [upDateVideoIsLoading, setUpDateVideoIsLoading] = useState<any>([]);
   const [messages, setMessages] = useState<any>([]);
+
+  // useEffect(() => {
+  //   console.log("======== ",messages);
+  // }, [messages]);
+
+
   const [messagesPin, setMessagesPin] = useState<any>([]);
 
   const [textMessages, setTextMessages] = useState<any>('');
@@ -358,7 +352,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
   const [textTilteLive, setTextTilteLive] = useState<any>('');
   const [listIdMember, setListIdMember] = useState<any>([]);
   const [showLiveStream, setShowLiveStream] = useState<boolean>(false);
-  const [showPlayLiveStream, setPlayShowLiveStream] = useState<boolean>(false);
+  // const [showPlayLiveStream, setPlayShowLiveStream] = useState<boolean>(false);
   const [isLiveStream, setIsLiveStream] = useState<boolean>(false);
   const [adaptor, setAdaptor] = useState<any>({});
   const [showtitleRoom, setShowTitleRoom] = useState<boolean>(false);
@@ -943,9 +937,12 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
                     socketmessage?.data?.clientMsgId ||
                   messages[i]._id === socketmessage?.data?.clientMsgId
                 ) {
-                  arr[i]._id = socketmessage?.data?.id;
-                  arr[i].is_pin = null;
-                  arr[i].name = socketmessage?.data?.full_name;
+                  arr[i] = {
+                    ...arr[i],
+                    _id: socketmessage?.data?.id,
+                    is_pin: null,
+                    name: socketmessage?.data?.full_name,
+                  };
                   isFound = true;
                   break;
                 }
@@ -987,7 +984,6 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
                 const i = 0;
                 if (!typeLive) {
                   if (messages[i]._id === socketmessage?.data?.clientMsgId) {
-                    console.log('---------111111111');
                     arr[i]._id = socketmessage?.data?.id;
                     arr[i]._idCdn = socketmessage?.data?.id;
                     arr[i].is_pin = null;
@@ -1133,36 +1129,36 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
                     JSON.parse(socketmessage?.data?.resources)?.type !==
                     undefined
                   ) {
-                    // showNotiLocal(
-                    //   `${socketmessage?.data?.full_name} ${t(
-                    //     'communityChat.voice.buttonSend',
-                    //   )} ${socketmessage?.data?.room_title}`,
-                    //   JSON.parse(socketmessage?.data?.resources)?.type,
-                    //   handlegoChat,
-                    //   socketmessage?.data?.avatar,
-                    // );
+                    showNotiLocal(
+                      `${socketmessage?.data?.full_name} ${t(
+                        'communityChat.voice.buttonSend',
+                      )} ${socketmessage?.data?.room_title}`,
+                      JSON.parse(socketmessage?.data?.resources)?.type,
+                      handlegoChat,
+                      socketmessage?.data?.avatar,
+                    );
                   } else {
-                    // showNotiLocal(
-                    //   `${socketmessage?.data?.full_name} ${t(
-                    //     'communityChat.voice.buttonSend',
-                    //   )} ${socketmessage?.data?.room_title}`,
-                    //   JSON.parse(socketmessage?.data?.resources)[0]?.type,
-                    //   handlegoChat,
-                    //   socketmessage?.data?.avatar,
-                    // );
+                    showNotiLocal(
+                      `${socketmessage?.data?.full_name} ${t(
+                        'communityChat.voice.buttonSend',
+                      )} ${socketmessage?.data?.room_title}`,
+                      JSON.parse(socketmessage?.data?.resources)[0]?.type,
+                      handlegoChat,
+                      socketmessage?.data?.avatar,
+                    );
                   }
                 } else {
-                  //   showNotiLocal(
-                  //     `${socketmessage?.data?.full_name} ${t(
-                  //       'communityChat.voice.buttonSend',
-                  //     )} ${socketmessage?.data?.room_title}`,
-                  //     socketmessage?.data?.content.replaceAll(
-                  //       'DoctorNetwork_Chat_NETDEV ',
-                  //       '',
-                  //     ),
-                  //     handlegoChat,
-                  //     socketmessage?.data?.avatar,
-                  //   );
+                  showNotiLocal(
+                    `${socketmessage?.data?.full_name} ${t(
+                      'communityChat.voice.buttonSend',
+                    )} ${socketmessage?.data?.room_title}`,
+                    socketmessage?.data?.content.replaceAll(
+                      'DoctorNetwork_Chat_NETDEV ',
+                      '',
+                    ),
+                    handlegoChat,
+                    socketmessage?.data?.avatar,
+                  );
                 }
               }
             }
@@ -1257,7 +1253,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
               }),
             );
             const fetchData = async () => {
-              await storeObjectData(STORAGEKEY.LIST_MESSAGES, {
+              storeObjectData(STORAGEKEY.LIST_MESSAGES, {
                 items: socketmessage?.data?.content,
               });
             };
@@ -1449,7 +1445,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
           arr.unshift(items);
           setMessages(arr);
           const fetchData = async () => {
-            await storeObjectData(STORAGEKEY.LIST_MESSAGES, {
+            storeObjectData(STORAGEKEY.LIST_MESSAGES, {
               items: botResponse.content,
             });
           };
@@ -1661,7 +1657,12 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
               // } else {
               //   setMessages(removeDuplicates(coverntArr));
               // }
-              setMessages(removeDuplicates(coverntArr));
+              setMessages(
+                removeDuplicates(coverntArr).sort(
+                  (a: IMessage, b: IMessage) =>
+                    moment(b.createdAt).valueOf() - moment(a.createdAt).valueOf(),
+                ),
+              );
               const result = coverntArr.filter(itemA =>
                 replyIdArr.some(itemB => itemA._id === itemB.reply_id),
               );
@@ -1738,7 +1739,12 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
               // } else {
               //   setMessages(removeDuplicates(coverntArr));
               // }
-              setMessages(removeDuplicates(coverntArr));
+              setMessages(
+                removeDuplicates(coverntArr).sort(
+                  (a: IMessage, b: IMessage) =>
+                    moment(b.createdAt).valueOf() - moment(a.createdAt).valueOf(),
+                ),
+              );
               const result = coverntArr.filter(itemA =>
                 replyIdArr.some(itemB => itemA._id === itemB.reply_id),
               );
@@ -1904,7 +1910,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
         if (data) {
           if (data.room_id === obj.room_is_live) {
             setIsLiveStream(false);
-            setPlayShowLiveStream(false);
+            // setPlayShowLiveStream(false);
             setShowLiveStream(false);
             // obj.room_is_live = null;
             // setItem(obj);
@@ -2195,7 +2201,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
     }
   };
 
-  const viewabilityConfigCallbackPairs = useRef([{ onViewableItemsChanged }]);
+  // const viewabilityConfigCallbackPairs = useRef([{ onViewableItemsChanged }]);
 
   const checkScrollBottom = () => {
     if (messages.length > 0) {
@@ -2381,7 +2387,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
     clientMsgIdVideo: any,
   ) => {
     let arr = [];
-    let arrV2 = [...messages];
+    // let arrV2 = [...messages];
     let content: { filename: any; data: any; type: any }[] = [];
     for (let i = 0; i < updateItem.length; i++) {
       const _filename = 'video' + moment().unix().toString() + '.mp4';
@@ -2528,6 +2534,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
       convenrtVideoCDN(contentVideo, content, updateItem);
     }
   };
+
   //detail img/video
   const onDetailImgVideo = (item: any, type: any) => {
     setType(type);
@@ -2600,7 +2607,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
         break;
       }
     }
-    await storeObjectData(STORAGEKEY.LIST_MESSAGES, {
+    storeObjectData(STORAGEKEY.LIST_MESSAGES, {
       items: '',
     });
     setShowMessModal(false);
@@ -2949,17 +2956,17 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
 
   const handleGoback = () => {
     // socketService.emitListRoom(PAGINATION.ITEMS_20, 0);
-    if (showPlayLiveStream || showLiveStream) {
-      adaptor.stop(item.room_is_live);
-      adaptor.closeWebSocket();
-      socketService.emitViewerLive(item.room_is_live, 0);
-      store.dispatch(resetSocketjoinRoom(null));
-      store.dispatch(deleteRoomLive(item.room_is_live));
-      setPlayShowLiveStream(false);
-      if (showLiveStream) {
-        socketService.emitRoomLive(item.room_is_live, 2, 1);
-      }
-    }
+    // if (showPlayLiveStream || showLiveStream) {
+    //   adaptor.stop(item.room_is_live);
+    //   adaptor.closeWebSocket();
+    //   socketService.emitViewerLive(item.room_is_live, 0);
+    //   store.dispatch(resetSocketjoinRoom(null));
+    //   store.dispatch(deleteRoomLive(item.room_is_live));
+    //   setPlayShowLiveStream(false);
+    //   if (showLiveStream) {
+    //     socketService.emitRoomLive(item.room_is_live, 2, 1);
+    //   }
+    // }
     navigation.goBack();
     const date = Date.now();
     socketService.emitSeenMessage(item.id, date);
@@ -3158,11 +3165,11 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
     // }
   };
 
-  const handlePlayLiveStream = () => {
-    if (listOwner !== 'Owner') {
-      setPlayShowLiveStream(true);
-    }
-  };
+  // const handlePlayLiveStream = () => {
+  //   if (listOwner !== 'Owner') {
+  //     setPlayShowLiveStream(true);
+  //   }
+  // };
 
   //RENDER
   const renderErrorImage = () => {
@@ -3188,7 +3195,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
   const renderRightHeader = () => (
     <View style={styles.rightWrapper}>
       <Row>
-        {isLiveStream && (
+        {/* {isLiveStream && (
           <>
             <Pressable
               style={{ position: 'absolute', right: 50, top: 6 }}
@@ -3198,7 +3205,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
                 {t('course.lesson.doingLive')}
               </CText>
             </Pressable>
-            {/* <Pressable
+            <Pressable
               style={{ position: 'absolute', right: 15, top: 0 }}
               onPress={() => handlePlayLiveStream()}
             >
@@ -3209,9 +3216,9 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
                 }}
                 source={images.course.ico_livetime}
               />
-            </Pressable> */}
+            </Pressable>
           </>
-        )}
+        )} */}
         <Pressable
           onPress={() => {
             setShowModal(true);
@@ -3247,8 +3254,6 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
           <Pressable onPress={() => handleProfileDoctor()}>
             {item.thumbnail === null && item.type === 'Room' ? (
               <View style={[styles.avatarListMember40]}>
-                {/* {listTotalMember.map((item:any, index: any)=>{ */}
-                {/* return ( */}
                 {listTotalMemberChat === '' ? (
                   <>
                     <View style={[styles.avatar40Member]}>
@@ -3445,7 +3450,6 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
               color={colors.black}
               numberOfLines={1}
               style={{
-                // width: ScreenWidth / 1.7 + 10
                 width: isLiveStream ? ScreenWidth / 3 : ScreenWidth / 2,
               }}
             >
@@ -3513,11 +3517,11 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
   const handleGoProfile = (item: any, coverntId: any) => {
     const id = extractTagsWithIDs(coverntId.content, coverntId.idTag)[item];
     if (id !== undefined) {
-      // if (!id.includes('bot')) {
-      //   navigation.navigate(mainRoute.expertProfileScreen, {
-      //     doctorId: id,
-      //   });
-      // }
+      if (!id.includes('bot')) {
+        // navigation.navigate(mainRoute.expertProfileScreen, {
+        //   doctorId: id,
+        // });
+      }
     }
   };
 
@@ -3606,8 +3610,6 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
   };
 
   const handleLikePost = (id: any, idMess: any, currentMessage: any) => {
-    // console.log("🚀 ~ handleLikePost ~ id:", item);
-    // console.log("🚀 ~ handleLikePost ~ currentMessage:", currentMessage.user?._id);
     let arr = JSON.parse(JSON.stringify(messages));
     let itemEmoji = {
       emoji_id: id,
@@ -3642,7 +3644,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
     setCheckLikeCount(true);
     socketService.emitLikeEmoji(itemRoomId, idMess, id);
     //tracking
-    if (item.owner_id && item.owner_id == currentMessage.user?._id) {
+    // if (item.owner_id && item.owner_id == currentMessage.user?._id) {
       // let arrAdjustParams = [
       //   { key: "group_id", value: itemRoomId ? itemRoomId.toString() : "" },
       //   { key: "content_id", value: idMess ? idMess.toString() : "" },
@@ -3663,7 +3665,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
       //     timestamp: moment().unix().toString(),
       //   };
       //   GALogEvent(GAEvents.GROUP_REACTION_ADDED, params);
-    }
+    // }
   };
 
   const handleHideEditRoom = () => {
@@ -3692,19 +3694,6 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
   };
 
   const handleSendCoppyImage = () => {
-    // if (item.type === '1-1') {
-    //   try {
-    //     const GAParams = {
-    //       doctor_id: item.owner_id?.toString() || '',
-    //       specialty: '',
-    //       screen_name: 'Chat Screen',
-    //       user_id: user.id ? user.id.toString() : '',
-    //       timestamp: moment().unix().toString(),
-    //       method: 'App chat send clicked',
-    //     };
-    //     GALogEvent(GAEvents.send_clicked, GAParams);
-    //   } catch (err) {}
-    // }
     if (checkisPaste) {
       if (textCoppy.includes('https://cdn-global.doctornetwork.us/videos')) {
         if (textMessages !== '') {
@@ -4244,9 +4233,6 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
                   </View>
                 ) : (
                   <>
-                    {/* <View style={{ top: typeChat === 'text' ? 0 : 5 }}>
-                      <CText h7 center color={colors.c98A2B3}>{userName.split(' ').pop()}</CText>
-                    </View> */}
                     <View
                       style={{
                         height: 36,
@@ -4409,7 +4395,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
                 ) : (
                   <View style={[screenStyles.box18, { marginBottom: 1 }]}>
                     <FastImage
-                      // style={screenStyles.box18}
+                      style={screenStyles.box18 as any}
                       source={{
                         uri: converntEmoji(props.currentMessage.is_emoji),
                       }}
@@ -4481,7 +4467,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
         >
           <View style={[screenStyles.box14, { top: 0 }]}>
             <FastImage
-              // style={screenStyles.box14}
+              style={screenStyles.box14 as any}
               source={{ uri: converntEmoji(item) }}
               resizeMode="contain"
             />
@@ -4722,7 +4708,6 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
   const handleLink = async (url: any) => {
     if (url.includes('rooms?id=')) {
       const match = url.toLowerCase().match(/([a-f0-9\-]{36})/);
-      // const userShareId = getFromParameter(url);
       const userShareId = new URL(url).searchParams.get('from') ?? '';
       socketService.emitDetailRoom(match[0]);
       socketService.emitRoomShare(match[0], userShareId);
@@ -4753,7 +4738,6 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
       let str = url.toLowerCase().match(/https:\/\/[^\s]+/)[0];
       const urlParams = new URL(str).searchParams;
       const id = urlParams.get('id');
-      //   navigation.navigate(mainRoute.detailCourses, {courseId: id});
     } else {
       let str = url.match(/https:\/\/[^\s]+/)[0];
       Linking.canOpenURL(str).then(() => {
@@ -4804,6 +4788,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
   };
 
   const handleReport = () => {
+    dispatch(getListReport(null));
     setTimeout(() => {
       bottomSheetReportRef.current?.present();
     }, 500);
@@ -5695,7 +5680,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
       } else {
         return (
           <Pressable>
-            {/* <MediaImgVideoLocal
+            <MediaImgVideoLocal
               list={props.currentMessage.image}
               uriCdn={props.currentMessage.imageCdn}
               onDetailImgVideo={onDetailImgVideo}
@@ -5709,7 +5694,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
               checkDeleteMess={checkDeleteMess}
               isPin={props?.currentMessage?.is_pin}
               handleShowModalText={handleShowModalText}
-            /> */}
+            />
           </Pressable>
         );
       }
@@ -5862,7 +5847,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
       } else {
         return (
           <Pressable>
-            {/* <VideoLocal
+            <VideoLocal
               listVideo={video}
               onDetailImgVideo={onDetailImgVideo}
               itemRoomId={itemRoomId}
@@ -5878,7 +5863,7 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
               onCoppyMessage={onCoppyMessage}
               handleShowModalText={handleShowModalText}
               upDateVideoIsLoading={upDateVideoIsLoading}
-            /> */}
+            />
           </Pressable>
         );
       }
@@ -6042,63 +6027,44 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
 
   const renderPin = () => (
     <>
-      {/* <MessagePin
+      <MessagePin
         messagesPin={messagesPin}
         fileNameFNS={fileNameFNS}
         handleShowPin={() => {
           setShowListPin(true), setCheckIsPin(true);
         }}
-      /> */}
+      />
     </>
   );
 
-  const renderLiveStream = () => {
-    return (
-      <>
-        {/* {showLiveStream && (
-          <LiveStream
-            itemRoomChat={item}
-            listIdMember={listIdMember}
-            onhandleClose={() => setShowLiveStream(false)}
-            onhandleStop={(e: any) => setAdaptor(e)}
-            height={height}
-            textTilteLive={textTilteLive}
-            setIsLiveStream={setIsLiveStream}
-            setItem={setItem}
-            countViewer={countViewer}
-            handleCreateRoom={handleLiveStream}
-          />
-        )} */}
-        {/* {showPlayLiveStream && (
-          <PlayLiveStream
-            itemLiveStream={item}
-            onhandleClose={() => setPlayShowLiveStream(false)}
-            onhandleStop={(e: any) => setAdaptor(e)}
-            height={height}
-          />
-        )} */}
-      </>
-    );
-  };
-
-  //   useEffect(() => {
-  //     if (textRef.current?.isFocused()) {
-  //       if (item.type == '1-1') {
-  //         // console.log('=====focus text',item);
-  //         try {
-  //           const GAParams = {
-  //             doctor_id: item.owner_id?.toString() || '',
-  //             specialty: '',
-  //             screen_name: 'Chat Screen',
-  //             user_id: user.id ? user.id.toString() : '',
-  //             timestamp: moment().unix().toString(),
-  //             method: 'App chat text clicked',
-  //           };
-  //           GALogEvent(GAEvents.text_clicked, GAParams);
-  //         } catch (err) {}
-  //       }
-  //     }
-  //   }, [textRef.current?.isFocused()]);
+  // const renderLiveStream = () => {
+  //   return (
+  //     <>
+  //       {/* {showLiveStream && (
+  //         <LiveStream
+  //           itemRoomChat={item}
+  //           listIdMember={listIdMember}
+  //           onhandleClose={() => setShowLiveStream(false)}
+  //           onhandleStop={(e: any) => setAdaptor(e)}
+  //           height={height}
+  //           textTilteLive={textTilteLive}
+  //           setIsLiveStream={setIsLiveStream}
+  //           setItem={setItem}
+  //           countViewer={countViewer}
+  //           handleCreateRoom={handleLiveStream}
+  //         />
+  //       )} */}
+  //       {/* {showPlayLiveStream && (
+  //         <PlayLiveStream
+  //           itemLiveStream={item}
+  //           onhandleClose={() => setPlayShowLiveStream(false)}
+  //           onhandleStop={(e: any) => setAdaptor(e)}
+  //           height={height}
+  //         />
+  //       )} */}
+  //     </>
+  //   );
+  // };
 
   const renderChatContent = () => {
     return (
@@ -6186,16 +6152,18 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
             ? renderAddFriend()
             : null}
           {renderPin()}
-          {renderLiveStream()}
+          {/* {renderLiveStream()} */}
           {checkShowAddTab && item.type === 'Room' ? renderTag() : null}
           {appBgChat.path != '' ? (
-            <ImageBackground
-              source={bgPath}
-              style={screenStyles.flex1}
-              resizeMode="cover"
-            >
+            <View style={screenStyles.flex1}>
+              <Image
+                source={bgPath}
+                style={StyleSheet.absoluteFill}
+                resizeMode="cover"
+                pointerEvents="none"
+              />
               {renderChatContent()}
-            </ImageBackground>
+            </View>
           ) : (
             renderChatContent()
           )}
@@ -6212,7 +6180,8 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
         rightComponent={renderRightHeader()}
       />
       {renderList()}
-      {/* {showModal && (
+
+      {showModal && (
         <ModalSettingChat
           isVisible={showModal}
           hideModal={() => setShowModal(false)}
@@ -6236,15 +6205,16 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
           isBlockMsg={isBlockMsg}
           onMarkChatComplete={handleMarkChatPremiumComplete}
         />
-      )} */}
-      {/* {showModalMedia && (
+      )}
+
+      {showModalMedia && (
         <MediaLocal
           isVisible={showModalMedia}
           hideModal={() => setShowModalMedia(false)}
           onSendImgVideo={onSendImgVideo}
         />
-      )} */}
-      {/* {(showModalDetail || showModalDetailV2) && (
+      )}
+      {(showModalDetail || showModalDetailV2) && (
         <DetailImgVideo
           isVisible={showModalDetail}
           hideModal={() => {
@@ -6254,8 +6224,8 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
           imgDetail={imgDetail}
           type={type}
         />
-      )} */}
-      {/* {(showModalDetailFile || showModalDetailV2) && (
+      )}
+      {(showModalDetailFile || showModalDetailV2) && (
         <DetailFile
           isVisible={showModalDetailFile}
           hideModal={() => {
@@ -6264,12 +6234,13 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
           }}
           fileUriDetail={fileUriDetail}
         />
-      )} */}
-      {/* <BottomSheetVoice
+      )}
+      <BottomSheetVoice
         bottomSheetRef={bottomSheetRef}
         hideModal={() => bottomSheetRef.current?.close()}
         handleVoiceSendMess={handleVoiceSendMess}
-      /> */}
+      />
+      
       {showMessModal && (
         <MessageModal
           isVisible={showMessModal}
@@ -6288,23 +6259,26 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
           handlePinMessage={onPinMessage}
         />
       )}
-      {/* {showShareMess && (
+
+      {showShareMess && (
         <ShareMessage
           isVisible={showShareMess}
           hideModal={() => setShowShareMess(false)}
           textCoppy={textCoppy}
           typeMessage={typeMessage}
         />
-      )} */}
-      {/* {showOwnerMess && (
+      )}
+      
+      {showOwnerMess && (
         <OwnerDeleteMessage
           isVisible={showOwnerMess}
           hideModal={() => setShowOwnerMess(false)}
           handleDeleteOnly={handleDeleteOnly}
           handleDeleteAll={handleDeleteAll}
         />
-      )} */}
-      {/* {showListPin && (
+      )}
+      
+      {showListPin && (
         <ModalListPin
           isVisible={showListPin}
           hideModal={() => setShowListPin(false)}
@@ -6315,8 +6289,9 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
           handleOnIndex={handleOnIndex}
           navigation={navigation}
         />
-      )} */}
-      {/* {showModalListMember && (
+      )}
+
+      {showModalListMember && (
         <ModalListMember
           isVisible={showModalListMember}
           hideModal={() => setShowModalListMember(false)}
@@ -6328,16 +6303,16 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
           navigation={navigation}
           isOnlyView={isOnlyView}
         />
-      )} */}
+      )}
 
-      {/* {showModalNotiMess && (
+      {showModalNotiMess && (
         <ModalListMember
           isVisible={showModalNotiMess}
           hideModal={() => setshowModalNotiMess(false)}
         />
-      )} */}
+      )}
 
-      {/* {showEditRoom && (
+      {showEditRoom && (
         <EditRoom
           isVisible={showEditRoom}
           hideModal={() => setShowEditRoom(false)}
@@ -6346,15 +6321,15 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
           setShowEditRoom={setShowEditRoom}
           setItem={setItem}
         />
-      )} */}
+      )}
 
-      {/* {showtitleRoom && (
+      {showtitleRoom && (
         <TitleLiveChat
           isVisible={showtitleRoom}
           hideModal={() => setShowTitleRoom(false)}
           handleSubmit={handleLiveStream}
         />
-      )} */}
+      )}
 
       {showEmoji && (
         <ModalLike
@@ -6376,36 +6351,36 @@ const ChatScreen: React.FC<any> = ({ navigation, route }: any) => {
         />
       )}
 
-      {/* {showErrorRoom && (
+      {showErrorRoom && (
         <ErrorRoom
           isVisible={showErrorRoom}
           hideModal={() => setShowErrorRoom(false)}
           item={item}
           handleHideEditRoom={handleHideEditRoom}
         />
-      )} */}
+      )}
 
-      {/* <BottomSheetListEmojji
+      <BottomSheetListEmojji
         bottomSheetRef={bottomSheetEmojiRef}
         hideModal={() => bottomSheetEmojiRef.current?.close()}
         listViewEmoji={listViewEmoji}
         listLikeEmoji={listLikeEmoji}
         listTotalMember={listTotalMember}
-      /> */}
-      {/* <BottomSheetReport
+      />
+      <BottomSheetReport
         t={t}
         bottomSheetReportRef={bottomSheetReportRef}
         videoChoose={item}
-      /> */}
+      />
       {apiLoading ? (
         <APILoading showAlert={apiLoading} isLoadingAPI={apiLoading} />
       ) : null}
-      {/* <ConfirmModal
+      <ConfirmModal
         visible={modalConfirm.isVisible}
         message={modalConfirm.message}
         onCancel={modalConfirm.onCancel}
         onConfirm={modalConfirm.onConfirm}
-      /> */}
+      />
       <Toast ref={toastEl} position={'center'} />
     </Wrapper>
   );

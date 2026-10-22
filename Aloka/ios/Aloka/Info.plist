@@ -68,6 +68,8 @@
 	<string>Need to access your photo library to select or update profile pictures and other support in the application</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Aloka needs speech recognition to convert your voice into text for chat messages.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Allow Microphone permission to support chat</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIAppFonts</key>
@@ -89,6 +91,7 @@
 		<string>Entypo.ttf</string>
 		<string>MaterialDesignIcons.ttf</string>
 		<string>Feather.ttf</string>
+		<string>Foundation.ttf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

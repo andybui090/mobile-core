@@ -5,7 +5,7 @@ import { makeStyles, normalize, useTheme } from '@rneui/themed';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, TextInput, View } from 'react-native';
-import Modal from 'react-native-modal';
+import Modal from '@gadhiyamanan/react-native-modal';
 
 export const TitleLiveChat = ({ isVisible, hideModal, handleSubmit }: any) => {
   const {
@@ -22,7 +22,6 @@ export const TitleLiveChat = ({ isVisible, hideModal, handleSubmit }: any) => {
   const [isEnabledPushNoti, setiseIsEnabledPushNoti] = useState<boolean>(false);
   const [isShowNoty, setIsShowNoty] = useState(0);
 
-
   useEffect(() => {
     const processAPIListRoom = () => {
       if (inputRef.current) {
@@ -32,18 +31,20 @@ export const TitleLiveChat = ({ isVisible, hideModal, handleSubmit }: any) => {
     processAPIListRoom();
   }, []);
 
-      const handlePushNotify = () => {
-        setiseIsEnabledPushNoti(!isEnabledPushNoti);
-        if(isEnabledPushNoti){
-            setIsShowNoty(0);
-        }else {
-            setIsShowNoty(1);
-        }
+  const handlePushNotify = () => {
+    setiseIsEnabledPushNoti(!isEnabledPushNoti);
+    if (isEnabledPushNoti) {
+      setIsShowNoty(0);
+    } else {
+      setIsShowNoty(1);
     }
+  };
 
   const renderInput = () => {
     return (
-      <View style={[screenStyles.pH24, screenStyles.pV12, { alignItems: 'center' }]}>
+      <View
+        style={[screenStyles.pH24, screenStyles.pV12, { alignItems: 'center' }]}
+      >
         <View style={{ paddingVertical: 13 }}>
           <TextInput
             ref={inputRef}
@@ -59,13 +60,13 @@ export const TitleLiveChat = ({ isVisible, hideModal, handleSubmit }: any) => {
     );
   };
 
-
   return (
     <Modal
       testID={'modal'}
       isVisible={isVisible}
       backdropOpacity={0.5}
-      style={styles.view}>
+      style={styles.view}
+    >
       <View
         style={[
           styles.viewContainPopup1,
@@ -73,39 +74,67 @@ export const TitleLiveChat = ({ isVisible, hideModal, handleSubmit }: any) => {
             overflow: 'hidden',
             borderRadius: 5,
           },
-        ]}>
+        ]}
+      >
         <View style={{ alignItems: 'center' }}>
           {renderInput()}
-                          <Row between style={{paddingBottom: 20}}>
-                              <Row>
-                                  <View style={{ }}>
-                                      <CText h5 color={colors.c667085}>{t('communityChat.CreateGroup.pushNoti')}</CText>
-                                  </View>
-                              </Row>
-                              <View style={screenStyles.mL15}>
-                                  <ToggleSwitch
-                                      size="small"
-                                      isOn={isEnabledPushNoti}
-                                      onToggle={handlePushNotify}
-                                      onColor={colors.primary}
-                                      offColor={colors.c98A2B3}
-                                  />
-                              </View>
-                          </Row>
+          <Row between style={{ paddingBottom: 20 }}>
+            <Row>
+              <View style={{}}>
+                <CText h5 color={colors.c667085}>
+                  {t('communityChat.CreateGroup.pushNoti')}
+                </CText>
+              </View>
+            </Row>
+            <View style={screenStyles.mL15}>
+              <ToggleSwitch
+                size="small"
+                isOn={isEnabledPushNoti}
+                onToggle={handlePushNotify}
+                onColor={colors.primary}
+                offColor={colors.c98A2B3}
+              />
+            </View>
+          </Row>
         </View>
         <Row center>
-          <Pressable onPress={() => hideModal()} style={{ width: '50%', alignItems: 'center', borderWidth: 1, borderColor: colors.cEAECF0, paddingVertical: 10 }}>
-            <CText w500 color={colors.c101828} h5>{t('communityChat.editRoom.cancel')}</CText>
+          <Pressable
+            onPress={() => hideModal()}
+            style={{
+              width: '50%',
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: colors.cEAECF0,
+              paddingVertical: 10,
+            }}
+          >
+            <CText w500 color={colors.c101828} h5>
+              {t('communityChat.editRoom.cancel')}
+            </CText>
           </Pressable>
-          <Pressable onPress={() => handleSubmit(valueNameGroup, isShowNoty)} style={{ width: '50%', alignItems: 'center', borderWidth: 1, borderColor: colors.cEAECF0, paddingVertical: 10 }}>
-            <CText w500 color={valueNameGroup !== '' ? colors.primary : colors.cEAECF0} h5>{t('communityChat.editRoom.save')}</CText>
-
+          <Pressable
+            onPress={() => handleSubmit(valueNameGroup, isShowNoty)}
+            style={{
+              width: '50%',
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: colors.cEAECF0,
+              paddingVertical: 10,
+            }}
+          >
+            <CText
+              w500
+              color={valueNameGroup !== '' ? colors.primary : colors.cEAECF0}
+              h5
+            >
+              {t('communityChat.editRoom.save')}
+            </CText>
           </Pressable>
-          
         </Row>
-
       </View>
-      {apiLoading ? <APILoading showAlert={apiLoading} isLoadingAPI={apiLoading} /> : null}
+      {apiLoading ? (
+        <APILoading showAlert={apiLoading} isLoadingAPI={apiLoading} />
+      ) : null}
     </Modal>
   );
 };
@@ -113,21 +142,21 @@ export const TitleLiveChat = ({ isVisible, hideModal, handleSubmit }: any) => {
 const useStyles = makeStyles(({ colors }) => ({
   ...screenStyles,
   view: {
-    justifyContent: 'center',
+    justifyContent: 'center' as const,
     margin: 0,
     paddingHorizontal: 60,
   },
   viewContainPopup: {
     backgroundColor: colors.cFCFCFD,
-    display: 'flex',
-    width: '100%',
+    display: 'flex' as const,
+    width: '100%' as const,
     top: -40,
   },
   viewContainPopup1: {
-    backgroundColor: 'white',
-    display: 'flex',
-    width: '100%',
+    backgroundColor: 'white' as const,
+    display: 'flex' as const,
+    width: '100%' as const,
     paddingTop: normalize(10),
-    top: - 100,
+    top: -100,
   },
 }));

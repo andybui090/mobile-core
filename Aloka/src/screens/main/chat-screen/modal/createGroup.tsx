@@ -41,7 +41,7 @@ import {
   View,
 } from 'react-native';
 import Config from 'react-native-config';
-import Modal from 'react-native-modal';
+import Modal from '@gadhiyamanan/react-native-modal';
 
 export const ModalCreateGroup = ({
   isVisible,

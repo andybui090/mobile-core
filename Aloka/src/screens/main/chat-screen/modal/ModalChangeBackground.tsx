@@ -1,4 +1,4 @@
-import {APILoading, ICON_TYPE, IconX, ImageHelper, Toast} from '@/components';
+import { APILoading, IconType, IconX, ImageHelper, Toast } from '@/components';
 import {
   getURLExtension,
   keyExtractor,
@@ -6,35 +6,35 @@ import {
   ScreenWidth,
   showToast,
 } from '@/configs';
-import {CHAT_THEME} from '@/constants';
-import {photoChangBackgroundLauncher} from '@/permissions';
-import {showPhotoLibraryChangBackground} from '@/permissions/picker';
+import { CHAT_THEME } from '@/constants';
+import { photoChangBackgroundLauncher } from '@/permissions';
+import { showPhotoLibraryChangBackground } from '@/permissions/picker';
 import {
   getCreateBackground,
   getListBackground,
   setAppChatBg,
 } from '@/redux/slices/communitySlice';
-import {useAppDispatch, useAppSelector} from '@/redux/store/customReduxHook';
+import { useAppDispatch, useAppSelector } from '@/redux/store/customReduxHook';
 import socketService from '@/socketio';
-import {CButton, CText, Row} from '@/utils';
-import {Divider} from '@rneui/base';
-import {useTheme} from '@rneui/themed';
-import {useEffect, useRef, useState} from 'react';
-import {useTranslation} from 'react-i18next';
-import {FlatList, Platform, Pressable, View} from 'react-native';
-import Modal from 'react-native-modal';
+import { CButton, CText, Row } from '@/utils';
+import { Divider } from '@rneui/base';
+import { useTheme } from '@rneui/themed';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { FlatList, Platform, Pressable, View } from 'react-native';
+import Modal from '@gadhiyamanan/react-native-modal';
 
-const ModalChangeBackground = ({isVisible, hideModal, item}: any) => {
+const ModalChangeBackground = ({ isVisible, hideModal, item }: any) => {
   const {
-    theme: {colors},
+    theme: { colors },
   } = useTheme();
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const toastEl = useRef<any>(null);
   const dispatch = useAppDispatch();
   const [showAlertAi, setShowAlertAi] = useState(false);
   const [isLoadingAPI, setIsLoadingAPI] = useState(false);
 
-  const {appBgChat, listBackground, createBackground} = useAppSelector(
+  const { appBgChat, listBackground, createBackground } = useAppSelector(
     state => state.communityReducer,
   );
 
@@ -46,11 +46,11 @@ const ModalChangeBackground = ({isVisible, hideModal, item}: any) => {
 
   useEffect(() => {
     const processAPIListRoom = () => {
-      const {loading, data, error} = createBackground;
+      const { loading, data, error } = createBackground;
       let arr = [...bgData];
       if (!loading) {
         if (data && listMediaChoose.length > 0) {
-          dispatch(getListBackground({room_id: item.id}));
+          dispatch(getListBackground({ room_id: item.id }));
         } else if (error && listMediaChoose.length > 0) {
           setShowAlertAi(false);
           setIsLoadingAPI(false);
@@ -63,7 +63,7 @@ const ModalChangeBackground = ({isVisible, hideModal, item}: any) => {
 
   useEffect(() => {
     const processAPIListRoom = () => {
-      const {loading, data, error} = listBackground;
+      const { loading, data, error } = listBackground;
       if (!loading) {
         if (data) {
           const newItems = data.items || [];
@@ -149,7 +149,7 @@ const ModalChangeBackground = ({isVisible, hideModal, item}: any) => {
     return null;
   };
 
-  const renderItem = ({item, index}: any) => {
+  const renderItem = ({ item, index }: any) => {
     return (
       <Pressable
         onPress={() => handleChangeBg(item)}
@@ -164,9 +164,10 @@ const ModalChangeBackground = ({isVisible, hideModal, item}: any) => {
           borderWidth: 1,
           marginTop: 16,
           backgroundColor: colors.white,
-        }}>
+        }}
+      >
         <ImageHelper
-          source={{uri: item.path}}
+          source={{ uri: item.path }}
           renderErrorImage={renderErrorImage}
         />
       </Pressable>
@@ -194,9 +195,9 @@ const ModalChangeBackground = ({isVisible, hideModal, item}: any) => {
           <Row between>
             <Pressable onPress={() => hideModal()}>
               <IconX
-                style={{top: 2, left: 2}}
+                style={{ top: 2, left: 2 }}
                 name={'close'}
-                origin={ICON_TYPE.ICONICONS}
+                type={IconType.IONICONS}
                 color={colors.black}
                 size={24}
               />
@@ -206,9 +207,9 @@ const ModalChangeBackground = ({isVisible, hideModal, item}: any) => {
             </CText>
             <Pressable onPress={() => handleChooseMedia()}>
               <IconX
-                style={{top: 2, left: 2}}
+                style={{ top: 2, left: 2 }}
                 name={'plus'}
-                origin={ICON_TYPE.ANT_ICON}
+                type={IconType.ANT_DESIGN}
                 color={colors.black}
                 size={24}
               />
@@ -233,7 +234,8 @@ const ModalChangeBackground = ({isVisible, hideModal, item}: any) => {
     <Modal
       isVisible={isVisible}
       onBackdropPress={hideModal}
-      style={screenStyles.containerModalTop}>
+      style={screenStyles.containerModalTop}
+    >
       {renderContent()}
       {showAlertAi ? (
         <APILoading showAlert={showAlertAi} isLoadingAPI={isLoadingAPI} />

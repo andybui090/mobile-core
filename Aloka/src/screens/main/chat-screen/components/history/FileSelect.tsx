@@ -7,7 +7,6 @@ import { CText, Row } from '@/utils';
 import { useEffect, useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
 import { MessageModal } from '../../modal/MessageModal';
-// import { MessageModal } from '../../../modal/MessageModal';
 
 const FileSelect = (props: any) => {
     const { list = [], onDetailFile, checkUser, itemRoomId, idMessage, onDeleteMessage,

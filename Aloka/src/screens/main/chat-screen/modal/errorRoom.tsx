@@ -8,7 +8,7 @@ import {makeStyles, normalize, useTheme} from '@rneui/themed';
 import React, {useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Image, Platform, Pressable, TouchableOpacity, View} from 'react-native';
-import Modal from 'react-native-modal';
+import Modal from '@gadhiyamanan/react-native-modal';
 
 export const ErrorRoom = ({
   isVisible,
@@ -221,23 +221,23 @@ export const ErrorRoom = ({
 const useStyles = makeStyles(({colors}) => ({
   ...screenStyles,
   view: {
-    justifyContent: 'center',
+    justifyContent: 'center' as const,
     margin: 0,
     paddingHorizontal: 60,
   },
   viewContainPopup: {
     backgroundColor: colors.cFCFCFD,
-    display: 'flex',
-    width: '100%',
+    display: 'flex' as const,
+    width: '100%' as const,
     //   paddingTop: normalize(10),
     top: -40,
     // paddingHorizontal: normalize(15),
     // paddingBottom: normalize(20),
   },
   viewContainPopup1: {
-    backgroundColor: 'white',
-    display: 'flex',
-    width: '100%',
+    backgroundColor: 'white' as const,
+    display: 'flex' as const,
+    width: '100%' as const,
     paddingTop: normalize(10),
     // paddingHorizontal: normalize(15),
     // paddingBottom: normalize(20),

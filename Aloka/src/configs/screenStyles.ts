@@ -1,5 +1,5 @@
 import { Platform, StyleSheet } from 'react-native';
-import { getBottomSpace, ifIphoneX } from './helpers/Notch';
+import { getBottomSpace, getStatusBarHeight, ifIphoneX } from './helpers/Notch';
 
 export const screenStyles = StyleSheet.create({
   flex1: {
@@ -364,5 +364,16 @@ export const screenStyles = StyleSheet.create({
         elevation: 5,
       },
     }),
+  },
+  containerModalTop: {
+    marginTop: getStatusBarHeight() + ifIphoneX(20, 30),
+    marginHorizontal: 0,
+    marginBottom: 0,
+  },
+  modalTopBtn: {
+    paddingHorizontal: 24,
+  },
+  modalFullScreen: {
+    margin: 0,
   },
 });

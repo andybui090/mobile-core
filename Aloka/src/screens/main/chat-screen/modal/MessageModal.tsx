@@ -5,7 +5,8 @@ import { CText, Row } from '@/utils';
 import { makeStyles, normalize, useTheme } from '@rneui/themed';
 import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, TouchableOpacity, View, Modal } from 'react-native';
+import { Image, TouchableOpacity, View } from 'react-native';
+import Modal from '@gadhiyamanan/react-native-modal';
 
 export const MessageModal = ({
   isVisible,
@@ -73,11 +74,11 @@ export const MessageModal = ({
   return (
     <Modal
       testID={'modal'}
-      visible={isVisible}
-      // onBackdropPress={hideModal}
-      // backdropOpacity={0.5}
-      // swipeDirection={['up', 'left', 'right', 'down']}
-      // style={styles.view}
+      isVisible={isVisible}
+      onBackdropPress={hideModal}
+      backdropOpacity={0.5}
+      swipeDirection={['up', 'left', 'right', 'down']}
+      style={styles.view}
     >
       <View
         style={[
@@ -106,7 +107,7 @@ export const MessageModal = ({
                   </CText>
                 </TouchableOpacity>
 
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   style={{ alignItems: 'center', width: '33%' }}
                   onPress={handleShareMessage}
                 >
@@ -118,7 +119,7 @@ export const MessageModal = ({
                   <CText h4 style={{ color: colors.c667085 }}>
                     {t('communityChat.messageModal.buttonShare')}
                   </CText>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
                 {typeMessageLocal === 'text' || typeMessageLocal === 'image' ? (
                   <TouchableOpacity
@@ -279,8 +280,8 @@ const useStyles = makeStyles(({ colors }) => ({
   },
   viewContainPopup: {
     backgroundColor: colors.cFCFCFD,
-    display: 'flex',
-    width: '100%',
+    display: 'flex' as const,
+    width: '100%' as const,
     //   paddingTop: normalize(10),
     top: -40,
     // paddingHorizontal: normalize(15),
@@ -290,7 +291,7 @@ const useStyles = makeStyles(({ colors }) => ({
     backgroundColor: 'white' as const,
     display: 'flex' as const,
     width: '100%' as const,
-    paddingTop: normalize(10),
+    paddingTop: 10,
     // paddingHorizontal: normalize(15),
     // paddingBottom: normalize(20),
     top: -30,

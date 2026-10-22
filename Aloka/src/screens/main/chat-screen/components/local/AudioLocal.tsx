@@ -3,12 +3,11 @@ import { isPlayVoice } from '@/redux/slices/socketioSlice';
 import { store } from '@/redux/store';
 import { useAppSelector } from '@/redux/store/customReduxHook';
 import { CText, Row } from '@/utils';
-// import LottieView from 'lottie-react-native';
+import LottieView from 'lottie-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
+import audioRecorderPlayer from 'react-native-nitro-sound';
 import { MessageModal } from '../../modal/MessageModal';
-// import AudioRecorderPlayer from 'react-native-audio-recorder-player';
-// import { MessageModal } from '../../../modal/MessageModal';
 
 const AudioLocal = (props: any) => {
   const {
@@ -25,8 +24,6 @@ const AudioLocal = (props: any) => {
     checkDeleteMess,
     isPin,
   } = props;
-  // const audioRecorderPlayer = new AudioRecorderPlayer();
-
   const [ischeckPlay, setIscheckPlay] = useState<boolean>(false);
   const [ischeckReseum, setIscheckReseum] = useState<boolean>(true);
   const [ischeckPlayStart, setIscheckPlayStart] = useState<boolean>(false);
@@ -118,34 +115,34 @@ const AudioLocal = (props: any) => {
   };
 
   const onStartPlay = useCallback(async () => {
-    // const msg = await audioRecorderPlayer.startPlayer(list);
-    // audioRecorderPlayer.addPlayBackListener((e) => {
-    //     setRecording({
-    //         currentPositionSec: e.currentPosition,
-    //         currentDurationSec: e.duration,
-    //         playTime: audioRecorderPlayer.mmssss(Math.floor(e.currentPosition)),
-    //         duration: audioRecorderPlayer.mmssss(Math.floor(e.duration)),
-    //     })
-    //     if(e.isFinished){
-    //         store.dispatch(isPlayVoice(false))
-    //     }
-    //     return;
-    // });
+    const msg = await audioRecorderPlayer.startPlayer(list);
+    audioRecorderPlayer.addPlayBackListener(e => {
+      setRecording({
+        currentPositionSec: e.currentPosition,
+        currentDurationSec: e.duration,
+        playTime: audioRecorderPlayer.mmssss(Math.floor(e.currentPosition)),
+        duration: audioRecorderPlayer.mmssss(Math.floor(e.duration)),
+      });
+      if (e.duration > 0 && e.currentPosition >= e.duration) {
+        store.dispatch(isPlayVoice(false));
+      }
+      return;
+    });
     setIscheckPlay(true);
     setIscheckPlayStart(true);
   }, []);
 
   const resumeRecorder = useCallback(async () => {
-    // const msg = await audioRecorderPlayer.resumePlayer();
+    const msg = await audioRecorderPlayer.resumePlayer();
     setIscheckPlayStart(true);
     store.dispatch(isPlayVoice(false));
-    // if(msg === 'No audio playing'){
-    //     onStartPlay();
-    // }
+    if (msg === 'No audio playing') {
+      onStartPlay();
+    }
   }, []);
 
   const onPausePlay = useCallback(async () => {
-    // const msg =  await audioRecorderPlayer.pausePlayer();
+    const msg = await audioRecorderPlayer.pausePlayer();
     store.dispatch(isPlayVoice(false));
     setIscheckPlay(true);
     setIscheckReseum(false);
@@ -224,16 +221,15 @@ const AudioLocal = (props: any) => {
               style={screenStyles.box24}
             />
           ) : (
-            null
-            // <LottieView
-            //   style={{
-            //     width: 25,
-            //     height: 40,
-            //   }}
-            //   source={require('../../../../../../utils/lottie-json/voice.json')}
-            //   autoPlay
-            //   loop
-            // />
+            <LottieView
+              style={{
+                width: 25,
+                height: 40,
+              }}
+              source={require('../../../../../utils/lottie-json/voice.json')}
+              autoPlay
+              loop
+            />
           )}
         </View>
         <View style={{ right: 0 }}>

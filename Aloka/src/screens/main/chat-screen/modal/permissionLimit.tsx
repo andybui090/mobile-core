@@ -4,7 +4,7 @@ import { Divider, makeStyles, normalize, useTheme } from '@rneui/themed';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
-import Modal from 'react-native-modal';
+import Modal from '@gadhiyamanan/react-native-modal';
 
 export const PermissionLimit = ({ isVisible, hideModal, handleChooseImage, handleChooseSettings }: any) => {
     //a5e01b34-bf52-498f-8830-5fee6a3d0cff
@@ -77,23 +77,23 @@ export const PermissionLimit = ({ isVisible, hideModal, handleChooseImage, handl
 const useStyles = makeStyles(({ colors }) => ({
     ...screenStyles,
     view: {
-      justifyContent: 'flex-end',
+      justifyContent: 'flex-end' as const,
       margin: 0,
       paddingHorizontal: 10,
     },
     viewContainPopup: {
       backgroundColor: colors.cFCFCFD,
-      display: 'flex',
-      width: '100%',
+      display: 'flex' as const,
+      width: '100%' as const,
     //   paddingTop: normalize(10),
       top: -40,
       // paddingHorizontal: normalize(15),
       // paddingBottom: normalize(20),
     },
     viewContainPopup1: {
-      backgroundColor: 'white',
-      display: 'flex',
-      width: '100%',
+      backgroundColor: 'white' as const,
+      display: 'flex' as const,
+      width: '100%' as const,
       paddingTop: normalize(10),
       // paddingHorizontal: normalize(15),
       // paddingBottom: normalize(20),

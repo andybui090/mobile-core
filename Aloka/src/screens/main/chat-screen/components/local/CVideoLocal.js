@@ -1,10 +1,18 @@
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-import { Image, ImageBackground, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import {
+  Image,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import Video from 'react-native-video'; // eslint-disable-line
+import { IconX, IconType } from '@/components';
 
-const BackgroundImage = ImageBackground || Image; // fall back to Image if RN < 0.46
+const BackgroundImage = Image; // fall back to Image if RN < 0.46
 
 const getDurationTime = duration => {
   const padTimeValueString = value => value.toString().padStart(2, '0');
@@ -198,7 +206,8 @@ export default class CVideoLocal extends Component {
       this.props.onProgress(event);
     }
     this.setState({
-      progress: event.currentTime / (this.props.duration || this.state.duration),
+      progress:
+        event.currentTime / (this.props.duration || this.state.duration),
     });
     this.currentTime?.setNativeProps({
       text: getDurationTime(event.currentTime),
@@ -218,7 +227,10 @@ export default class CVideoLocal extends Component {
     this.setState({ progress: 1 });
 
     if (!this.props.loop) {
-      this.setState({ isPlaying: false }, () => this.player && this.player.seek(0));
+      this.setState(
+        { isPlaying: false },
+        () => this.player && this.player.seek(0),
+      );
     } else {
       this.player.seek(0);
     }
@@ -390,8 +402,16 @@ export default class CVideoLocal extends Component {
   renderStartButton() {
     const { customStyles } = this.props;
     return (
-      <TouchableOpacity style={[styles.playButton, customStyles.playButton]} onPress={this.onStartPress}>
-        <Icon style={[styles.playArrow, customStyles.playArrow]} name="play-arrow" size={42} />
+      <TouchableOpacity
+        style={[styles.playButton, customStyles.playButton]}
+        onPress={this.onStartPress}
+      >
+        <IconX
+          name="play-arrow"
+          type={IconType.MATERIAL_ICONS}
+          style={[styles.playArrow, customStyles.playArrow]}
+          size={42}
+        />
       </TouchableOpacity>
     );
   }
@@ -401,7 +421,12 @@ export default class CVideoLocal extends Component {
     return (
       <BackgroundImage
         {...props}
-        style={[styles.thumbnail, this.getSizeStyles(), style, customStyles.thumbnail]}
+        style={[
+          styles.thumbnail,
+          this.getSizeStyles(),
+          style,
+          customStyles.thumbnail,
+        ]}
         source={thumbnail}
       >
         {this.renderStartButton()}
@@ -421,7 +446,13 @@ export default class CVideoLocal extends Component {
         ]}
         onLayout={this.onSeekBarLayout}
       >
-        <View style={[{ flexGrow: this.state.progress }, styles.seekBarProgress, customStyles.seekBarProgress]} />
+        <View
+          style={[
+            { flexGrow: this.state.progress },
+            styles.seekBarProgress,
+            customStyles.seekBarProgress,
+          ]}
+        />
         {!fullWidth && !disableSeek ? (
           <View
             style={[
@@ -440,7 +471,11 @@ export default class CVideoLocal extends Component {
           />
         ) : null}
         <View
-          style={[styles.seekBarBackground, { flexGrow: 1 - this.state.progress }, customStyles.seekBarBackground]}
+          style={[
+            styles.seekBarBackground,
+            { flexGrow: 1 - this.state.progress },
+            customStyles.seekBarBackground,
+          ]}
         />
       </View>
     );
@@ -450,10 +485,18 @@ export default class CVideoLocal extends Component {
     const { customStyles, showDuration } = this.props;
     return (
       <View style={[styles.controls, customStyles.controls]}>
-        <TouchableOpacity onPress={this.onPlayPress} style={[customStyles.controlButton, customStyles.playControl]}>
-          <Icon
-            style={[styles.playControl, customStyles.controlIcon, customStyles.playIcon]}
+        <TouchableOpacity
+          onPress={this.onPlayPress}
+          style={[customStyles.controlButton, customStyles.playControl]}
+        >
+          <IconX
             name={this.state.isPlaying ? 'pause' : 'play-arrow'}
+            type={IconType.MATERIAL_ICONS}
+            style={[
+              styles.playControl,
+              customStyles.controlIcon,
+              customStyles.playIcon,
+            ]}
             size={32}
           />
         </TouchableOpacity>
@@ -461,45 +504,69 @@ export default class CVideoLocal extends Component {
         {showDuration && (
           <>
             <TextInput
-              style={[styles.durationText, styles.activeDurationText, customStyles.durationText]}
+              style={[
+                styles.durationText,
+                styles.activeDurationText,
+                customStyles.durationText,
+              ]}
               editable={false}
               ref={e => (this.currentTime = e)}
               value={getDurationTime(0)}
             />
-            <Text style={[styles.durationText, customStyles.durationText]}>/</Text>
-            <Text style={[styles.durationText, customStyles.durationText]}>{getDurationTime(this.state.duration)}</Text>
+            <Text style={[styles.durationText, customStyles.durationText]}>
+              /
+            </Text>
+            <Text style={[styles.durationText, customStyles.durationText]}>
+              {getDurationTime(this.state.duration)}
+            </Text>
           </>
         )}
         {this.props.muted ? null : (
-          <TouchableOpacity onPress={this.onMutePress} style={customStyles.controlButton}>
-            <Icon
-              style={[styles.extraControl, customStyles.controlIcon]}
+          <TouchableOpacity
+            onPress={this.onMutePress}
+            style={customStyles.controlButton}
+          >
+            <IconX
               name={this.state.isMuted ? 'volume-off' : 'volume-up'}
+              type={IconType.MATERIAL_ICONS}
+              style={[styles.extraControl, customStyles.controlIcon]}
               size={24}
             />
           </TouchableOpacity>
         )}
-        {/* {Platform.OS === 'android' || this.props.disableFullscreen ? null : (
-          <TouchableOpacity onPress={this.onToggleFullScreen} style={customStyles.controlButton}>
-            <Icon style={[styles.extraControl, customStyles.controlIcon]} name="fullscreen" size={32} />
-          </TouchableOpacity>
-        )} */}
       </View>
     );
   }
 
   renderVideo() {
-    const { video, style, resizeMode, pauseOnPress, fullScreenOnLongPress, customStyles, ...props } = this.props;
+    const {
+      video,
+      style,
+      resizeMode,
+      pauseOnPress,
+      fullScreenOnLongPress,
+      customStyles,
+      ...props
+    } = this.props;
     return (
       <View style={[customStyles.videoWrapper]}>
         <Video
           {...props}
-          style={[styles.video, this.getSizeStyles(), style, customStyles.video]}
+          style={[
+            styles.video,
+            this.getSizeStyles(),
+            style,
+            customStyles.video,
+          ]}
           ref={p => {
             this.player = p;
           }}
           muted={this.props.muted || this.state.isMuted}
-          paused={this.props.paused ? this.props.paused || !this.state.isPlaying : !this.state.isPlaying}
+          paused={
+            this.props.paused
+              ? this.props.paused || !this.state.isPlaying
+              : !this.state.isPlaying
+          }
           onProgress={this.onProgress}
           onEnd={this.onEnd}
           onLoad={this.onLoad}
@@ -509,7 +576,12 @@ export default class CVideoLocal extends Component {
           volume={1}
           // fullscreen={true}
         />
-        <View style={[this.getSizeStyles(), { marginTop: -this.getSizeStyles().height }]}>
+        <View
+          style={[
+            this.getSizeStyles(),
+            { marginTop: -this.getSizeStyles().height },
+          ]}
+        >
           <TouchableOpacity
             style={styles.overlayButton}
             onPress={() => {
@@ -527,7 +599,6 @@ export default class CVideoLocal extends Component {
         </View>
         {/* {!this.state.isPlaying || this.state.isControlsVisible ? this.renderControls() : this.renderSeekBar(true)} */}
         {this.renderControls()}
-
       </View>
     );
   }
@@ -542,7 +613,11 @@ export default class CVideoLocal extends Component {
       return this.renderThumbnail(thumbnail);
     } else if (!isStarted) {
       return (
-        <View style={[styles.preloadingPlaceholder, this.getSizeStyles(), style]}>{this.renderStartButton()}</View>
+        <View
+          style={[styles.preloadingPlaceholder, this.getSizeStyles(), style]}
+        >
+          {this.renderStartButton()}
+        </View>
       );
     }
     return this.renderVideo();

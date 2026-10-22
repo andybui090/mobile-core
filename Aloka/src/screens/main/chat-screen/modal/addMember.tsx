@@ -1,7 +1,7 @@
 import {
   APILoading,
   CSearchBar,
-  ICON_TYPE,
+  IconType,
   IconX,
   ImageHelper,
 } from '@/components';
@@ -39,7 +39,7 @@ import {
   View,
 } from 'react-native';
 import Config from 'react-native-config';
-import Modal from 'react-native-modal';
+import Modal from '@gadhiyamanan/react-native-modal';
 
 export const ModalAddMember = ({
   isVisible,
@@ -211,22 +211,22 @@ export const ModalAddMember = ({
         };
         for (let i = 0; i < listCreateRoom.length; i++) {
           if (listCreateRoom[i].id === socketCreatRoom.data?.room_id) {
-            navigation.navigate(mainRoute.communityChat, {
-              item: item,
-              roomId: listCreateRoom[i].id,
-              ownerId: user.id,
-              checkCreateRoom: true,
-            });
+            // navigation.navigate(mainRoute.communityChat, {
+            //   item: item,
+            //   roomId: listCreateRoom[i].id,
+            //   ownerId: user.id,
+            //   checkCreateRoom: true,
+            // });
           }
         }
         socketService.emitListRoom(PAGINATION.ITEMS_100, 0);
         navigation.goBack();
-        navigation.navigate(mainRoute.communityChat, {
-          item: item,
-          roomId: socketCreatRoom.data?.room_id,
-          ownerId: user.id,
-          checkCreateRoom: true,
-        });
+        // navigation.navigate(mainRoute.communityChat, {
+        //   item: item,
+        //   roomId: socketCreatRoom.data?.room_id,
+        //   ownerId: user.id,
+        //   checkCreateRoom: true,
+        // });
         store.dispatch(resetPinMessage(null));
         store.dispatch(resetMessages(null));
         store.dispatch(resetHistoryChat(null));
@@ -459,7 +459,7 @@ export const ModalAddMember = ({
               ) : (
                 <IconX
                   name={'camera'}
-                  origin={ICON_TYPE.FEATHER_ICONS}
+                  type={IconType.FEATHER}
                   color={colors.black}
                   size={24}
                 />
@@ -514,7 +514,7 @@ export const ModalAddMember = ({
             <View>
               <IconX
                 name={'closecircle'}
-                origin={ICON_TYPE.ANT_ICON}
+                type={IconType.ANT_DESIGN}
                 color={colors.c344054}
                 size={12}
               />
@@ -563,14 +563,14 @@ export const ModalAddMember = ({
           {!selectedUserId?.includes(user_id) ? (
             <IconX
               name={'check-box-outline-blank'}
-              origin={ICON_TYPE.MATERIAL_ICONS}
+              type={IconType.MATERIAL_ICONS}
               color={colors.black}
               size={26}
             />
           ) : (
             <IconX
               name={'checkbox'}
-              origin={ICON_TYPE.ICONICONS}
+              type={IconType.IONICONS}
               color={colors.primary}
               size={26}
             />
@@ -643,7 +643,7 @@ export const ModalAddMember = ({
           <Pressable onPress={hideModal}>
             <IconX
               name={'close'}
-              origin={ICON_TYPE.ANT_ICON}
+              type={IconType.ANT_DESIGN}
               color={colors.black}
               size={24}
             />
@@ -690,7 +690,7 @@ export const ModalAddMember = ({
 
 const useStyles = makeStyles(({colors}) => ({
   avatarDot: {
-    position: 'absolute',
+    position: 'absolute' as const,
     width: 30,
     height: 30,
     borderRadius: 6,
@@ -701,7 +701,7 @@ const useStyles = makeStyles(({colors}) => ({
     width: 50,
     height: 50,
     borderRadius: 25,
-    overflow: 'hidden',
+    overflow: 'hidden' as const,
     borderWidth: 1,
     borderColor: colors.cF2F4F7,
     backgroundColor: colors.cEAECF0,

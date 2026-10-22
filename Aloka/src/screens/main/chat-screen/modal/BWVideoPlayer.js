@@ -1,7 +1,16 @@
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-import { Image, ImageBackground, Platform, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import {
+  Image,
+  ImageBackground,
+  Platform,
+  Pressable,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { IconX, IconType } from '@/components';
+
 import Video from 'react-native-video'; // eslint-disable-line
 
 const BackgroundImage = ImageBackground || Image; // fall back to Image if RN < 0.46
@@ -52,7 +61,7 @@ const styles = StyleSheet.create({
   },
   video:
     Platform.Version >= 24
-      ? {backgroundColor: 'black'}
+      ? { backgroundColor: 'black' }
       : {
           backgroundColor: 'black',
         },
@@ -198,7 +207,8 @@ export default class BWVideoPlayer extends Component {
       this.props.onProgress(event);
     }
     this.setState({
-      progress: event.currentTime / (this.props.duration || this.state.duration),
+      progress:
+        event.currentTime / (this.props.duration || this.state.duration),
     });
     this.currentTime?.setNativeProps({
       text: getDurationTime(event.currentTime),
@@ -218,7 +228,10 @@ export default class BWVideoPlayer extends Component {
     this.setState({ progress: 1 });
 
     if (!this.props.loop) {
-      this.setState({ isPlaying: false }, () => this.player && this.player.seek(0));
+      this.setState(
+        { isPlaying: false },
+        () => this.player && this.player.seek(0),
+      );
     } else {
       this.player.seek(0);
     }
@@ -390,8 +403,17 @@ export default class BWVideoPlayer extends Component {
   renderStartButton() {
     const { customStyles } = this.props;
     return (
-      <TouchableOpacity style={[styles.playButton, customStyles.playButton]} onPress={this.onStartPress}>
-        <Icon style={[styles.playArrow, customStyles.playArrow]} name="play-arrow" size={42} />
+      <TouchableOpacity
+        style={[styles.playButton, customStyles.playButton]}
+        onPress={this.onStartPress}
+      >
+        <IconX
+          name="play-arrow"
+          type={IconType.MATERIAL_ICONS}
+          style={[styles.playArrow, customStyles.playArrow]}
+          size={42}
+          // color={colors.c98A2B3}
+        />
       </TouchableOpacity>
     );
   }
@@ -401,7 +423,12 @@ export default class BWVideoPlayer extends Component {
     return (
       <BackgroundImage
         {...props}
-        style={[styles.thumbnail, this.getSizeStyles(), style, customStyles.thumbnail]}
+        style={[
+          styles.thumbnail,
+          this.getSizeStyles(),
+          style,
+          customStyles.thumbnail,
+        ]}
         source={thumbnail}
       >
         {this.renderStartButton()}
@@ -421,7 +448,13 @@ export default class BWVideoPlayer extends Component {
         ]}
         onLayout={this.onSeekBarLayout}
       >
-        <View style={[{ flexGrow: this.state.progress }, styles.seekBarProgress, customStyles.seekBarProgress]} />
+        <View
+          style={[
+            { flexGrow: this.state.progress },
+            styles.seekBarProgress,
+            customStyles.seekBarProgress,
+          ]}
+        />
         {!fullWidth && !disableSeek ? (
           <View
             style={[
@@ -440,7 +473,11 @@ export default class BWVideoPlayer extends Component {
           />
         ) : null}
         <View
-          style={[styles.seekBarBackground, { flexGrow: 1 - this.state.progress }, customStyles.seekBarBackground]}
+          style={[
+            styles.seekBarBackground,
+            { flexGrow: 1 - this.state.progress },
+            customStyles.seekBarBackground,
+          ]}
         />
       </View>
     );
@@ -452,57 +489,50 @@ export default class BWVideoPlayer extends Component {
     const { width } = this.state;
     const ratio = videoHeight / videoWidth;
     return (
-      <View style={{height: width * ratio , width:width ,position:'absolute', justifyContent:'center', alignContent:'center', alignItems:'center'}}>
-        {/* <TouchableOpacity onPress={this.onPlayPress} style={[customStyles.controlButton, customStyles.playControl]}> */}
-          {/* <Icon
-            style={[styles.playControl, customStyles.controlIcon, customStyles.playIcon]}
-            name={this.state.isPlaying ? 'play-arrow' : 'pause'}
-            size={32}
-          /> */}
-        {/* </TouchableOpacity> */}
-        {/* {this.renderSeekBar()}
-        {showDuration && (
-          <>
-            <TextInput
-              style={[styles.durationText, styles.activeDurationText, customStyles.durationText]}
-              editable={false}
-              ref={e => (this.currentTime = e)}
-              value={getDurationTime(0)}
-            />
-            <Text style={[styles.durationText, customStyles.durationText]}>/</Text>
-            <Text style={[styles.durationText, customStyles.durationText]}>{getDurationTime(this.state.duration)}</Text>
-          </>
-        )}
-        {this.props.muted ? null : (
-          <TouchableOpacity onPress={this.onMutePress} style={customStyles.controlButton}>
-            <Icon
-              style={[styles.extraControl, customStyles.controlIcon]}
-              name={this.state.isMuted ? 'volume-off' : 'volume-up'}
-              size={24}
-            />
-          </TouchableOpacity>
-        )} */}
-        {/* {Platform.OS === 'android' || this.props.disableFullscreen ? null : (
-          <TouchableOpacity onPress={this.onToggleFullScreen} style={customStyles.controlButton}>
-            <Icon style={[styles.extraControl, customStyles.controlIcon]} name="fullscreen" size={32} />
-          </TouchableOpacity>
-        )} */}
+      <View
+        style={{
+          height: width * ratio,
+          width: width,
+          position: 'absolute',
+          justifyContent: 'center',
+          alignContent: 'center',
+          alignItems: 'center',
+        }}
+      >
       </View>
     );
   }
 
   renderVideo() {
-    const { video, style, resizeMode, pauseOnPress, fullScreenOnLongPress, customStyles, ...props } = this.props;
+    const {
+      video,
+      style,
+      resizeMode,
+      pauseOnPress,
+      fullScreenOnLongPress,
+      customStyles,
+      ...props
+    } = this.props;
     return (
       <View style={[customStyles.videoWrapper]}>
         <Video
           {...props}
-          style={[styles.video, this.getSizeStyles(), style, customStyles.video, {borderRadius: 10} ]}
+          style={[
+            styles.video,
+            this.getSizeStyles(),
+            style,
+            customStyles.video,
+            { borderRadius: 10 },
+          ]}
           ref={p => {
             this.player = p;
           }}
           muted={this.props.muted || this.state.isMuted}
-          paused={this.props.paused ? this.props.paused || !this.state.isPlaying : !this.state.isPlaying}
+          paused={
+            this.props.paused
+              ? this.props.paused || !this.state.isPlaying
+              : !this.state.isPlaying
+          }
           onProgress={this.onProgress}
           onEnd={this.onEnd}
           onLoad={this.onLoad}
@@ -512,7 +542,12 @@ export default class BWVideoPlayer extends Component {
           volume={1}
           // fullscreen={true}
         />
-        <View style={[this.getSizeStyles(), { marginTop: -this.getSizeStyles().height }]}>
+        <View
+          style={[
+            this.getSizeStyles(),
+            { marginTop: -this.getSizeStyles().height },
+          ]}
+        >
           <TouchableOpacity
             style={styles.overlayButton}
             onPress={() => {
@@ -528,7 +563,7 @@ export default class BWVideoPlayer extends Component {
             }}
           />
         </View>
-   
+
         {this.renderControls()}
         {/* {!this.state.isPlaying || this.state.isControlsVisible ? this.renderControls() : this.renderSeekBar(true)} */}
       </View>
@@ -546,7 +581,11 @@ export default class BWVideoPlayer extends Component {
     } else if (!isStarted) {
       return (
         // this.renderThumbnail(thumbnail)
-        <View style={[styles.preloadingPlaceholder, this.getSizeStyles(), style]}>{this.renderStartButton()}</View>
+        <View
+          style={[styles.preloadingPlaceholder, this.getSizeStyles(), style]}
+        >
+          {this.renderStartButton()}
+        </View>
       );
     }
     return this.renderVideo();
@@ -555,8 +594,8 @@ export default class BWVideoPlayer extends Component {
   render() {
     return (
       <View onLayout={this.onLayout} style={this.props.customStyles.wrapper}>
-        <Pressable onPress={()=> console.log('zzzsasa')}>
-        {this.renderContent()}
+        <Pressable onPress={() => console.log('zzzsasa')}>
+          {this.renderContent()}
         </Pressable>
       </View>
     );

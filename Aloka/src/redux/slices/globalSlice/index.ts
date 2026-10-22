@@ -14,6 +14,7 @@ interface GlobalState {
   reloadConnectSocket: any;
   deleteRoomLive: any;
   appStateStatus: any;
+  historyChatName: string;
 }
 
 const initialState: GlobalState = {
@@ -69,6 +70,7 @@ const initialState: GlobalState = {
     error: undefined,
   },
   appStateStatus: '',
+  historyChatName: 'Community',
 };
 
 const globalSlice = createSlice({
@@ -169,6 +171,9 @@ const globalSlice = createSlice({
     appStateStatus: (state, _action) => {
       state.appStateStatus = _action.payload;
     },
+    setHistoryChatName: (state, action) => {
+      state.historyChatName = action.payload;
+    },
   },
 });
 
@@ -194,6 +199,7 @@ export const {
   reloadConnectSocket,
   deleteRoomLive,
   appStateStatus,
+  setHistoryChatName,
 } = globalSlice.actions;
 
 export default globalSlice.reducer;

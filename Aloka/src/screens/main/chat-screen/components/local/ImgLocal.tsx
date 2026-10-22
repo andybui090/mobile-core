@@ -4,7 +4,7 @@ import {
 import { Row } from '@/utils';
 import React, { useEffect, useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
-// import AutoHeightImage from 'react-native-auto-height-image';
+import AutoHeightImage from 'react-native-auto-height-image';
 
 const ImgLocal = (props: any) => {
   const { listImages = [], onDetailImgVideo, itemRoomId, idMessage, onDeleteMessage, onRecallMessage, onCoppyMessage, handleShowModalText, titleName, userId, checkDeleteMess, isPin, uriCdn} = props;
@@ -76,12 +76,12 @@ const ImgLocal = (props: any) => {
         style={{ width: ScreenWidth / 1.3 + 20 }}>
         <Pressable
           onPress={() => handleDetaiImg(listImages[0].src, listImages[0].type)} onLongPress={() => handleShowModalText(idMessage, listImagesCdn[0]?.data, titleName, userId, checkDeleteMess, isPin, 'image')} >
-          {/* <AutoHeightImage
+          <AutoHeightImage
             width={ScreenWidth / 1.3 + 20}
             source={{ uri: listImages[0].src }}
             resizeMode={'cover'}
-            borderRadius={10}
-          /> */}
+            // borderRadius={10}
+          />
         </Pressable>
       </View>
     )

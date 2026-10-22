@@ -19,3 +19,4 @@ import AnimatedReadMore from './react-native-read-more/AnimatedReadMore';
 import CSearchBarCarelFilter from './CSearchBarCarelyFilter';
 export { Toast, Wrapper, ReCaptcha, CSearchBar, AnimatedReadMore, CSearchBarCarelFilter };
 export * from './agree-form';
+export { BottomSheetReport } from './modal-report';

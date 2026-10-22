@@ -1,6 +1,6 @@
 // import deeplinkService from '@/DeeplinkService';
 // import {GAEvents, GALogEvent} from '@/configs';
-import { API_MESSAGE, PAGINATION, STORAGEKEY } from '@/constants';
+import { API_MESSAGE, mainRoute, PAGINATION, STORAGEKEY } from '@/constants';
 // import {mainRoute} from '@/constants/route_key';
 import { AppContext } from '@/contexts';
 // import customEventEmitter, {CUSTOM_EVENTS} from '@/notify-helper';
@@ -71,6 +71,8 @@ import ApiSSO from '@/services/api-sso';
 import MainNavigator from './app-navigator/main-navigator';
 import { Loader } from '@/utils';
 import socketService from '@/socketio';
+import { store } from '@/redux/store';
+import { resetRoomDetal } from '@/redux/slices/socketioSlice';
 interface RootNavigatorProps {
   onCompleteLoading: () => Promise<void>;
 }
@@ -80,6 +82,13 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
   const { firebaseConfig } = useAppSelector(state => state.globalReducer);
 
   const { profileData } = useAppSelector(state => state.profileReducer);
+
+  const {
+    detailRoom,
+    // checkErorrRemoveRoom,
+    getRoomIslive,
+    getRoomIsliveTitle,
+  } = useAppSelector(state => state.socketioReducer);
 
   // const {firebaseTokenUpdate} = useAppSelector(state => state.notifyReducer);
 
@@ -243,6 +252,64 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
     };
     processAPIProfileUser();
   }, [profileData]);
+
+  //navigation room chat
+  useEffect(() => {
+    const processAPIrecallMess = () => {
+      const { loading, data, error } = detailRoom;
+
+      if (!loading) {
+        if (data) {
+          const item: any = data.result;
+          let str = getStringData(STORAGEKEY.JOIN_PUBLIC_CHAT) || '';
+          let arrParse = str ? str.split(',') : [];
+          let isFound = false;
+          for (let i = 0; i < arrParse.length; i++) {
+            if (arrParse[i].toString() == item.id) {
+              isFound = true;
+            }
+          }
+          if (!isFound) {
+            arrParse.push(item.id);
+            storeStringData(STORAGEKEY.JOIN_PUBLIC_CHAT, arrParse.toString());
+            socketService.emitRejoinRoom();
+          }
+          if (item.invite_status !== 0) {
+            if (item.media == 'livestream') {
+              // if (item.owner_id === stateRoot.user.id) {
+              //   navigate2(mainRoute.publishStream, { item: item });
+              // } else {
+              //   if (item.private === 1) {
+              //     console.log('🚀 ~ processAPIrecallMess ~ item:', item);
+              //   }
+              //   navigate2(mainRoute.playStream, { item: item });
+              // }
+            } else if (item.media === 'text') {
+              let itemTemp: any;
+              if (getRoomIslive.data) {
+                itemTemp = {
+                  ...item,
+                  room_is_live: getRoomIslive.data.live_id,
+                  room_live_title: getRoomIsliveTitle.data.title,
+                };
+              } else {
+                itemTemp = item;
+              }
+              navigate2(mainRoute.chatScreen, {
+                item: itemTemp,
+                listCreateRoom: [item],
+                roomId: item.id,
+                ownerId: item.owner_id,
+                checkCreateRoom: false,
+              });
+            }
+          }
+        }
+        store.dispatch(resetRoomDetal(null));
+      }
+    };
+    processAPIrecallMess();
+  }, [detailRoom]);
 
   // useEffect(() => {
   //   const checkFirebaseToken = () => {

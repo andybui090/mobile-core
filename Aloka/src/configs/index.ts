@@ -5,3 +5,5 @@ export * from './helpers/Notch';
 export { fonts, fontScale } from './font';
 export { images } from './image';
 export { screenStyles } from './screenStyles';
+export * from './permissions';
+export * from './commonUI';

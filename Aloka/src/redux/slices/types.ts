@@ -5,6 +5,11 @@ type successPayload = {
   msg: any;
   users: any;
   disconnects: any;
+  total: any;
+  room_id: any;
+  owner_id:any;
+  thumbnail:any;
+  title:any;
 };
 
 type errorPayload = {

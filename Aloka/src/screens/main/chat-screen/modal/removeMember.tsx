@@ -4,7 +4,7 @@ import { makeStyles, normalize, useTheme } from '@rneui/themed';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
-import Modal from 'react-native-modal';
+import Modal from '@gadhiyamanan/react-native-modal';
 
 export const RemoveMember = ({ isVisible, hideModal, handleDeleteMember, checkTextDelete, handleChangeAdmin, itemMember }: any) => {
     //a5e01b34-bf52-498f-8830-5fee6a3d0cff

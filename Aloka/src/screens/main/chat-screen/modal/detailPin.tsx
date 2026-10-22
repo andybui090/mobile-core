@@ -1,7 +1,7 @@
 import { CHeader, ImageHelper } from '@/components';
 import { ScreenHeight, images, screenStyles } from '@/configs';
 import { mainRoute } from '@/constants/route_key';
-import { formatDay } from '@/screens/course-tab/components/Util';
+// import { formatDay } from '@/screens/course-tab/components/Util';
 import { CText, Row } from '@/utils';
 import { makeStyles, useTheme } from '@rneui/themed';
 import axios from 'axios';
@@ -9,8 +9,12 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, Linking, Platform, Pressable, ScrollView, View } from 'react-native';
 import Config from 'react-native-config';
-import Modal from 'react-native-modal';
+import Modal from '@gadhiyamanan/react-native-modal';
 
+const formatDay = (d: any) => {
+  const timestamp = new Date(d).toLocaleDateString('vi-VN');
+  return timestamp;
+};
 
 export const DetailPin = ({ isVisible, hideModal, itemDetail, handleUri }: any) => {
   const {
@@ -152,7 +156,7 @@ const useStyles = makeStyles(({ colors }) => ({
     width: 40,
     height: 40,
     borderRadius: 20,
-    overflow: 'hidden',
+    overflow: 'hidden' as const,
     borderWidth: 1,
     borderColor: colors.cF2F4F7,
     backgroundColor: colors.cEAECF0,

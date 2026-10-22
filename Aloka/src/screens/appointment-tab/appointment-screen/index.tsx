@@ -1,9 +1,9 @@
 import { APILoading, HeaderBar, ImageHeader, Wrapper } from '@/components';
 import { isIOS, ScreenWidth } from '@/configs';
-import { useAppDispatch } from '@/redux/store/customReduxHook';
+import { useAppDispatch, useAppSelector } from '@/redux/store/customReduxHook';
 import { CText, EmptyBooking } from '@/utils';
 import { makeStyles, useTheme } from '@rneui/themed';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { TabBar, TabView } from 'react-native-tab-view';
@@ -13,7 +13,12 @@ import CompletedTab from './CompletedTab';
 import CancelTab from './CancelTab';
 import ExpiredTab from './ExpiredTab';
 import { ModalSheetSupport } from './ModalSheetSupport';
+import socketService from '@/socketio';
 // import WorkInformation from './work-information';
+import {useIsFocused} from '@react-navigation/native';
+import { updateCurrentToChatInfo } from '@/redux/slices/communitySlice';
+import { STORAGEKEY } from '@/constants';
+import { storeObjectData } from '@/storages';
 
 export enum statusAppoinment {
   PENDING = 'PENDING',
@@ -75,11 +80,63 @@ const AppointmentScreen: React.FC<any> = ({ navigation, route }: any) => {
   const [showAlert, setShowAlert] = useState(false);
   const [isLoadingAPI, setIsLoadingAPI] = useState(false);
 
+  const [currentDoctor, setCurrentDoctor] = useState<any>({});
+
+  const {socketCreatRoom} = useAppSelector(state => state.socketioReducer);
+
+  const isFocusScreen = useIsFocused();
+
+  useEffect(() => {
+    const process = () => {
+      if (socketCreatRoom.data?.room_id) {
+        if (showAlert && isLoadingAPI) {
+          setShowAlert(false);
+          setIsLoadingAPI(false);
+          // const { owner_id, manager, ownerInfo, say_hello } = channelData;
+          const infoToUser = {
+            roomChatId: socketCreatRoom.data?.room_id,
+            userToId: currentDoctor.id,
+            userToAvatar: currentDoctor?.avatar || '',
+            // sayHello: say_hello || t("chat.sayHello", "Xin chào 👋! Tôi có thể hỗ trợ gì cho bạn?"),
+            sayHello: '',
+          };
+          dispatch(updateCurrentToChatInfo(infoToUser));
+          storeObjectData(STORAGEKEY.LIST_ROOM_PACKAGE, infoToUser);
+          // setRoomChatId(socketCreatRoom.data?.room_id);
+          socketService.emitDetailRoom(socketCreatRoom.data?.room_id);
+        } else {
+          // setRoomChatId(socketCreatRoom.data?.room_id);
+        }
+      }
+    };
+    if (isFocusScreen && currentDoctor.id) {
+      process();
+    }
+  }, [socketCreatRoom]);
+
   // -------------------------------
   // ACTION
   // -------------------------------
 
-  const handleChatNurse = (item: any) => {};
+  const handleChatNurse = (item: any) => {
+    const { doctor, package: packageInfo } = item;
+    // console.log("🚀 ~ handleChatNurse ~ item:", doctor?.id, packageInfo.id, item.id);
+    setShowAlert(true);
+    setIsLoadingAPI(true);
+    // const toId = owner_id || manager?.id;
+    if (doctor?.id && packageInfo.id && item.id) {
+      setCurrentDoctor(doctor);
+      socketService.emitCreateSocketUser(
+        doctor?.full_name || '',
+        doctor?.id,
+        'text',
+        1,
+        1,
+        packageInfo.id,
+        item.id,
+      );
+    }
+  };
 
   const handleSupportContact = () => {
     setVisibleDetail(true);

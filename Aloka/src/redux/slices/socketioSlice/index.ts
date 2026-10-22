@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { responseProps } from '../types';
 interface SocketState {
-  socketCreatRoom: responseProps;
+  socketCreatRoom: any;
   socketinviteRoom: responseProps;
 
   socketinviteRoomLive: responseProps;

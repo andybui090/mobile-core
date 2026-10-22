@@ -16,7 +16,13 @@ const MessagePin = (props: any) => {
   const { t } = useTranslation();
 
   const renderErrorImage = () => {
-    return <Image source={images.global.no_avatar} style={screenStyles.box30} resizeMode="contain" />;
+    return (
+      <Image
+        source={images.global.no_avatar}
+        style={screenStyles.box30}
+        resizeMode="contain"
+      />
+    );
   };
 
   return (
@@ -26,76 +32,86 @@ const MessagePin = (props: any) => {
           <Row start>
             <View style={{ width: '70%' }}>
               <Row start>
-                <Image source={images.community.icon_pinchat} style={screenStyles.box24} />
+                <Image
+                  source={images.community.icon_pinchat}
+                  style={screenStyles.box24}
+                />
                 <View style={{ paddingHorizontal: 8 }}>
                   {messagesPin[0].type === 'image' ? (
-                    <CText numberOfLines={1} w500 color={colors.black}>{t('communityChat.home.lastMessageImage')}</CText>
-                  ) :
-                    messagesPin[0].type === 'file' ? (
-                      messagesPin[0].text === '' ?
-                        <CText numberOfLines={1} w500 color={colors.black}>{`${t('communityChat.home.lastMessageFile')} ${fileNameFNS.split("/").pop()}`}</CText>
-                        :
-                        <CText numberOfLines={1} w500 color={colors.black}>{`${t('communityChat.home.lastMessageFile')} ${JSON.parse(messagesPin[0].text).filename}`}</CText>
-                    ) :
-                      messagesPin[0].type === 'voice' ? (
-                        <CText numberOfLines={1} w500 color={colors.black}>{t('communityChat.home.lastMessageVoice')}</CText>
-                      )
-                        :
-                        messagesPin[0].type === 'video' ? (
-                          <CText numberOfLines={1} w500 color={colors.black}>{t('communityChat.home.lastMessageVideo')}</CText>
-                        )
-                          :
-                          messagesPin[0].type === 'media' ? (
-                            <CText numberOfLines={1} w500 color={colors.black}>{t('communityChat.listPin.imgVideo')}</CText>
-                          )
-                            :
-                            <>
-                            {messagesPin[0].text.includes('idTag') ? (
-                            <CText numberOfLines={1} w500 color={colors.black}>{JSON.parse(messagesPin[0].text).content}</CText>
-                            ):
-                            <CText numberOfLines={1} w500 color={colors.black}>{messagesPin[0].text}</CText>
-                            }
-                            </>
-
-                  }
-                  <CText numberOfLines={1} color={colors.c98A2B3}>{messagesPin[0].name}</CText>
+                    <CText numberOfLines={1} w500 color={colors.black}>
+                      {t('communityChat.home.lastMessageImage')}
+                    </CText>
+                  ) : messagesPin[0].type === 'file' ? (
+                    messagesPin[0].text === '' ? (
+                      <CText numberOfLines={1} w500 color={colors.black}>{`${t(
+                        'communityChat.home.lastMessageFile',
+                      )} ${fileNameFNS.split('/').pop()}`}</CText>
+                    ) : (
+                      <CText numberOfLines={1} w500 color={colors.black}>{`${t(
+                        'communityChat.home.lastMessageFile',
+                      )} ${JSON.parse(messagesPin[0].text).filename}`}</CText>
+                    )
+                  ) : messagesPin[0].type === 'voice' ? (
+                    <CText numberOfLines={1} w500 color={colors.black}>
+                      {t('communityChat.home.lastMessageVoice')}
+                    </CText>
+                  ) : messagesPin[0].type === 'video' ? (
+                    <CText numberOfLines={1} w500 color={colors.black}>
+                      {t('communityChat.home.lastMessageVideo')}
+                    </CText>
+                  ) : messagesPin[0].type === 'media' ? (
+                    <CText numberOfLines={1} w500 color={colors.black}>
+                      {t('communityChat.listPin.imgVideo')}
+                    </CText>
+                  ) : (
+                    <>
+                      {messagesPin[0].text.includes('idTag') ? (
+                        <CText numberOfLines={1} w500 color={colors.black}>
+                          {JSON.parse(messagesPin[0].text).content}
+                        </CText>
+                      ) : (
+                        <CText numberOfLines={1} w500 color={colors.black}>
+                          {messagesPin[0].text}
+                        </CText>
+                      )}
+                    </>
+                  )}
+                  <CText numberOfLines={1} color={colors.c98A2B3}>
+                    {messagesPin[0].name}
+                  </CText>
                 </View>
               </Row>
             </View>
             <View style={{ width: '25%', alignItems: 'flex-end', left: 5 }}>
               <Row end>
                 {messagesPin[0].type === 'image' ? (
-                  messagesPin[0].image === undefined ?
+                  messagesPin[0].image === undefined ? (
                     <View style={styles.imgPin}>
-                      <ImageHelper source={{ uri: JSON.parse(messagesPin[0].text)[0].data }} renderErrorImage={renderErrorImage} />
+                      <ImageHelper
+                        source={{
+                          uri: JSON.parse(messagesPin[0].text)[0].data,
+                        }}
+                        renderErrorImage={renderErrorImage}
+                      />
                     </View>
-                    : <View style={styles.imgPin}>
-                      <Image source={{ uri: JSON.parse(messagesPin[0].image)[0].data }} style={{ width: 40, height: 40, borderRadius: 10 }} />
+                  ) : (
+                    <View style={styles.imgPin}>
+                      <Image
+                        source={{
+                          uri: JSON.parse(messagesPin[0].image)[0].data,
+                        }}
+                        style={{ width: 40, height: 40, borderRadius: 10 }}
+                      />
                     </View>
-                ) :
-                  messagesPin[0].type === 'video' ? (
-                    messagesPin[0]?.video === undefined ? (
-                      <View style={styles.imgPin}>
-                        <Video
-                          style={[screenStyles.fillParent]}
-                          source={{ uri: JSON.parse(messagesPin[0].text)[0].data }}
-                          controls={false}
-                          paused={true}
-                          muted={true}
-                          repeat={false}
-                          volume={0.0}
-                          fullscreen={false}
-                          playWhenInactive={false}
-                          useTextureView={false}
-                          playInBackground={false}
-                          disableFocus={true}
-                          ignoreSilentSwitch={"ignore"}
-                        />
-                      </View>
-                    ) : <View style={styles.imgPin}>
+                  )
+                ) : messagesPin[0].type === 'video' ? (
+                  messagesPin[0]?.video === undefined ? (
+                    <View style={styles.imgPin}>
                       <Video
                         style={[screenStyles.fillParent]}
-                        source={{ uri: JSON.parse(messagesPin[0]?.video)[0]?.data }}
+                        source={{
+                          uri: JSON.parse(messagesPin[0].text)[0].data,
+                        }}
                         controls={false}
                         paused={true}
                         muted={true}
@@ -106,18 +122,49 @@ const MessagePin = (props: any) => {
                         useTextureView={false}
                         playInBackground={false}
                         disableFocus={true}
-                        ignoreSilentSwitch={"ignore"}
+                        ignoreSilentSwitch={'ignore'}
                       />
                     </View>
-
+                  ) : (
+                    <View style={styles.imgPin}>
+                      <Video
+                        style={[screenStyles.fillParent]}
+                        source={{
+                          uri: JSON.parse(messagesPin[0]?.video)[0]?.data,
+                        }}
+                        controls={false}
+                        paused={true}
+                        muted={true}
+                        repeat={false}
+                        volume={0.0}
+                        fullscreen={false}
+                        playWhenInactive={false}
+                        useTextureView={false}
+                        playInBackground={false}
+                        disableFocus={true}
+                        ignoreSilentSwitch={'ignore'}
+                      />
+                    </View>
                   )
-                    : null}
-                <View style={{ height: 44, width: 1, backgroundColor: colors.c98A2B3, marginRight: 10 }} />
+                ) : null}
+                <View
+                  style={{
+                    height: 44,
+                    width: 1,
+                    backgroundColor: colors.c98A2B3,
+                    marginRight: 10,
+                  }}
+                />
                 <Pressable style={styles.showListPin} onPress={handleShowPin}>
                   <Row end>
-                    <CText color={colors.primary}>{`+ ${messagesPin.length}`}</CText>
+                    <CText
+                      color={colors.primary}
+                    >{`+ ${messagesPin.length}`}</CText>
                     <View style={screenStyles.mL10}>
-                      <Image source={images.community.icon_downPin} style={screenStyles.box16} />
+                      <Image
+                        source={images.community.icon_downPin}
+                        style={screenStyles.box16}
+                      />
                     </View>
                   </Row>
                 </Pressable>
@@ -127,13 +174,30 @@ const MessagePin = (props: any) => {
         </View>
       ) : null}
     </>
-  )
-}
+  );
+};
 
 export default MessagePin;
 const useStyles = makeStyles(({ colors }) => ({
-  viewPin: { position: 'absolute', zIndex: 100, top: 2, height: 56, width: '95%', marginLeft: '2.5%', paddingStart: 8, justifyContent: 'center', borderRadius: 10, borderColor: colors.black, },
-  showListPin: { borderWidth: 1, borderColor: colors.primary, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
+  viewPin: {
+    position: 'absolute' as const,
+    zIndex: 100,
+    top: 2,
+    height: 56,
+    width: '95%' as const,
+    marginLeft: '2.5%' as const,
+    paddingStart: 8,
+    justifyContent: 'center' as const,
+    borderRadius: 10,
+    borderColor: colors.black,
+  },
+  showListPin: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
   shadow: {
     backgroundColor: '#fff',
     ...Platform.select({
@@ -154,7 +218,7 @@ const useStyles = makeStyles(({ colors }) => ({
   imgPin: {
     width: 40,
     height: 40,
-    overflow: 'hidden',
+    overflow: 'hidden' as const,
     borderWidth: 1,
     borderRadius: 10,
     right: 10,

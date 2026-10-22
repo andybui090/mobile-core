@@ -4,6 +4,45 @@ import DeviceInfo from 'react-native-device-info';
 import dayjs from 'dayjs';
 import moment from 'moment';
 
+export const imgExts = ['jpeg', 'jpg', 'webp', 'png', 'gif', 'heic'];
+
+export const videoExts = [
+  '3g2',
+  '3gp',
+  'aaf',
+  'asf',
+  'avchd',
+  'avi',
+  'drc',
+  'flv',
+  'm2v',
+  'm3u8',
+  'm4p',
+  'm4v',
+  'mkv',
+  'mng',
+  'mov',
+  'mp2',
+  'mp4',
+  'mpe',
+  'mpeg',
+  'mpg',
+  'mpv',
+  'mxf',
+  'nsv',
+  'ogg',
+  'ogv',
+  'qt',
+  'rm',
+  'rmvb',
+  'roq',
+  'svi',
+  'vob',
+  'webm',
+  'wmv',
+  'yuv',
+];
+
 export const getUniqueListBy = (arr: any, key: string) => {
   return [...new Map(arr.map((item: any) => [item[key], item])).values()];
 };
@@ -709,4 +748,23 @@ export const setMomentLocale = (languageCode: string) => {
       moment.locale('en');
       break;
   }
+};
+
+export const getURLExtension = (url: string) => {
+  if (url) {
+    let str: string = url.split('.').pop() || '';
+    if (str) {
+      let extension = str.toLowerCase();
+      if (imgExts.indexOf(extension) > -1) {
+        return 'img';
+      }
+      if (videoExts.indexOf(extension) > -1) return 'video';
+    }
+  }
+  return '';
+};
+
+export const getMediaType = (fileName: string) => {
+  if (fileName.match(/\.(mp4|mov|avi)$/i)) return 'video';
+  return 'image';
 };

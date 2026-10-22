@@ -6,9 +6,8 @@ import { CText, Row } from '@/utils';
 import LottieView from 'lottie-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
+import audioRecorderPlayer from 'react-native-nitro-sound';
 import { MessageModal } from '../../modal/MessageModal';
-// import AudioRecorderPlayer from 'react-native-audio-recorder-player';
-// import { MessageModal } from '../../../modal/MessageModal';
 
 const AudioSelect = (props: any) => {
   const {
@@ -24,8 +23,6 @@ const AudioSelect = (props: any) => {
     checkDeleteMess,
     isPin,
   } = props;
-  // const audioRecorderPlayer = new AudioRecorderPlayer();
-
   const [ischeckPlay, setIscheckPlay] = useState<boolean>(false);
   const [ischeckReseum, setIscheckReseum] = useState<boolean>(true);
   const [ischeckPlayStart, setIscheckPlayStart] = useState<boolean>(false);
@@ -158,23 +155,25 @@ const AudioSelect = (props: any) => {
     if (!isPlayVoiceCheck) {
       store.dispatch(isPlayVoice(true));
       if (!ischeckPlay && ischeckReseum) {
-        // const msg = await audioRecorderPlayer.startPlayer(JSON.parse(list).data);
-        // audioRecorderPlayer.addPlayBackListener((e) => {
-        //     setRecording({
-        //         currentPositionSec: e.currentPosition,
-        //         currentDurationSec: e.duration,
-        //         playTime: audioRecorderPlayer.mmssss(Math.floor(e.currentPosition)),
-        //         duration: audioRecorderPlayer.mmssss(Math.floor(e.duration)),
-        //     })
-        //        // Kiểm tra khi phát xong
-        //     if (Math.floor(e.currentPosition) >= Math.floor(e.duration)) {
-        //         console.log('1213123131231321321')
-        //         store.dispatch(isPlayVoice(false));
-        //         // audioRecorderPlayer.stopPlayer();
-        //         // audioRecorderPlayer.removePlayBackListener();
-        //     }
-        //     return;
-        // });
+        const msg = await audioRecorderPlayer.startPlayer(
+          JSON.parse(list).data,
+        );
+        audioRecorderPlayer.addPlayBackListener(e => {
+          setRecording({
+            currentPositionSec: e.currentPosition,
+            currentDurationSec: e.duration,
+            playTime: audioRecorderPlayer.mmssss(Math.floor(e.currentPosition)),
+            duration: audioRecorderPlayer.mmssss(Math.floor(e.duration)),
+          });
+          // Kiểm tra khi phát xong
+          if (Math.floor(e.currentPosition) >= Math.floor(e.duration)) {
+            console.log('1213123131231321321');
+            store.dispatch(isPlayVoice(false));
+            audioRecorderPlayer.stopPlayer();
+            audioRecorderPlayer.removePlayBackListener();
+          }
+          return;
+        });
         setIscheckPlay(true);
         setIscheckPlayStart(true);
       } else {
@@ -184,16 +183,16 @@ const AudioSelect = (props: any) => {
   }, [isPlayVoiceCheck, ischeckPlay, ischeckPlayStart]);
 
   const resumeRecorder = useCallback(async () => {
-    // const msg = await audioRecorderPlayer.resumePlayer();
-    // setIscheckPlayStart(true);
-    // store.dispatch(isPlayVoice(false))
-    // if(msg === 'No audio playing'){
-    //     onStartPlay();
-    // }
+    const msg = await audioRecorderPlayer.resumePlayer();
+    setIscheckPlayStart(true);
+    store.dispatch(isPlayVoice(false));
+    if (msg === 'No audio playing') {
+      onStartPlay();
+    }
   }, []);
 
   const onPausePlay = useCallback(async () => {
-    // const msg =  await audioRecorderPlayer.pausePlayer();
+    const msg = await audioRecorderPlayer.pausePlayer();
     setIscheckPlay(true);
     setIscheckReseum(false);
     setIscheckPlayStart(false);
@@ -277,7 +276,7 @@ const AudioSelect = (props: any) => {
                 width: 25,
                 height: 40,
               }}
-              source={require('./voice.json')}
+              source={require('../../../../../utils/lottie-json/voice.json')}
               autoPlay
               loop
             />

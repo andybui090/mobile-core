@@ -129,6 +129,7 @@ class Socketio {
 
     socket?.on('createRoom', (data: any) => {
       console.log('createRoom', data);
+      console.log("🚀 ~ Socketio ~ listenEvent ~ data:", data)
       store.dispatch(socketCreatRoom(data));
       // lan dau tien tao room chat premium
       if (
@@ -192,7 +193,7 @@ class Socketio {
     socket?.on('message', async (data: any) => {
       console.log('message', data);
       store.dispatch(socketmessage(data));
-      await storeObjectData(STORAGEKEY.LIST_MESSAGES, {
+      storeObjectData(STORAGEKEY.LIST_MESSAGES, {
         items: data,
       });
     });
@@ -200,7 +201,7 @@ class Socketio {
     socket?.on('deleteMessage', async (data: any) => {
       console.log('deleteMessage', data);
       store.dispatch(socketOwnerDeleteMessage(data));
-      await storeObjectData(STORAGEKEY.LIST_MESSAGES, {
+      storeObjectData(STORAGEKEY.LIST_MESSAGES, {
         items: data,
       });
     });
@@ -208,7 +209,7 @@ class Socketio {
     socket?.on('recallMessage', async (data: any) => {
       console.log('recallMessage', data);
       store.dispatch(recallMess(data));
-      await storeObjectData(STORAGEKEY.LIST_MESSAGES, {
+      storeObjectData(STORAGEKEY.LIST_MESSAGES, {
         items: data,
       });
     });
@@ -986,6 +987,7 @@ class Socketio {
 
   //like emoji
   emitLikeEmoji(room: any, message: any, emoji: any) {
+    console.log('======== socket like');
     socket?.emit('emotion', {room: room, message: message, emoji: emoji});
   }
 

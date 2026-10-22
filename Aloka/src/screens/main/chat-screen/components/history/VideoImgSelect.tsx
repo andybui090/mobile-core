@@ -2,7 +2,7 @@ import { images, screenStyles, ScreenWidth } from '@/configs';
 import { Row } from '@/utils';
 import { useEffect, useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
-// import AutoHeightImage from 'react-native-auto-height-image';
+import AutoHeightImage from 'react-native-auto-height-image';
 
 const VideoImgSelect = (props: any) => {
   const {
@@ -165,12 +165,12 @@ const VideoImgSelect = (props: any) => {
           }
           onPress={() => handleDetaiImg(listImages[0].data, listImages[0].type)}
         >
-          {/* <AutoHeightImage
+          <AutoHeightImage
             width={checkUser ? ScreenWidth / 1.3 + 20 : ScreenWidth / 1.3}
             source={{ uri: listImages[0].data }}
             resizeMode={'cover'}
-            borderRadius={10}
-          /> */}
+            // borderRadius={10}
+          />
         </Pressable>
       </View>
     );

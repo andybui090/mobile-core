@@ -13,7 +13,6 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, Linking, Pressable, View } from 'react-native';
 import Video from 'react-native-video';
-// import { MessageModal } from '../../../modal/MessageModal';
 import ParsedText from 'react-native-parsed-text';
 import { MessageModal } from '../../modal/MessageModal';
 

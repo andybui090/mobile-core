@@ -1,17 +1,17 @@
-import { ICON_TYPE, IconX } from '@/components';
+import { IconType, IconX } from '@/components';
 import { ScreenHeight, getStatusBarHeight, ifIphoneX } from '@/configs';
 import { spacings } from '@/theme';
 import { CText, Row } from '@/utils';
 import { makeStyles, useTheme } from '@rneui/themed';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
-import RNModal from 'react-native-modal';
+import RNModal from '@gadhiyamanan/react-native-modal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const useStyles = makeStyles(({ colors }) => ({
   container: {
     margin: 0,
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-end' as const,
     paddingHorizontal: spacings.md,
   },
   wrapper: {
@@ -27,8 +27,8 @@ const useStyles = makeStyles(({ colors }) => ({
     borderColor: colors.grey1,
     width: 24,
     height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     marginRight: 4,
   },
 }));
@@ -62,13 +62,13 @@ export const ModalDownloadProgress = ({ isVisible, progress, onClose }: Props) =
               </>
             ) : (
               <>
-                <IconX origin={ICON_TYPE.MATERIAL_COMMUNITY} name={'check-circle'} size={24} color={colors.c12B76A} />
+                <IconX type={IconType.MATERIAL_DESIGN_ICONS} name={'check-circle'} size={24} color={colors.c12B76A} />
                 <CText color={colors.white}> {t('communityChat.detailFile.success', 'downloaded')}</CText>
               </>
             )}
           </Row>
           <TouchableOpacity onPress={onClose}>
-            <IconX origin={ICON_TYPE.ANT_ICON} name={'close'} size={24} color={colors.white} />
+            <IconX type={IconType.ANT_DESIGN} name={'close'} size={24} color={colors.white} />
           </TouchableOpacity>
         </Row>
       </SafeAreaView>
