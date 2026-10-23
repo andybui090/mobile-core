@@ -20,17 +20,17 @@ import {
   screenStyles,
   ScreenWidth,
 } from '@/configs';
-import {PAGINATION, STORAGEKEY} from '@/constants';
-import {mainRoute} from '@/constants/route_key';
-import {getCarelySearchServices} from '@/redux/slices/carelySlice';
-import {useAppDispatch, useAppSelector} from '@/redux/store/customReduxHook';
-import {getObjectData, removeValue, storeObjectData} from '@/storages';
-import {CEmptyData, CScrollView, CText, Row} from '@/utils';
-import {Divider} from '@rneui/base';
-import {makeStyles, useTheme} from '@rneui/themed';
+import { PAGINATION, STORAGEKEY } from '@/constants';
+import { homeTabRoute, mainRoute } from '@/constants/route_key';
+import { getCarelySearchServices } from '@/redux/slices/carelySlice';
+import { useAppDispatch, useAppSelector } from '@/redux/store/customReduxHook';
+import { getObjectData, removeValue, storeObjectData } from '@/storages';
+import { CEmptyData, CScrollView, CText, Row } from '@/utils';
+import { Divider } from '@rneui/base';
+import { makeStyles, useTheme } from '@rneui/themed';
 import moment from 'moment';
-import React, {useContext, useEffect, useRef, useState} from 'react';
-import {useTranslation} from 'react-i18next';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Animated,
   FlatList,
@@ -43,24 +43,24 @@ import {
   UIManager,
   View,
 } from 'react-native';
-import {Rating} from 'react-native-ratings';
+import { Rating } from 'react-native-ratings';
 import FilterDropdownV2 from './FilterDropdownV2';
-import {ServiceLoading} from './ServiceLoading';
-import {AppContext} from '@/contexts';
+import { ServiceLoading } from './ServiceLoading';
+import { AppContext } from '@/contexts';
 
-const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
+const SearchServiceScreen: React.FC<any> = ({ navigation, route }: any) => {
   const {
-    theme: {colors},
+    theme: { colors },
   } = useTheme();
-  const {t} = useTranslation();
+  const { t } = useTranslation();
 
   const styles = useStyles();
   const toastEl = useRef(null);
 
   const dispatch = useAppDispatch();
 
-  const {carelySearchData} = useAppSelector(state => state.carelyReducer);
-  const {currentLocation} = useContext(AppContext);
+  const { carelySearchData } = useAppSelector(state => state.carelyReducer);
+  const { currentLocation } = useContext(AppContext);
 
   //PROPS & STATE
 
@@ -102,7 +102,6 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
   useEffect(() => {
     const initHistorySearchData = async () => {
       const searchH = await getObjectData(STORAGEKEY.SEARCH_HISTORY_CARELY);
-      // console.log('🚀 ~ file: index.tsx:47 ~ initHistorySearchData ~ searchH:', searchH);
       if (searchH) {
         setSearchHistory(searchH);
       }
@@ -117,7 +116,7 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
 
   useEffect(() => {
     const processAPIListSearchService = () => {
-      const {loading, data, error} = carelySearchData;
+      const { loading, data, error } = carelySearchData;
       if (!loading) {
         if (data) {
           const newItems = data.items || [];
@@ -154,7 +153,7 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
       s: `${keyword}|name`,
     };
     if (filters) {
-      const {sortBy, lat, lng, rating} = filters;
+      const { sortBy, lat, lng, rating } = filters;
       if (sortBy) {
         params.sort_by = sortBy;
         if (sortBy === 'distance') {
@@ -252,13 +251,18 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
       callAPICarelyServicesSearch(newOffset, searchValue, filters);
     }
   };
+
+  const handleOpenNearbyFacilities = () => {
+    navigation.navigate(homeTabRoute.nearbyFacilitiesScreen);
+  };
+
   //RENDER
   const renderSearch = () => {
     return (
       <View style={[screenStyles.pH14, screenStyles.pV12]}>
         <CSearchBarCarelyFilter
           value={searchValue}
-          placeholder={t('search.searchPlaceholder', 'Search...')}
+          placeholder={t('search.searchAndDiscover', 'Search & discover')}
           onChangeText={onChangeTextSearch}
           onClear={handleClearSearch}
           onSubmitEditing={handleSearch}
@@ -272,15 +276,17 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
 
   const renderHistorySearch = (item: any, idx: number) => {
     if (idx < sizeHistory) {
-      const {value} = item;
+      const { value } = item;
       return (
         <Row
           key={idx + 'History'}
           between
-          style={[screenStyles.pH16, screenStyles.pV8]}>
+          style={[screenStyles.pH16, screenStyles.pV8]}
+        >
           <Pressable
             style={[screenStyles.rowStart, screenStyles.flex1]}
-            onPress={() => handleSearchFromHistory(value)}>
+            onPress={() => handleSearchFromHistory(value)}
+          >
             <IconX
               type={IconType.MATERIAL_ICONS}
               name="access-time"
@@ -293,7 +299,8 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
           </Pressable>
           <Pressable
             onPress={() => deleteItemSearchHistory(idx)}
-            hitSlop={screenStyles.hitSlop20}>
+            hitSlop={screenStyles.hitSlop20}
+          >
             <IconX
               type={IconType.MATERIAL_ICONS}
               name="close"
@@ -309,7 +316,8 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
         key={idx + 'History'}
         style={screenStyles.rowCenter}
         hitSlop={screenStyles.hitSlop20}
-        onPress={handleViewMore}>
+        onPress={handleViewMore}
+      >
         <CText h5 w500 color={colors.c98A2B3} style={screenStyles.mR5}>
           {t('video.more', 'View more')}
         </CText>
@@ -330,7 +338,8 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
         <>
           <Row
             between
-            style={[screenStyles.pH16, screenStyles.pV8, screenStyles.mT10]}>
+            style={[screenStyles.pH16, screenStyles.pV8, screenStyles.mT10]}
+          >
             <CText color={colors.black} h5 w600>
               {t('search.recentSearches', 'Recent searches')}
             </CText>
@@ -361,7 +370,8 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
           right: 0,
           zIndex: 1,
           backgroundColor: 'white',
-        }}>
+        }}
+      >
         <CScrollView contentContainerStyle={screenStyles.flexGrowBottom}>
           {searchValue.trim() == '' && renderSearchNear()}
         </CScrollView>
@@ -373,13 +383,13 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
     return (
       <Image
         source={images.bottomTab.carely}
-        style={{width: '80%', height: '80%'}}
+        style={{ width: '80%', height: '80%' }}
         resizeMode="contain"
       />
     );
   };
 
-  const ServiceCard = ({item}: any) => {
+  const ServiceCard = ({ item }: any) => {
     const {
       name,
       price,
@@ -406,7 +416,7 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
       <Pressable style={styles.card} onPress={() => handleViewDetail(item)}>
         <View style={styles.image}>
           <ImageHelper
-            source={{uri: thumbnail}}
+            source={{ uri: thumbnail }}
             renderErrorImage={renderErrorImage}
           />
         </View>
@@ -445,12 +455,13 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
           )}
           <View style={screenStyles.mT3}>
             {priceFormat.discountPrice > 0 ? (
-              <Row start style={{flex: 1, flexWrap: 'wrap'}}>
+              <Row start style={{ flex: 1, flexWrap: 'wrap' }}>
                 <CText
                   color={'#999'}
                   h5
                   w400
-                  style={{textDecorationLine: 'line-through'}}>
+                  style={{ textDecorationLine: 'line-through' }}
+                >
                   {`${formatMoneyVND(priceFormat.rootPrice, '.')}`}
                 </CText>
                 <CText h4 w600 color={'#ff3b30'} style={[screenStyles.mL5]}>
@@ -458,7 +469,7 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
                 </CText>
               </Row>
             ) : (
-              <Row start style={{flex: 1, flexWrap: 'wrap'}}>
+              <Row start style={{ flex: 1, flexWrap: 'wrap' }}>
                 <CText h4 w600 color={'#ff3b30'}>
                   {`${formatMoneyVND(priceFormat.rootPrice, '.')}`}
                 </CText>
@@ -485,8 +496,8 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
           keyExtractor={keyExtractor}
           numColumns={2}
           showsVerticalScrollIndicator={false}
-          columnWrapperStyle={{justifyContent: 'space-between'}}
-          renderItem={({item}) => <ServiceCard item={item} />}
+          columnWrapperStyle={{ justifyContent: 'space-between' }}
+          renderItem={({ item }) => <ServiceCard item={item} />}
           scrollEventThrottle={isIOS ? 160 : 16}
           ListEmptyComponent={<CEmptyData />}
           refreshControl={
@@ -508,7 +519,7 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
 
   const renderContent = () => {
     return (
-      <View style={{flex: 1}}>
+      <View style={{ flex: 1 }}>
         {/* CONTENT */}
         {searchValue.trim() == '' && !isApplyFilter && renderViewSearch()}
         {(isSubmitSearch || isApplyFilter) && renderSearchResult()}
@@ -524,7 +535,8 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
         {/* FILTER PANEL */}
         {showFilter && (
           <Animated.View
-            style={[styles.filterWrapper, {height: animatedHeight}]}>
+            style={[styles.filterWrapper, { height: animatedHeight }]}
+          >
             <FilterDropdownV2
               onApply={(filters: any) => {
                 setShowFilter(false);
@@ -547,23 +559,52 @@ const SearchServiceScreen: React.FC<any> = ({navigation, route}: any) => {
     );
   };
 
+  const renderFacilities = () => {
+    return (
+      <Pressable
+        style={styles.nearByWrapper}
+        onPress={handleOpenNearbyFacilities}
+      >
+        <Row start>
+          <View style={styles.locationWrapper}>
+            <IconX
+              type="ionicons"
+              name={'location'}
+              size={20}
+              color="#0D9488"
+            />
+          </View>
+          <View style={[screenStyles.flex1, screenStyles.mL10]}>
+            <CText h56 w600 color="#0F766E">
+              {t('search.findHealthcare', 'Find healthcare facilities nearby?')}
+            </CText>
+            <CText h6 color="#115E59" style={screenStyles.mT5}>
+              {t('search.discoverPartnerNear', 'Discover partner hospitals and clinics near you.')}
+            </CText>
+          </View>
+        </Row>
+      </Pressable>
+    );
+  };
+
   return (
     <Wrapper>
       <CHeader
         isBorderBottom={true}
-        title={t('search.searchText', 'Search')}
+        title={t('search.searchAndDiscover', 'Search & discover')}
         rightComponentDisable
         leftComponentOnPress={navigation.goBack}
       />
       <Divider color={'#F7F7F7'} width={6} />
       {renderSearch()}
+      {renderFacilities()}
       {renderContent()}
       <Toast ref={toastEl} position={'center'} />
     </Wrapper>
   );
 };
 
-const useStyles = makeStyles(({colors}) => ({
+const useStyles = makeStyles(({ colors }) => ({
   card: {
     width: '48%',
     backgroundColor: '#fff',
@@ -594,6 +635,23 @@ const useStyles = makeStyles(({colors}) => ({
     ...StyleSheet.absoluteFill,
     justifyContent: 'flex-end' as const, // 👈 panel từ dưới lên
     zIndex: 20,
+  },
+  nearByWrapper: {
+    backgroundColor: '#F0FDFA',
+    marginHorizontal: 16,
+    marginTop: 0,
+    marginBottom: 10,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
+  },
+  locationWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#CCFBF1',
+    ...screenStyles.centerWrap,
   },
 }));
 

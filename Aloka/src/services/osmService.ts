@@ -218,7 +218,8 @@ export const getNearbyMedicalFacilities = async ({
   const maxLat = latitude + delta;
 
   let rawResults: any[] = [];
-  const querySuffix = searchQuery && searchQuery.trim() !== '' ? ` ${searchQuery.trim()}` : '';
+  const querySuffix =
+    searchQuery && searchQuery.trim() !== '' ? ` ${searchQuery.trim()}` : '';
 
   if (facilityType === 'hospital') {
     rawResults = await fetchNominatim(
@@ -295,12 +296,20 @@ export const getNearbyMedicalFacilities = async ({
     .map((item: any) => {
       const itemLat = parseFloat(item.lat);
       const itemLng = parseFloat(item.lon);
-      const distanceKm = calculateDistanceKm(latitude, longitude, itemLat, itemLng);
+      const distanceKm = calculateDistanceKm(
+        latitude,
+        longitude,
+        itemLat,
+        itemLng,
+      );
 
       // Tên ưu tiên name hoặc tên trong address
       let name = item.name;
       if (!name || name.trim() === '') {
-        name = item.address?.amenity || item.display_name?.split(',')?.[0] || 'Cơ sở y tế';
+        name =
+          item.address?.amenity ||
+          item.display_name?.split(',')?.[0] ||
+          'Cơ sở y tế';
       }
 
       const type: 'hospital' | 'clinic' | 'other' =

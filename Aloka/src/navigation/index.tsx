@@ -371,49 +371,30 @@ const RootNavigator: React.FC<RootNavigatorProps> = ({ onCompleteLoading }) => {
         appDispatch(getProfile(null));
       },
       registerComplete: async (userInfo: any, loginType: any) => {
-        // GALogEvent(GAEvents.REGISTER_COMPLETE, {
-        //   method: 'App register complete',
-        // });
-        // GALogEvent(GAEvents.REGISTER, {method: 'App register'});
-        // AppEventsLogger.logEvent('Register', {
-        //   [AppEventsLogger.AppEventParams.RegistrationMethod]: loginType || '',
-        // });
-
         setWaitingRegisterComplete(true);
-
         // Cho nay cheat de load man hinh nhanh chong.
         rootDispatch({
           type: TYPES.SET_USER,
           payload: userInfo,
         });
-
         // set lai gia tri de nhan notify luc dau
         setFirstStart(true);
         appDispatch(getProfile(null));
         // Delete firebase dynamic link
         // removeValue(STORAGEKEY.FIREBASE_DYNAMIC_LINK);
       },
-      // setGlobalLocation: async (location: any) => {
-      //   rootDispatch({
-      //     type: TYPES.SET_LOCATION,
-      //     payload: location,
-      //   });
-      // },
-      // register: () => {},
+      setGlobalLocation: (location: any) => {
+        rootDispatch({
+          type: TYPES.SET_LOCATION,
+          payload: location,
+        });
+      },
       logout: async () => {
-        // GALogEvent(GAEvents.LOGOUT, {method: 'App Logout'});
         logoutApp();
       },
-      // showModalAuth: async () => {
-      //   setShowModalAuth(true);
-      // },
       onCompleteAuth: () => {
         setWaitingRegisterComplete(false);
       },
-      // setAdmodData: (data: any) => {
-      //   parseAdmod(data || {});
-      // },
-      // showModalAdd: () => {},
     }),
     [firebaseConfig],
   );

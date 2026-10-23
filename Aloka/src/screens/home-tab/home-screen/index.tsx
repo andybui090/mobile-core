@@ -1,7 +1,5 @@
 import {
   HeaderBar,
-  IconType,
-  IconX,
   ImageHeader,
   Toast,
   Wrapper,
@@ -341,7 +339,7 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
     return (
       <View style={[screenStyles.pH14, screenStyles.mT8]}>
         <CSearchBarTrigger
-          placeholder={t('search.searchPlaceholder', 'Search...')}
+          placeholder={t('search.searchAndDiscover', 'Search & discover')}
           onPress={handlePressSearch}
         />
       </View>
@@ -444,48 +442,10 @@ const HomeScreen: React.FC<any> = ({ navigation, route }: any) => {
     }
   };
 
-  const handleOpenNearbyFacilities = () => {
-    navigation.navigate(homeTabRoute.nearbyFacilitiesScreen);
-  };
-
   const renderContent = () => {
     return (
       <Container>
         {renderSearch()}
-        <Pressable
-          style={{
-            marginHorizontal: 16,
-            marginTop: 10,
-            marginBottom: 4,
-            paddingVertical: 11,
-            paddingHorizontal: 16,
-            backgroundColor: colors.primary,
-            borderRadius: 10,
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexDirection: 'row',
-          }}
-          onPress={handleOpenNearbyFacilities}
-        >
-          <Row start style={{ flex: 1 }}>
-            <IconX
-              name="medkit"
-              type={IconType.IONICONS}
-              size={18}
-              color="#fff"
-              style={{ marginRight: 8 }}
-            />
-            <CText color="#fff" w600 h5>
-              Cơ sở y tế gần đây (Bệnh viện, Phòng khám)
-            </CText>
-          </Row>
-          <IconX
-            name="chevron-right"
-            type={IconType.OCTICONS}
-            size={18}
-            color="#fff"
-          />
-        </Pressable>
         {renderListFilter()}
         {renderTopBanner}
         {renderListData()}

@@ -14,7 +14,7 @@ import GeolocationAndroid from 'react-native-geolocation-service';
 // ---- TYPES ----
 type SortBy = 'distance' | 'popular' | 'newest' | 'price_asc' | 'price_desc';
 
-const FilterDropdownV2 = ({onApply, onClose, filters}: any) => {
+const FilterDropdownV2 = ({onApply, onClose: _onClose, filters}: any) => {
   const {
     theme: {colors},
   } = useTheme();
@@ -53,7 +53,7 @@ const FilterDropdownV2 = ({onApply, onClose, filters}: any) => {
     if (location == null) {
       checkGlobalLocation();
     }
-  }, [currentLocation]);
+  }, [currentLocation, location]);
 
   const _handleCheckPermission = async () => {
     const checkLocation = await PermissionHelper();
@@ -72,7 +72,9 @@ const FilterDropdownV2 = ({onApply, onClose, filters}: any) => {
               longitude: pos.coords.longitude,
             });
           },
-          (error: any) => {},
+          (error: unknown) => {
+            console.warn('[FilterDropdownV2] Unable to get location:', error);
+          },
           {enableHighAccuracy: true},
         );
       } else {
@@ -92,7 +94,7 @@ const FilterDropdownV2 = ({onApply, onClose, filters}: any) => {
           async (error: any) => {
             if (error.code && error.code === 2) {
               const enableResult = await promptForEnableLocationIfNeeded();
-              if (enableResult == 'enabled') {
+              if (enableResult === 'enabled') {
                 _handleCheckPermission();
               }
             } else {
@@ -109,7 +111,12 @@ const FilterDropdownV2 = ({onApply, onClose, filters}: any) => {
                     longitude: position.coords.longitude,
                   });
                 },
-                error => {},
+                fallbackError => {
+                  console.warn(
+                    '[FilterDropdownV2] Unable to get location:',
+                    fallbackError,
+                  );
+                },
                 {enableHighAccuracy: false},
               );
             }
@@ -119,6 +126,7 @@ const FilterDropdownV2 = ({onApply, onClose, filters}: any) => {
       }
     }
   };
+
   // ---- HANDLERS ----
   const handleApply = () => {
     // # Distance sort
@@ -199,6 +207,7 @@ const FilterDropdownV2 = ({onApply, onClose, filters}: any) => {
                 label={t('carely.locationNear', 'Nearest')}
                 active={sortBy === 'distance'}
                 onPress={() => {
+                  // console.log("🚀 ~ FilterDropdownV2 ~ onPress:", !location)
                   if (!location) {
                     _handleCheckPermission();
                     return;
@@ -206,7 +215,7 @@ const FilterDropdownV2 = ({onApply, onClose, filters}: any) => {
                   setSortBy('distance');
                 }}
               />
-            </Row>,
+            </Row>
           )}
 
           <View style={screenStyles.mT15} />

@@ -7,11 +7,10 @@ import React, {useEffect, useState} from 'react';
 import {
   LayoutAnimation,
   Linking,
-  NativeSyntheticEvent,
   Platform,
   Pressable,
   StyleSheet,
-  TextLayoutEventData,
+  TextLayoutEvent,
   UIManager,
   View,
 } from 'react-native';
@@ -79,7 +78,7 @@ const AnimatedReadMore: React.FC<AnimatedReadMoreProps> = ({
     setShowFullText(false);
   }, [text]);
 
-  const onTextLayout = (e: NativeSyntheticEvent<TextLayoutEventData>) => {
+  const onTextLayout = (e: TextLayoutEvent) => {
     if (!measured) {
       if (e.nativeEvent.lines.length > numberOfLines) {
         setIsOverflowing(true);

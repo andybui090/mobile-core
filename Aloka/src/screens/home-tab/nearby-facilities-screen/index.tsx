@@ -1,12 +1,23 @@
-import { CHeader, IconType, IconX, Wrapper } from '@/components';
+import { CHeader, CSearchBar, IconType, IconX, Wrapper } from '@/components';
+import { screenStyles } from '@/configs';
+import { PAGINATION } from '@/constants';
+import { AppContext } from '@/contexts';
+import { PermissionHelper } from '@/permissions';
 import {
-  getCurrentDeviceLocation,
   getNearbyMedicalFacilities,
   MedicalFacility,
 } from '@/services/osmService';
 import { Container, CText, Row } from '@/utils';
+import Geolocation from '@react-native-community/geolocation';
 import { makeStyles, useTheme } from '@rneui/themed';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   FlatList,
@@ -15,11 +26,10 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  TextInput,
   View,
 } from 'react-native';
-
-const PAGE_LIMIT = 15;
+import { promptForEnableLocationIfNeeded } from 'react-native-android-location-enabler';
+import GeolocationAndroid from 'react-native-geolocation-service';
 
 const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
   const styles = useStyles();
@@ -27,8 +37,12 @@ const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
     theme: { colors },
   } = useTheme();
 
+  const { t } = useTranslation();
+
+  const { currentLocation, setGlobalLocation }: any = useContext(AppContext);
+
   // STATE
-  const [currentLocation, setCurrentLocation] = useState<{
+  const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
@@ -41,27 +55,120 @@ const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
   const [page, setPage] = useState<number>(1);
 
   // FILTERS
-  const [facilityType, setFacilityType] = useState<'all' | 'hospital' | 'clinic'>('all');
+  const [facilityType, setFacilityType] = useState<
+    'all' | 'hospital' | 'clinic'
+  >('all');
   const [radiusKm, setRadiusKm] = useState<number>(10);
   const [searchText, setSearchText] = useState<string>('');
   const [queryInput, setQueryInput] = useState<string>('');
 
   const onEndReachedCalledDuringMomentum = useRef(true);
 
-  // 1. Lấy toạ độ GPS khi vào màn hình
-  const initLocation = useCallback(async () => {
-    setLoading(true);
-    try {
-      const loc = await getCurrentDeviceLocation();
-      setCurrentLocation(loc);
-      return loc;
-    } catch (err: any) {
-      console.warn('Không lấy được GPS, dùng toạ độ mặc định:', err);
-      const fallback = { latitude: 10.762622, longitude: 106.660172 };
-      setCurrentLocation(fallback);
-      return fallback;
-    }
+  const handleLocationError = useCallback((error: unknown) => {
+    console.warn('[NearbyFacilities] Không lấy được vị trí:', error);
+    setLoading(false);
+    setRefreshing(false);
   }, []);
+
+  const _handleCheckPermission = useCallback(async () => {
+    try {
+      const checkLocation = await PermissionHelper();
+      if (checkLocation.isSuccess) {
+        if (Platform.OS === 'ios') {
+          Geolocation.getCurrentPosition(
+            (pos: any) => {
+              const objLocation = {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                type: 'place',
+              };
+              setLocation(objLocation);
+              setGlobalLocation({
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+              });
+            },
+            (error: any) => {
+              handleLocationError(error);
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
+          );
+        } else {
+          Geolocation.getCurrentPosition(
+            (pos: any) => {
+              const objLocation = {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                type: 'place',
+              };
+              setLocation(objLocation);
+              setGlobalLocation({
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+              });
+            },
+            async (error: any) => {
+              try {
+                if (error.code && error.code === 2) {
+                  const enableResult = await promptForEnableLocationIfNeeded();
+                  if (enableResult === 'enabled') {
+                    _handleCheckPermission();
+                  } else {
+                    handleLocationError(error);
+                  }
+                } else {
+                  GeolocationAndroid.getCurrentPosition(
+                    position => {
+                      const objLocation = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        type: 'place',
+                      };
+                      setLocation(objLocation);
+                      setGlobalLocation({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                      });
+                    },
+                    handleLocationError,
+                    {
+                      enableHighAccuracy: false,
+                      timeout: 15000,
+                      maximumAge: 60000,
+                    },
+                  );
+                }
+              } catch (promptError) {
+                handleLocationError(promptError);
+              }
+            },
+            { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 },
+          );
+        }
+      } else {
+        handleLocationError(checkLocation.msg);
+      }
+    } catch (permissionError) {
+      handleLocationError(permissionError);
+    }
+  }, [handleLocationError, setGlobalLocation]);
+
+  useEffect(() => {
+    if (location != null) return;
+
+    if (
+      Number.isFinite(currentLocation?.latitude) &&
+      Number.isFinite(currentLocation?.longitude)
+    ) {
+      setLocation({
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        // type: 'place',
+      });
+    } else {
+      _handleCheckPermission();
+    }
+  }, [currentLocation, location, _handleCheckPermission]);
 
   // 2. Fetch danh sách từ OpenStreetMap
   const fetchFacilities = useCallback(
@@ -75,16 +182,14 @@ const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
       existingItems: MedicalFacility[] = [],
     ) => {
       try {
-        const excludeIds = isRefresh
-          ? []
-          : existingItems.map(it => it.id);
+        const excludeIds = isRefresh ? [] : existingItems.map(it => it.id);
 
         const newItems = await getNearbyMedicalFacilities({
           latitude: loc.latitude,
           longitude: loc.longitude,
           radiusKm: currentRadius,
           facilityType: filterType,
-          limit: PAGE_LIMIT,
+          limit: PAGINATION.ITEMS_15,
           page: targetPage,
           excludePlaceIds: excludeIds,
           searchQuery: search,
@@ -98,7 +203,7 @@ const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
           setFacilities(prev => [...prev, ...uniqueNew]);
         }
 
-        setHasMore(newItems.length >= PAGE_LIMIT);
+        setHasMore(newItems.length >= PAGINATION.ITEMS_15);
         setPage(targetPage);
       } catch (error) {
         console.error('Lỗi khi tải cơ sở y tế:', error);
@@ -112,46 +217,34 @@ const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
   );
 
   useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      const loc = await initLocation();
-      if (isMounted && loc) {
-        await fetchFacilities(loc, 1, true, facilityType, radiusKm, searchText, []);
-      }
-    })();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    if (!location) return;
+    setLoading(true);
+    fetchFacilities(location, 1, true);
+  }, [location, fetchFacilities]);
 
   // Kéo xuống làm mới (Pull-to-refresh)
   const handleRefresh = async () => {
     setRefreshing(true);
-    let loc = currentLocation;
-    try {
-      loc = await getCurrentDeviceLocation();
-      setCurrentLocation(loc);
-    } catch (_) {}
-
-    if (loc) {
-      await fetchFacilities(loc, 1, true, facilityType, radiusKm, searchText, []);
-    } else {
-      setRefreshing(false);
-    }
+    await _handleCheckPermission();
   };
 
   // Tải thêm (Load More)
   const handleLoadMore = () => {
-    if (loadingMore || loading || !hasMore || onEndReachedCalledDuringMomentum.current) {
+    if (
+      loadingMore ||
+      loading ||
+      !hasMore ||
+      onEndReachedCalledDuringMomentum.current
+    ) {
       return;
     }
 
-    if (!currentLocation) return;
+    if (!location) return;
 
     setLoadingMore(true);
     const nextPage = page + 1;
     fetchFacilities(
-      currentLocation,
+      location,
       nextPage,
       false,
       facilityType,
@@ -165,39 +258,18 @@ const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
   const handleSelectType = (type: 'all' | 'hospital' | 'clinic') => {
     if (type === facilityType) return;
     setFacilityType(type);
-    setLoading(true);
-    if (currentLocation) {
-      fetchFacilities(currentLocation, 1, true, type, radiusKm, searchText, []);
-    }
   };
 
   // Đổi bán kính
   const handleSelectRadius = (r: number) => {
     if (r === radiusKm) return;
     setRadiusKm(r);
-    setLoading(true);
-    if (currentLocation) {
-      fetchFacilities(currentLocation, 1, true, facilityType, r, searchText, []);
-    }
   };
 
   // Tìm kiếm theo từ khoá
   const handleSearchSubmit = () => {
     const text = queryInput.trim();
     setSearchText(text);
-    setLoading(true);
-    if (currentLocation) {
-      fetchFacilities(currentLocation, 1, true, facilityType, radiusKm, text, []);
-    }
-  };
-
-  const handleClearSearch = () => {
-    setQueryInput('');
-    setSearchText('');
-    setLoading(true);
-    if (currentLocation) {
-      fetchFacilities(currentLocation, 1, true, facilityType, radiusKm, '', []);
-    }
   };
 
   // Mở ứng dụng Bản đồ chỉ đường
@@ -219,7 +291,13 @@ const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
   };
 
   // RENDER ITEM
-  const renderItem = ({ item, index }: { item: MedicalFacility; index: number }) => {
+  const renderItem = ({
+    item,
+    index,
+  }: {
+    item: MedicalFacility;
+    index: number;
+  }) => {
     const isHospital = item.type === 'hospital';
 
     return (
@@ -243,7 +321,7 @@ const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
                 color: isHospital ? '#0066CC' : '#19A2A7',
               }}
             >
-              {isHospital ? 'Bệnh viện' : 'Phòng khám'}
+              {isHospital ? t('home.nearbyHospital') : t('home.nearbyClinic')}
             </CText>
           </View>
         </Row>
@@ -258,27 +336,38 @@ const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
             style={{ marginTop: 3, marginRight: 5 }}
           />
           <View style={{ flex: 1 }}>
-            <CText style={{ fontSize: 13, color: colors.c667085, lineHeight: 18 }}>
+            <CText h5 color={colors.c667085}>
               {item.address}
             </CText>
           </View>
         </Row>
 
         {/* Khoảng cách & Chỉ đường */}
-        <Row between style={{ marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F2F4F7' }}>
+        <Row
+          between
+          style={{
+            marginTop: 12,
+            paddingTop: 10,
+            borderTopWidth: 1,
+            borderTopColor: '#F2F4F7',
+          }}
+        >
           <View style={{ flex: 1 }}>
             {item.roadDistanceKm != null ? (
               <Row start style={{ marginBottom: 2 }}>
-                <CText w700 style={{ fontSize: 13, color: '#101828' }}>
+                <CText w700 h5 color={colors.c101828}>
                   {`🚗 ${item.roadDistanceKm} km `}
                 </CText>
-                <CText style={{ fontSize: 11, color: '#98A2B3' }}>
-                  {`(xe chạy)`}
+                <CText h6 color={colors.c475467}>
+                  {`(${t('nearby.driving', 'Xe chạy')})`}
                 </CText>
               </Row>
             ) : null}
-            <CText style={{ fontSize: 12, color: '#475467' }}>
-              {`📍 ${item.distanceKm} km (đường thẳng)`}
+            <CText h6 color={colors.c475467}>
+              {`📍 ${item.distanceKm} km (${t(
+                'nearby.straightLine',
+                'Đường thẳng',
+              )})`}
             </CText>
           </View>
 
@@ -293,8 +382,8 @@ const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
               color="#fff"
               style={{ marginRight: 4 }}
             />
-            <CText w600 style={{ color: '#fff', fontSize: 12 }}>
-              Chỉ đường
+            <CText w600 h6 color={colors.white}>
+              {t('search.getDirections', 'Get directions')}
             </CText>
           </Pressable>
         </Row>
@@ -309,7 +398,7 @@ const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={colors.primary || '#19A2A7'} />
         <CText style={{ marginLeft: 8, fontSize: 13, color: colors.c667085 }}>
-          Đang tải thêm cơ sở y tế...
+          {t('search.searchPlaceholder')}
         </CText>
       </View>
     );
@@ -326,148 +415,141 @@ const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
           size={48}
           color="#D0D5DD"
         />
-        <CText h5 w600 color={colors.c101828} style={{ marginTop: 12 }}>
-          Không tìm thấy cơ sở y tế nào
+        <CText h5 w600 color={colors.c101828} style={screenStyles.mT10}>
+          {t('search.noHealthcareFound', 'Không tìm thấy cơ sở y tế nào')}
         </CText>
-        <CText style={{ color: colors.c667085, textAlign: 'center', marginTop: 4, paddingHorizontal: 30 }}>
-          Hãy thử tăng bán kính tìm kiếm hoặc thay đổi từ khoá tìm kiếm.
+        <CText h5 center color={colors.c667085} style={screenStyles.mT10}>
+          {t(
+            'nearby.TryExpanding',
+            'Hãy thử tăng bán kính tìm kiếm hoặc thay đổi từ khoá tìm kiếm',
+          )}
         </CText>
         <Pressable
           style={styles.btnRetry}
           onPress={() => handleSelectRadius(radiusKm + 10)}
         >
           <CText color="#fff" w600>
-            {`Mở rộng bán kính lên ${radiusKm + 10} km`}
+            {`${t('search.expandSearch', 'Mở rộng bán kính lên')} ${
+              radiusKm + 10
+            } km`}
           </CText>
         </Pressable>
       </View>
     );
   };
 
-  return (
-    <Wrapper>
-      <CHeader
-        title="Cơ sở y tế gần bạn"
-        isBorderBottom
-        leftComponentOnPress={navigation.goBack}
-      />
+  // RENDER
 
-      <Container style={{ backgroundColor: '#F8F9FA' }}>
-        {/* THANH TÌM KIẾM */}
-        <View style={styles.searchContainer}>
-          <Row style={styles.searchBar}>
-            <IconX
-              name="search"
-              type={IconType.OCTICONS}
-              size={16}
-              color={colors.c667085}
-              style={{ marginRight: 8 }}
-            />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Tìm theo tên bệnh viện, phòng khám..."
-              placeholderTextColor={colors.c98A2B3}
-              value={queryInput}
-              onChangeText={setQueryInput}
-              onSubmitEditing={handleSearchSubmit}
-              returnKeyType="search"
-            />
-            {queryInput.length > 0 && (
-              <Pressable onPress={handleClearSearch} style={{ padding: 4 }}>
-                <IconX
-                  name="close-circle"
-                  type={IconType.IONICONS}
-                  size={16}
-                  color={colors.c98A2B3}
-                />
+  const renderSearch = () => {
+    return (
+      <View style={styles.searchContainer}>
+        <CSearchBar
+          value={queryInput}
+          placeholder={t(
+            'search.searchByClinicName',
+            'Tìm theo tên bệnh viện, phòng khám',
+          )}
+          onChangeText={setQueryInput}
+          onClear={() => {
+            setQueryInput('');
+            setSearchText('');
+          }}
+          onSubmitEditing={handleSearchSubmit}
+          returnKeyType="search"
+        />
+      </View>
+    );
+  };
+
+  const renderChips = () => {
+    return (
+      <View style={styles.filterSection}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsRow}
+        >
+          {[
+            { key: 'all', label: t('common.all') },
+            { key: 'hospital', label: '🏥 ' + t('home.nearbyHospital') },
+            { key: 'clinic', label: '🩺 ' + t('home.nearbyClinic') },
+          ].map(tab => {
+            const active = facilityType === tab.key;
+            return (
+              <Pressable
+                key={tab.key}
+                onPress={() => handleSelectType(tab.key as any)}
+                style={[styles.chip, active && styles.chipActive]}
+              >
+                <CText h6 w500 color={active ? colors.white : colors.c475467}>
+                  {tab.label}
+                </CText>
               </Pressable>
-            )}
-          </Row>
-        </View>
+            );
+          })}
+          <View style={styles.divider} />
+          {[5, 10, 15, 25].map(r => {
+            const active = radiusKm === r;
+            return (
+              <Pressable
+                key={r}
+                onPress={() => handleSelectRadius(r)}
+                style={[styles.chipRadius, active && styles.chipRadiusActive]}
+              >
+                <CText w500 h6 color={active ? colors.primary : colors.c475467}>
+                  {`${r} km`}
+                </CText>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+    );
+  };
 
-        {/* BỘ LỌC CHIPS */}
-        <View style={styles.filterSection}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
-            {[
-              { key: 'all', label: 'Tất cả' },
-              { key: 'hospital', label: '🏥 Bệnh viện' },
-              { key: 'clinic', label: '🩺 Phòng khám' },
-            ].map(tab => {
-              const active = facilityType === tab.key;
-              return (
-                <Pressable
-                  key={tab.key}
-                  onPress={() => handleSelectType(tab.key as any)}
-                  style={[styles.chip, active && styles.chipActive]}
-                >
-                  <CText
-                    w500={!active}
-                    w600={active}
-                    style={{
-                      fontSize: 12,
-                      color: active ? '#fff' : '#475467',
-                    }}
-                  >
-                    {tab.label}
-                  </CText>
-                </Pressable>
-              );
-            })}
-
-            <View style={styles.divider} />
-
-            {/* Lọc Bán kính */}
-            {[5, 10, 15, 25].map(r => {
-              const active = radiusKm === r;
-              return (
-                <Pressable
-                  key={r}
-                  onPress={() => handleSelectRadius(r)}
-                  style={[styles.chipRadius, active && styles.chipRadiusActive]}
-                >
-                  <CText
-                    w500={!active}
-                    w600={active}
-                    style={{
-                      fontSize: 11,
-                      color: active ? '#19A2A7' : '#475467',
-                    }}
-                  >
-                    {`${r} km`}
-                  </CText>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* THANH TOẠ ĐỘ GPS HIỆN TẠI */}
-        {currentLocation && (
-          <Row between style={styles.gpsBar}>
-            <Row start style={{ flex: 1 }}>
-              <IconX
-                name="location"
-                type={IconType.OCTICONS}
-                size={14}
-                color="#19A2A7"
-                style={{ marginRight: 5 }}
-              />
-              <CText style={{ fontSize: 11, color: '#475467' }}>
-                {`GPS: [${currentLocation.latitude.toFixed(4)}, ${currentLocation.longitude.toFixed(4)}]`}
-              </CText>
-            </Row>
-            <CText style={{ fontSize: 11, color: '#98A2B3' }}>
-              {`${facilities.length} kết quả`}
+  const renderLocationGPS = () => {
+    if (location) {
+      return (
+        <Row between style={styles.gpsBar}>
+          <Row start style={{ flex: 1 }}>
+            <IconX
+              name="location"
+              type={IconType.OCTICONS}
+              size={14}
+              color={colors.primary}
+              style={{ marginRight: 5 }}
+            />
+            <CText h6 color={colors.c475467}>
+              {`GPS: [${location.latitude.toFixed(
+                4,
+              )}, ${location.longitude.toFixed(4)}]`}
             </CText>
           </Row>
-        )}
+          <CText h6 color={colors.c98A2B3}>
+            {`${facilities.length}`}
+          </CText>
+        </Row>
+      );
+    }
+  };
 
+  const renderContent = () => {
+    return (
+      <Container>
+        {renderSearch()}
+        {/* BỘ LỌC CHIPS */}
+        {renderChips()}
+        {/* THANH TOẠ ĐỘ GPS HIỆN TẠI */}
+        {renderLocationGPS()}
         {/* DANH SÁCH CƠ SỞ Y TẾ */}
         {loading && facilities.length === 0 ? (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={colors.primary || '#19A2A7'} />
-            <CText style={{ marginTop: 12, color: colors.c667085, fontSize: 14 }}>
-              Đang tìm kiếm cơ sở y tế gần bạn...
+            <ActivityIndicator
+              size="large"
+              color={colors.primary || '#19A2A7'}
+            />
+            <CText h5 color={colors.c667085} style={screenStyles.mT10}>
+              {t('search.searchPlaceholder')}
             </CText>
           </View>
         ) : (
@@ -495,6 +577,20 @@ const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
           />
         )}
       </Container>
+    );
+  };
+
+  return (
+    <Wrapper>
+      <CHeader
+        title={t(
+          'search.healthcareFacilities',
+          'Healthcare Facilities Near You',
+        )}
+        isBorderBottom
+        leftComponentOnPress={navigation.goBack}
+      />
+      {renderContent()}
     </Wrapper>
   );
 };
@@ -502,9 +598,7 @@ const NearbyFacilitiesScreen: React.FC<any> = ({ navigation }: any) => {
 const useStyles = makeStyles(() => ({
   searchContainer: {
     paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 6,
-    backgroundColor: '#fff',
+    padding: 10,
   },
   searchBar: {
     backgroundColor: '#F2F4F7',
@@ -545,6 +639,7 @@ const useStyles = makeStyles(() => ({
     height: 20,
     backgroundColor: '#D0D5DD',
     marginHorizontal: 4,
+    marginRight: 10,
   },
   chipRadius: {
     paddingHorizontal: 10,
@@ -617,7 +712,8 @@ const useStyles = makeStyles(() => ({
   emptyContainer: {
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    paddingVertical: 60,
+    paddingHorizontal: 24,
+    flex: 1,
   },
   btnRetry: {
     marginTop: 16,
